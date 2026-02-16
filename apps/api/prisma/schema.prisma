@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+model Client {
+  id               String           @id @default(uuid())
+  telegramId       BigInt           @unique
+  telegramUsername String?
+  registeredAt     DateTime         @default(now())
+
+  requests         ShipmentRequest[]
+}
+
+model Manager {
+  id           String           @id @default(uuid())
+  email        String           @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime         @default(now())
+  lastLoginAt  DateTime?
+
+  assignedRequests ShipmentRequest[] @relation("AssignedRequests")
+  statusChanges    RequestStatusHistory[]
+}
+
+model ShipmentRequest {
+  id                String        @id @default(uuid())
+  clientId          String
+  assignedManagerId String?
+
+  destinationCity String
+  deliveryDate    DateTime
+  cargoSize       String
+  cargoWeightKg   Decimal
+  boxesCount      Int
+  comment         String?
+
+  status    RequestStatus @default(OPEN)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  assignedManager Manager? @relation("AssignedRequests", fields: [assignedManagerId], references: [id])
+
+  history RequestStatusHistory[]
+
+  @@index([clientId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model RequestStatusHistory {
+  id                 String        @id @default(uuid())
+  requestId          String
+  oldStatus          RequestStatus?
+  newStatus          RequestStatus
+  changedByManagerId String?
+  changedAt          DateTime      @default(now())
+
+  request ShipmentRequest @relation(fields: [requestId], references: [id])
+
+  changedByManager Manager? @relation(fields: [changedByManagerId], references: [id])
+
+  @@index([requestId, changedAt(sort: Desc)])
+}
