@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mini-crm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mini_crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - mini_crm_pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ../apps/api
+    container_name: mini-crm-api
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/mini_crm?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  mini_crm_pgdata:
