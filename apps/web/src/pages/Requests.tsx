@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getRequests, type ShipmentRequest, type RequestStatus } from "../api";
 import { cn } from "../lib/utils";
 
@@ -19,6 +19,7 @@ export default function Requests() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<RequestStatus | "all">("all");
+  const navigate = useNavigate();
 
   useEffect(() => {
     getRequests()
@@ -71,12 +72,8 @@ export default function Requests() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3">
-                    <Link to={`/requests/${r.id}`} className="text-blue-600 font-medium hover:underline">
-                      #{r.id}
-                    </Link>
-                  </td>
+                <tr key={r.id} onClick={() => navigate(`/requests/${r.id}`)} className="hover:bg-gray-50 transition cursor-pointer">
+                  <td className="px-4 py-3 text-blue-600 font-medium">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {r.size} · {r.weight} кг · {r.boxCount} мест
