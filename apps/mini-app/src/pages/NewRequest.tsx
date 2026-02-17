@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createRequest } from "../api";
+import { createRequest, getSchedule, type ScheduleEntry } from "../api";
 import { getTelegramUser } from "../telegram";
 
 export default function NewRequest() {
   const navigate = useNavigate();
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [city, setCity] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [size, setSize] = useState("");
@@ -13,6 +14,15 @@ export default function NewRequest() {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    getSchedule().then(setSchedule).catch(() => {});
+  }, []);
+
+  const destinations = [...new Set(schedule.map((s) => s.destination))].sort();
+  const availableDates = city
+    ? schedule.filter((s) => s.destination === city).sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate))
+    : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,26 +68,41 @@ export default function NewRequest() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1 text-tg-hint">Город доставки</label>
-          <input
-            type="text"
+          <label className="block text-sm font-medium mb-1 text-tg-hint">Направление</label>
+          <select
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => { setCity(e.target.value); setDeliveryDate(""); }}
             required
             className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-            placeholder="Москва"
-          />
+          >
+            <option value="">Выберите направление</option>
+            {destinations.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-tg-hint">Дата доставки</label>
-          <input
-            type="date"
+          <label className="block text-sm font-medium mb-1 text-tg-hint">Дата выгрузки</label>
+          <select
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
             required
-            className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-          />
+            disabled={!city}
+            className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text disabled:opacity-50"
+          >
+            <option value="">{city ? "Выберите дату" : "Сначала выберите направление"}</option>
+            {availableDates.map((s) => (
+              <option key={s.id} value={s.deliveryDate}>
+                {new Date(s.deliveryDate).toLocaleDateString("ru-RU", {
+                  day: "numeric",
+                  month: "long",
+                  weekday: "short",
+                })}
+                {" — приём: " + s.acceptDays}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
