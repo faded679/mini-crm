@@ -37,7 +37,7 @@ export async function createRequest(data: CreateRequestPayload): Promise<Shipmen
     throw new Error(`API error ${res.status}: ${body}`);
   }
 
-  return res.json();
+  return res.json() as Promise<ShipmentRequest>;
 }
 
 export async function getRequests(telegramId: string): Promise<ShipmentRequest[]> {
@@ -48,5 +48,5 @@ export async function getRequests(telegramId: string): Promise<ShipmentRequest[]
     throw new Error(`API error ${res.status}: ${body}`);
   }
 
-  return res.json();
+  return res.json() as Promise<ShipmentRequest[]>;
 }
