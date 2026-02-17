@@ -1,7 +1,7 @@
-import "../src/server/env.js";
-
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { prisma } from "../src/server/db/prisma.js";
+
+const prisma = new PrismaClient();
 
 async function main() {
   const email = process.env.SEED_MANAGER_EMAIL ?? "admin@example.com";
