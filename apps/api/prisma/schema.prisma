@@ -14,13 +14,15 @@ enum RequestStatus {
 }
 
 model Client {
-  id         Int              @id @default(autoincrement())
-  telegramId String           @unique @map("telegram_id")
-  username   String?
-  firstName  String?          @map("first_name")
-  lastName   String?          @map("last_name")
-  createdAt  DateTime         @default(now()) @map("created_at")
-  requests   ShipmentRequest[]
+  id           Int              @id @default(autoincrement())
+  telegramId   String           @unique @map("telegram_id")
+  username     String?
+  firstName    String?          @map("first_name")
+  lastName     String?          @map("last_name")
+  consentGiven Boolean          @default(false) @map("consent_given")
+  consentAt    DateTime?        @map("consent_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  requests     ShipmentRequest[]
 
   @@map("clients")
 }

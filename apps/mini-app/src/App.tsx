@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
-import { ready } from "./telegram";
+import { ready, getTelegramUser } from "./telegram";
+import { checkConsent } from "./api";
 import MyRequests from "./pages/MyRequests";
 import NewRequest from "./pages/NewRequest";
 import Schedule from "./pages/Schedule";
+import Consent from "./pages/Consent";
 
 function NavBar() {
   const { pathname } = useLocation();
@@ -30,9 +32,34 @@ function NavBar() {
 }
 
 export default function App() {
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     ready();
+    const user = getTelegramUser();
+    if (user) {
+      checkConsent(user.id)
+        .then((res) => {
+          setConsentGiven(res.consentGiven);
+          setConsentChecked(true);
+        })
+        .catch(() => setConsentChecked(true))
+        .finally(() => setLoading(false));
+    } else {
+      setConsentChecked(true);
+      setLoading(false);
+    }
   }, []);
+
+  if (loading) {
+    return <div className="p-4 text-center text-tg-hint">Загрузка...</div>;
+  }
+
+  if (consentChecked && !consentGiven) {
+    return <Consent onAccepted={() => setConsentGiven(true)} />;
+  }
 
   return (
     <div>
