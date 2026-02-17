@@ -54,6 +54,14 @@ services:
     container_name: mini-crm-mini-app
     restart: unless-stopped
 
+  web:
+    build:
+      context: ../apps/web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://test.ved31.ru/api}
+    container_name: mini-crm-web
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     container_name: mini-crm-nginx
@@ -61,6 +69,7 @@ services:
     depends_on:
       - api
       - mini-app
+      - web
     ports:
       - "80:80"
       - "443:443"
