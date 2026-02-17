@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getRequestById, updateRequestStatus, type ShipmentRequestDetail, type RequestStatus } from "../api";
 import { cn } from "../lib/utils";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 
 const statusLabels: Record<RequestStatus, string> = {
   open: "Открыта",
@@ -112,7 +112,7 @@ export default function RequestDetail() {
           {/* Status change */}
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Изменить статус:</p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               {(["open", "in_progress", "done"] as RequestStatus[]).map((s) => (
                 <button
                   key={s}
@@ -128,6 +128,14 @@ export default function RequestDetail() {
                   {statusLabels[s]}
                 </button>
               ))}
+              <div className="ml-auto">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                >
+                  <FileText size={16} />
+                  Выписать счёт
+                </button>
+              </div>
             </div>
           </div>
         </div>

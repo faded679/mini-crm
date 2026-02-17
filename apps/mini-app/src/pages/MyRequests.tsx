@@ -4,19 +4,15 @@ import { getRequests, type ShipmentRequest } from "../api";
 import { getTelegramUser } from "../telegram";
 
 const STATUS_LABELS: Record<string, string> = {
-  NEW: "🆕 Новая",
-  IN_PROGRESS: "🔄 В работе",
-  SHIPPED: "🚚 Отправлен",
-  DELIVERED: "✅ Доставлен",
-  CANCELLED: "❌ Отменена",
+  open: "🆕 Открыта",
+  in_progress: "🔄 В работе",
+  done: "✅ Выполнена",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-blue-100 text-blue-800",
-  IN_PROGRESS: "bg-yellow-100 text-yellow-800",
-  SHIPPED: "bg-purple-100 text-purple-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  open: "bg-yellow-100 text-yellow-800",
+  in_progress: "bg-blue-100 text-blue-800",
+  done: "bg-green-100 text-green-800",
 };
 
 export default function MyRequests() {
