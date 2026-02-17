@@ -96,3 +96,14 @@ export function updateRequestStatus(id: number, status: RequestStatus) {
 export function getClients() {
   return request<Client[]>("/admin/clients");
 }
+
+export interface ScheduleEntry {
+  id: number;
+  destination: string;
+  deliveryDate: string;
+  acceptDays: string;
+}
+
+export function getSchedule() {
+  return request<ScheduleEntry[]>("/schedule");
+}

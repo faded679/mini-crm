@@ -6,6 +6,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import authRouter from "./routes/auth.js";
 import adminRouter from "./routes/admin.js";
 import botRouter from "./routes/bot.js";
+import scheduleRouter from "./routes/schedule.js";
 
 export function createApp() {
   const app = express();
@@ -21,6 +22,7 @@ export function createApp() {
   app.use("/auth", authRouter);
   app.use("/admin", adminRouter);
   app.use("/bot", botRouter);
+  app.use("/schedule", scheduleRouter);
 
   app.use(errorHandler);
 

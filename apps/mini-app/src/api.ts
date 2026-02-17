@@ -40,6 +40,35 @@ export async function createRequest(data: CreateRequestPayload): Promise<Shipmen
   return res.json();
 }
 
+export interface ScheduleEntry {
+  id: number;
+  destination: string;
+  deliveryDate: string;
+  acceptDays: string;
+}
+
+export async function getSchedule(): Promise<ScheduleEntry[]> {
+  const res = await fetch(`${API_URL}/schedule`);
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+
+  return res.json();
+}
+
+export async function getDestinations(): Promise<string[]> {
+  const res = await fetch(`${API_URL}/schedule/destinations`);
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+
+  return res.json();
+}
+
 export async function getRequests(telegramId: string): Promise<ShipmentRequest[]> {
   const res = await fetch(`${API_URL}/bot/requests/${telegramId}`);
 

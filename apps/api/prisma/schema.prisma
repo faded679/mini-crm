@@ -54,6 +54,16 @@ model ShipmentRequest {
   @@map("shipment_requests")
 }
 
+model DeliverySchedule {
+  id            Int      @id @default(autoincrement())
+  destination   String
+  deliveryDate  DateTime @map("delivery_date")
+  acceptDays    String   @map("accept_days")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("delivery_schedules")
+}
+
 model RequestStatusHistory {
   id        Int           @id @default(autoincrement())
   requestId Int           @map("request_id")
