@@ -53,21 +53,9 @@ bot.callbackQuery("consent_accept", async (ctx) => {
     await ctx.editMessageText(
       "✅ Спасибо! Согласие на обработку персональных данных принято.\n\n" +
       "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
-      "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команды:\n" +
+      "Нажмите кнопку «📦 Открыть» слева от поля ввода, чтобы открыть приложение, или используйте команды:\n" +
       "/new — Создать новую заявку\n" +
-      "/my — Мои заявки",
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "📦 Открыть приложение",
-                web_app: { url: env.MINI_APP_URL },
-              },
-            ],
-          ],
-        },
-      }
+      "/my — Мои заявки"
     );
   } catch {
     await ctx.answerCallbackQuery({ text: "Ошибка. Попробуйте позже." });
@@ -84,6 +72,15 @@ bot.on("message:text", async (ctx) => {
 bot.catch((err) => {
   console.error("Bot error:", err);
 });
+
+bot.api.setChatMenuButton({
+  menu_button: {
+    type: "web_app",
+    text: "📦 Открыть",
+    web_app: { url: env.MINI_APP_URL },
+  },
+}).then(() => console.log("Menu button set"))
+  .catch((err) => console.error("Failed to set menu button:", err));
 
 bot.start({
   onStart: () => console.log("Bot started"),

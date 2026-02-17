@@ -1,5 +1,4 @@
 import type { Context } from "grammy";
-import { env } from "../env.js";
 import { checkConsent } from "../api.js";
 
 const CONSENT_TEXT =
@@ -14,7 +13,7 @@ const CONSENT_TEXT =
 const WELCOME_TEXT =
   "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
   "Здесь вы можете создать заявку на перевозку груза и отслеживать статус.\n\n" +
-  "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команды:\n" +
+  "Нажмите кнопку «📦 Открыть» слева от поля ввода, чтобы открыть приложение, или используйте команды:\n" +
   "/new — Создать новую заявку\n" +
   "/my — Мои заявки";
 
@@ -26,18 +25,7 @@ export async function handleStart(ctx: Context): Promise<void> {
     const { consentGiven } = await checkConsent(String(userId));
 
     if (consentGiven) {
-      await ctx.reply(WELCOME_TEXT, {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "📦 Открыть приложение",
-                web_app: { url: env.MINI_APP_URL },
-              },
-            ],
-          ],
-        },
-      });
+      await ctx.reply(WELCOME_TEXT);
     } else {
       await ctx.reply(CONSENT_TEXT, {
         parse_mode: "HTML",
