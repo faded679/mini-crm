@@ -35,5 +35,17 @@ services:
     ports:
       - "3000:3000"
 
+  bot:
+    build:
+      context: ../apps/bot
+    container_name: mini-crm-bot
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      API_URL: http://mini-crm-api:3000
+
 volumes:
   mini_crm_pgdata:

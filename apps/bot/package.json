@@ -1,0 +1,20 @@
+{
+  "name": "@mini-crm/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "grammy": "^1.30.0",
+    "@grammyjs/conversations": "^2.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.1",
+    "@types/node": "^20.17.0"
+  }
+}
