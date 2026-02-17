@@ -8,69 +8,60 @@ datasource db {
 }
 
 enum RequestStatus {
-  OPEN
-  IN_PROGRESS
-  DONE
+  open
+  in_progress
+  done
 }
 
 model Client {
-  id               String           @id @default(uuid())
-  telegramId       BigInt           @unique
-  telegramUsername String?
-  registeredAt     DateTime         @default(now())
+  id         Int              @id @default(autoincrement())
+  telegramId String           @unique @map("telegram_id")
+  username   String?
+  firstName  String?          @map("first_name")
+  lastName   String?          @map("last_name")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  requests   ShipmentRequest[]
 
-  requests         ShipmentRequest[]
+  @@map("clients")
 }
 
 model Manager {
-  id           String           @id @default(uuid())
-  email        String           @unique
-  passwordHash String
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
   name         String
-  createdAt    DateTime         @default(now())
-  lastLoginAt  DateTime?
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  assignedRequests ShipmentRequest[] @relation("AssignedRequests")
-  statusChanges    RequestStatusHistory[]
+  @@map("managers")
 }
 
 model ShipmentRequest {
-  id                String        @id @default(uuid())
-  clientId          String
-  assignedManagerId String?
+  id          Int                    @id @default(autoincrement())
+  clientId    Int                    @map("client_id")
+  city        String
+  deliveryDate DateTime             @map("delivery_date")
+  size        String
+  weight      Float
+  boxCount    Int                    @map("box_count")
+  comment     String?
+  status      RequestStatus          @default(open)
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
 
-  destinationCity String
-  deliveryDate    DateTime
-  cargoSize       String
-  cargoWeightKg   Decimal
-  boxesCount      Int
-  comment         String?
+  client      Client                 @relation(fields: [clientId], references: [id])
+  history     RequestStatusHistory[]
 
-  status    RequestStatus @default(OPEN)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  client Client @relation(fields: [clientId], references: [id])
-
-  assignedManager Manager? @relation("AssignedRequests", fields: [assignedManagerId], references: [id])
-
-  history RequestStatusHistory[]
-
-  @@index([clientId, createdAt(sort: Desc)])
-  @@index([status, createdAt(sort: Desc)])
+  @@map("shipment_requests")
 }
 
 model RequestStatusHistory {
-  id                 String        @id @default(uuid())
-  requestId          String
-  oldStatus          RequestStatus?
-  newStatus          RequestStatus
-  changedByManagerId String?
-  changedAt          DateTime      @default(now())
+  id        Int           @id @default(autoincrement())
+  requestId Int           @map("request_id")
+  oldStatus RequestStatus @map("old_status")
+  newStatus RequestStatus @map("new_status")
+  changedAt DateTime      @default(now()) @map("changed_at")
 
-  request ShipmentRequest @relation(fields: [requestId], references: [id])
+  request   ShipmentRequest @relation(fields: [requestId], references: [id])
 
-  changedByManager Manager? @relation(fields: [changedByManagerId], references: [id])
-
-  @@index([requestId, changedAt(sort: Desc)])
+  @@map("request_status_history")
 }

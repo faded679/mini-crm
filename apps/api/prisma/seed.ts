@@ -1,7 +1,6 @@
 import "../src/server/env.js";
 
 import bcrypt from "bcryptjs";
-
 import { prisma } from "../src/server/db/prisma.js";
 
 async function main() {
@@ -13,18 +12,10 @@ async function main() {
 
   const manager = await prisma.manager.upsert({
     where: { email },
-    update: {
-      name,
-      passwordHash,
-    },
-    create: {
-      email,
-      name,
-      passwordHash,
-    },
+    update: { name, passwordHash },
+    create: { email, name, passwordHash },
   });
 
-  // eslint-disable-next-line no-console
   console.log(`Seeded manager: ${manager.email}`);
 }
 
@@ -33,7 +24,6 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e) => {
-    // eslint-disable-next-line no-console
     console.error(e);
     await prisma.$disconnect();
     process.exit(1);

@@ -1,117 +1,98 @@
-import { Router } from "express";
-import { z } from "zod";
-
-import { requireManagerAuth } from "../auth/middleware.js";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { prisma } from "../db/prisma.js";
+import { requireAuth } from "../auth/middleware.js";
 import { ApiError } from "../errors.js";
-import { telegramNotifier } from "../services/telegram-notifier.js";
+import { notifyClient } from "../services/telegram-notifier.js";
+import { RequestStatus } from "@prisma/client";
 
-export const adminRouter = Router();
+const router = Router();
+router.use(requireAuth);
 
-adminRouter.use(requireManagerAuth);
-
-adminRouter.get("/requests", async (req, res) => {
-  const status = req.query.status as string | undefined;
-
-  const where = status
-    ? {
-        status: status as any,
-      }
-    : undefined;
-
-  const requests = await prisma.shipmentRequest.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    include: {
-      client: true,
-    },
-  });
-
-  res.json({ data: requests });
+// GET /admin/requests
+router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requests = await prisma.shipmentRequest.findMany({
+      include: { client: true },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(requests);
+  } catch (err) {
+    next(err);
+  }
 });
 
-adminRouter.get("/requests/:id", async (req, res, next) => {
+// GET /admin/requests/:id
+router.get("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id;
+    const id = Number(req.params.id);
     const request = await prisma.shipmentRequest.findUnique({
       where: { id },
       include: { client: true, history: { orderBy: { changedAt: "desc" } } },
     });
-
-    if (!request) {
-      throw new ApiError({ status: 404, code: "NOT_FOUND", message: "Request not found" });
-    }
-
-    res.json({ data: request });
-  } catch (e) {
-    next(e);
+    if (!request) throw new ApiError(404, "Request not found");
+    res.json(request);
+  } catch (err) {
+    next(err);
   }
 });
 
-const patchStatusSchema = z.object({
-  status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]),
-});
-
-adminRouter.patch("/requests/:id/status", async (req, res, next) => {
+// PATCH /admin/requests/:id/status
+router.patch("/requests/:id/status", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id;
-    const body = patchStatusSchema.parse(req.body);
+    const id = Number(req.params.id);
+    const { status } = req.body as { status: RequestStatus };
 
-    const existing = await prisma.shipmentRequest.findUnique({ where: { id }, include: { client: true } });
-    if (!existing) {
-      throw new ApiError({ status: 404, code: "NOT_FOUND", message: "Request not found" });
+    if (!Object.values(RequestStatus).includes(status)) {
+      throw new ApiError(400, "Invalid status");
     }
 
-    if (existing.status === body.status) {
-      res.json({ data: existing });
-      return;
-    }
+    const existing = await prisma.shipmentRequest.findUnique({
+      where: { id },
+      include: { client: true },
+    });
+    if (!existing) throw new ApiError(404, "Request not found");
 
     const updated = await prisma.shipmentRequest.update({
       where: { id },
+      data: { status },
+    });
+
+    await prisma.requestStatusHistory.create({
       data: {
-        status: body.status as any,
-        assignedManagerId: body.status === "IN_PROGRESS" ? (req as any).manager.sub : existing.assignedManagerId,
-        history: {
-          create: {
-            oldStatus: existing.status,
-            newStatus: body.status as any,
-            changedByManagerId: (req as any).manager.sub,
-          },
-        },
+        requestId: id,
+        oldStatus: existing.status,
+        newStatus: status,
       },
-      include: { client: true },
     });
 
-    await telegramNotifier.notifyStatusChanged({
-      telegramId: updated.client.telegramId,
-      requestId: updated.id,
-      newStatus: updated.status,
-    });
+    const statusLabels: Record<RequestStatus, string> = {
+      open: "Открыта",
+      in_progress: "Взята в работу",
+      done: "Выполнена",
+    };
 
-    res.json({ data: updated });
-  } catch (e) {
-    next(e);
+    await notifyClient(
+      existing.client.telegramId,
+      `Статус вашей заявки #${id} изменён: <b>${statusLabels[status]}</b>`,
+    );
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
   }
 });
 
-adminRouter.get("/clients", async (_req, res) => {
-  const clients = await prisma.client.findMany({
-    orderBy: { registeredAt: "desc" },
-    include: {
-      _count: {
-        select: { requests: true },
-      },
-    },
-  });
-
-  res.json({
-    data: clients.map((c) => ({
-      id: c.id,
-      telegramId: c.telegramId,
-      telegramUsername: c.telegramUsername,
-      registeredAt: c.registeredAt,
-      requestsCount: c._count.requests,
-    })),
-  });
+// GET /admin/clients
+router.get("/clients", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const clients = await prisma.client.findMany({
+      include: { _count: { select: { requests: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(clients);
+  } catch (err) {
+    next(err);
+  }
 });
+
+export default router;

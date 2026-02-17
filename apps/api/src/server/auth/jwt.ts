@@ -1,17 +1,17 @@
 import jwt from "jsonwebtoken";
-
 import { env } from "../env.js";
 
-export type JwtPayload = {
-  sub: string;
+export interface JwtPayload {
+  managerId: number;
   email: string;
-  name: string;
-};
-
-export function signAccessToken(payload: JwtPayload) {
-  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
 }
 
-export function verifyAccessToken(token: string): JwtPayload {
+export function signToken(payload: JwtPayload): string {
+  return jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN,
+  });
+}
+
+export function verifyToken(token: string): JwtPayload {
   return jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 }

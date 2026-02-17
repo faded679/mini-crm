@@ -1,28 +1,24 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
+import { ApiError } from "../errors.js";
 
-import { ApiError, type ApiErrorBody } from "../errors.js";
-
-export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
-  const requestId = (req as any).requestId as string | undefined;
-
+export function errorHandler(
+  err: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+) {
   if (err instanceof ApiError) {
-    const body: ApiErrorBody = {
-      code: err.code,
+    res.status(err.status).json({
+      status: err.status,
       message: err.message,
       details: err.details,
-      requestId,
-    };
-    res.status(err.status).json(body);
+    });
     return;
   }
 
-  const body: ApiErrorBody = {
-    code: "INTERNAL_ERROR",
+  console.error("Unhandled error:", err);
+  res.status(500).json({
+    status: 500,
     message: "Internal server error",
-    requestId,
-  };
-
-  // eslint-disable-next-line no-console
-  console.error({ requestId, err });
-  res.status(500).json(body);
+  });
 }

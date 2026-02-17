@@ -1,24 +1,19 @@
-import type { NextFunction, Request, Response } from "express";
-
+import type { Request, Response, NextFunction } from "express";
+import { verifyToken } from "./jwt.js";
 import { ApiError } from "../errors.js";
-import { verifyAccessToken, type JwtPayload } from "./jwt.js";
 
-export type AuthedRequest = Request & { manager: JwtPayload };
-
-export function requireManagerAuth(req: Request, _res: Response, next: NextFunction) {
+export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined;
-
-  if (!token) {
-    next(new ApiError({ status: 401, code: "UNAUTHORIZED", message: "Missing bearer token" }));
-    return;
+  if (!header?.startsWith("Bearer ")) {
+    throw new ApiError(401, "Missing or invalid Authorization header");
   }
 
   try {
-    const payload = verifyAccessToken(token);
-    (req as AuthedRequest).manager = payload;
+    const token = header.slice(7);
+    const payload = verifyToken(token);
+    (req as any).manager = payload;
     next();
   } catch {
-    next(new ApiError({ status: 401, code: "UNAUTHORIZED", message: "Invalid token" }));
+    throw new ApiError(401, "Invalid or expired token");
   }
 }

@@ -1,27 +1,28 @@
 import express from "express";
-
-import { requestIdMiddleware } from "./middleware/request-id.js";
+import cors from "cors";
+import { env } from "./env.js";
+import { requestId } from "./middleware/request-id.js";
 import { errorHandler } from "./middleware/error-handler.js";
-import { prisma } from "./db/prisma.js";
-import { authRouter } from "./routes/auth.js";
-import { adminRouter } from "./routes/admin.js";
-import { botRouter } from "./routes/bot.js";
+import authRouter from "./routes/auth.js";
+import adminRouter from "./routes/admin.js";
+import botRouter from "./routes/bot.js";
 
-export async function createApp() {
-  const router = express.Router();
+export function createApp() {
+  const app = express();
 
-  router.use(requestIdMiddleware);
+  app.use(cors({ origin: env.CORS_ORIGINS.split(",") }));
+  app.use(express.json());
+  app.use(requestId);
 
-  router.get("/health", async (_req, res) => {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ ok: true });
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok" });
   });
 
-  router.use("/auth", authRouter);
-  router.use("/admin", adminRouter);
-  router.use("/bot", botRouter);
+  app.use("/auth", authRouter);
+  app.use("/admin", adminRouter);
+  app.use("/bot", botRouter);
 
-  router.use(errorHandler);
+  app.use(errorHandler);
 
-  return router;
+  return app;
 }

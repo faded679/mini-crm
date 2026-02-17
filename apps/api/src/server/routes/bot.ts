@@ -1,61 +1,53 @@
-import { Router } from "express";
-import { z } from "zod";
-
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { prisma } from "../db/prisma.js";
+import { ApiError } from "../errors.js";
 
-export const botRouter = Router();
+const router = Router();
 
-const createRequestSchema = z.object({
-  telegramId: z.union([z.string(), z.number(), z.bigint()]).transform((v) => BigInt(v)),
-  telegramUsername: z.string().optional(),
-  destinationCity: z.string().min(1),
-  deliveryDate: z.string().min(1),
-  cargoSize: z.string().min(1),
-  cargoWeightKg: z.number().positive(),
-  boxesCount: z.number().int().positive(),
-  comment: z.string().optional().nullable(),
-});
-
-botRouter.post("/requests", async (req, res, next) => {
+// POST /bot/requests — create a shipment request
+router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = createRequestSchema.parse(req.body);
+    const { telegramId, username, firstName, lastName, city, deliveryDate, size, weight, boxCount, comment } = req.body;
+
+    if (!telegramId || !city || !deliveryDate || !size || !weight || !boxCount) {
+      throw new ApiError(400, "Missing required fields");
+    }
 
     const client = await prisma.client.upsert({
-      where: { telegramId: body.telegramId },
-      update: {
-        telegramUsername: body.telegramUsername,
-      },
-      create: {
-        telegramId: body.telegramId,
-        telegramUsername: body.telegramUsername,
-      },
+      where: { telegramId: String(telegramId) },
+      update: { username, firstName, lastName },
+      create: { telegramId: String(telegramId), username, firstName, lastName },
     });
 
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
-        destinationCity: body.destinationCity,
-        deliveryDate: new Date(body.deliveryDate),
-        cargoSize: body.cargoSize,
-        cargoWeightKg: body.cargoWeightKg as any,
-        boxesCount: body.boxesCount,
-        comment: body.comment ?? null,
+        city,
+        deliveryDate: new Date(deliveryDate),
+        size,
+        weight: Number(weight),
+        boxCount: Number(boxCount),
+        comment: comment || null,
       },
     });
 
-    res.json({ data: request });
-  } catch (e) {
-    next(e);
+    res.status(201).json(request);
+  } catch (err) {
+    next(err);
   }
 });
 
-botRouter.get("/requests", async (req, res, next) => {
+// GET /bot/requests/:telegramId — list client's requests
+router.get("/requests/:telegramId", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const telegramId = BigInt(req.query.telegramId as string);
+    const { telegramId } = req.params;
 
-    const client = await prisma.client.findUnique({ where: { telegramId } });
+    const client = await prisma.client.findUnique({
+      where: { telegramId },
+    });
+
     if (!client) {
-      res.json({ data: [] });
+      res.json([]);
       return;
     }
 
@@ -64,8 +56,10 @@ botRouter.get("/requests", async (req, res, next) => {
       orderBy: { createdAt: "desc" },
     });
 
-    res.json({ data: requests });
-  } catch (e) {
-    next(e);
+    res.json(requests);
+  } catch (err) {
+    next(err);
   }
 });
+
+export default router;

@@ -1,32 +1,11 @@
-import "reflect-metadata";
-
-import cors from "cors";
-import express from "express";
+import "./server/env.js";
 
 import { createApp } from "./server/app.js";
-import { env } from "./server/env.js";
 
-async function bootstrap() {
-  const app = express();
+const port = Number(process.env.PORT) || 3000;
 
-  app.use(express.json({ limit: "1mb" }));
-  app.use(
-    cors({
-      origin: env.CORS_ORIGINS.split(",").map((s) => s.trim()),
-      credentials: true,
-    }),
-  );
+const app = createApp();
 
-  app.use(await createApp());
-
-  app.listen(env.PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`API listening on http://localhost:${env.PORT}`);
-  });
-}
-
-bootstrap().catch((e) => {
-  // eslint-disable-next-line no-console
-  console.error(e);
-  process.exit(1);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`API listening on http://0.0.0.0:${port}`);
 });
