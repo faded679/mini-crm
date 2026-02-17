@@ -25,17 +25,17 @@ export default function Schedule() {
   }, {});
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-500">Загрузка...</div>;
+    return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Расписание отправок</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Расписание отправок</h1>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700"
+          className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
         >
           <option value="">Все направления</option>
           {destinations.map((d) => (
@@ -45,32 +45,32 @@ export default function Schedule() {
       </div>
 
       {Object.keys(grouped).length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Нет данных</div>
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">Нет данных</div>
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([dest, items]) => (
-            <div key={dest} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <h2 className="font-semibold text-gray-900">📍 {dest}</h2>
+            <div key={dest} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="font-semibold text-gray-900 dark:text-white">📍 {dest}</h2>
               </div>
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Дата выгрузки</th>
-                    <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Приём груза на складе</th>
+                  <tr className="border-b border-gray-100 dark:border-gray-700">
+                    <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Дата выгрузки</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Приём груза на складе</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                         {new Date(item.deliveryDate).toLocaleDateString("ru-RU", {
                           day: "numeric",
                           month: "long",
                           weekday: "short",
                         })}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{item.acceptDays}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{item.acceptDays}</td>
                     </tr>
                   ))}
                 </tbody>

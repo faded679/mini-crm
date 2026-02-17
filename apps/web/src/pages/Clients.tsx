@@ -12,39 +12,39 @@ export default function Clients() {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-500">Загрузка...</div>;
+    return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Клиенты</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Клиенты</h1>
 
       {clients.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">Клиентов нет</div>
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">Клиентов нет</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Имя</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Username</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Telegram ID</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Заявок</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Дата</th>
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Имя</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Username</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Telegram ID</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Заявок</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Дата</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {clients.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">
                     {c.firstName} {c.lastName || ""}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {c.username ? `@${c.username}` : "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-400 font-mono">{c.telegramId}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{c._count?.requests ?? 0}</td>
-                  <td className="px-4 py-3 text-sm text-gray-400">
+                  <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500 font-mono">{c.telegramId}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{c._count?.requests ?? 0}</td>
+                  <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
                     {new Date(c.createdAt).toLocaleDateString("ru-RU")}
                   </td>
                 </tr>
