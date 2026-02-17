@@ -69,20 +69,24 @@ export default function RequestDetail() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Груз</p>
-              <p className="text-sm text-gray-900">{request.cargoDescription}</p>
+              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Город</p>
+              <p className="text-sm text-gray-900">{request.city}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Дата доставки</p>
+              <p className="text-sm text-gray-900">{new Date(request.deliveryDate).toLocaleDateString("ru-RU")}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Габариты</p>
+              <p className="text-sm text-gray-900">{request.size}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 uppercase font-medium mb-1">Вес</p>
-              <p className="text-sm text-gray-900">{request.weight ? `${request.weight} кг` : "—"}</p>
+              <p className="text-sm text-gray-900">{request.weight} кг</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Откуда</p>
-              <p className="text-sm text-gray-900">{request.fromCity}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Куда</p>
-              <p className="text-sm text-gray-900">{request.toCity}</p>
+              <p className="text-xs text-gray-400 uppercase font-medium mb-1">Кол-во мест</p>
+              <p className="text-sm text-gray-900">{request.boxCount}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 uppercase font-medium mb-1">Клиент</p>
@@ -97,6 +101,12 @@ export default function RequestDetail() {
                 {new Date(request.createdAt).toLocaleString("ru-RU")}
               </p>
             </div>
+            {request.comment && (
+              <div className="col-span-2">
+                <p className="text-xs text-gray-400 uppercase font-medium mb-1">Комментарий</p>
+                <p className="text-sm text-gray-900">{request.comment}</p>
+              </div>
+            )}
           </div>
 
           {/* Status change */}

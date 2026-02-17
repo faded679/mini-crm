@@ -29,7 +29,6 @@ export default function Clients() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Имя</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Username</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Telegram ID</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Телефон</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Заявок</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Дата</th>
               </tr>
@@ -44,7 +43,6 @@ export default function Clients() {
                     {c.username ? `@${c.username}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400 font-mono">{c.telegramId}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{c.phone || "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{c._count?.requests ?? 0}</td>
                   <td className="px-4 py-3 text-sm text-gray-400">
                     {new Date(c.createdAt).toLocaleDateString("ru-RU")}

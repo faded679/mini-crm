@@ -62,8 +62,8 @@ export default function Requests() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">#</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Груз</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Маршрут</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Город</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Габариты / Вес</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Клиент</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Статус</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Дата</th>
@@ -77,9 +77,9 @@ export default function Requests() {
                       #{r.id}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{r.cargoDescription}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {r.fromCity} → {r.toCity}
+                    {r.size} · {r.weight} кг · {r.boxCount} мест
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {r.client.firstName} {r.client.lastName || ""}

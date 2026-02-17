@@ -38,10 +38,9 @@ export interface LoginResponse {
 export interface Client {
   id: number;
   telegramId: string;
-  firstName: string;
+  firstName: string | null;
   lastName: string | null;
   username: string | null;
-  phone: string | null;
   createdAt: string;
   _count?: { requests: number };
 }
@@ -50,10 +49,12 @@ export type RequestStatus = "open" | "in_progress" | "done";
 
 export interface ShipmentRequest {
   id: number;
-  cargoDescription: string;
-  fromCity: string;
-  toCity: string;
-  weight: number | null;
+  city: string;
+  deliveryDate: string;
+  size: string;
+  weight: number;
+  boxCount: number;
+  comment: string | null;
   status: RequestStatus;
   createdAt: string;
   client: Client;
