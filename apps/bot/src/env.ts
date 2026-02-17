@@ -9,4 +9,5 @@ function requireEnv(name: string): string {
 export const env = {
   BOT_TOKEN: requireEnv("TELEGRAM_BOT_TOKEN"),
   API_URL: process.env.API_URL ?? "http://mini-crm-api:3000",
+  MINI_APP_URL: process.env.MINI_APP_URL ?? "http://localhost:8080",
 };
