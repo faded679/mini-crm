@@ -81,9 +81,15 @@ export default function MyRequests() {
                 </span>
               </div>
               <div className="text-sm text-tg-hint space-y-1">
-                <p>📍 {r.city}</p>
-                <p>📅 {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}</p>
-                <p>📦 {(r.volume ?? r.size ?? "—")} м³ · ⚖️ {r.weight} кг · 📦 {r.boxCount} мест</p>
+                <div className="flex items-center justify-between">
+                  <span>📍 {r.city}</span>
+                  <span>📅 {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span>📦 {r.volume ?? r.size ?? "—"} м³</span>
+                  <span>⚖️ {r.weight} кг</span>
+                  <span>📦 {r.boxCount} мест</span>
+                </div>
                 {r.comment && <p className="text-tg-text mt-1">💬 {r.comment}</p>}
               </div>
             </div>
