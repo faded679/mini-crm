@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || "https://test.ved31.ru/api";
 
-function getToken(): string | null {
+export function getToken(): string | null {
   return localStorage.getItem("token");
 }
 

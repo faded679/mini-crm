@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
+  getToken,
   getCounterparties,
   getInvoicePdfUrl,
   getRequestById,
@@ -39,6 +40,7 @@ export default function RequestDetail() {
   const [invoiceAmount, setInvoiceAmount] = useState<string>("");
   const [invoiceSending, setInvoiceSending] = useState(false);
   const [confirmInvoiceSend, setConfirmInvoiceSend] = useState(false);
+  const [invoiceDownloading, setInvoiceDownloading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -62,6 +64,53 @@ export default function RequestDetail() {
 
   const handleIssueInvoice = async () => {
     setConfirmInvoice(false);
+  };
+
+  const handleDownloadInvoicePdf = async () => {
+    if (!request) return;
+    if (!canInvoice) return;
+    if (invoiceDownloading) return;
+
+    setInvoiceDownloading(true);
+    try {
+      const token = getToken();
+      if (!token) throw new Error("Not authenticated");
+
+      const url = getInvoicePdfUrl({
+        requestId: request.id,
+        counterpartyId: invoiceCounterpartyId as number,
+        amount: parsedInvoiceAmount,
+      });
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        let msg = "";
+        try {
+          const data = (await res.json()) as { message?: string };
+          msg = data.message ?? "";
+        } catch {
+          msg = await res.text().catch(() => "");
+        }
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `invoice-request-${request.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } finally {
+      setInvoiceDownloading(false);
+    }
   };
 
   const parsedInvoiceAmount = Number(String(invoiceAmount).replace(",", "."));
@@ -298,22 +347,13 @@ export default function RequestDetail() {
                       ? "bg-blue-600 hover:bg-blue-700 text-white"
                       : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
                   )}
-                  href={
-                    canInvoice
-                      ? getInvoicePdfUrl({
-                          requestId: request.id,
-                          counterpartyId: invoiceCounterpartyId as number,
-                          amount: parsedInvoiceAmount,
-                        })
-                      : undefined
-                  }
                   onClick={(e) => {
-                    if (!canInvoice) e.preventDefault();
+                    e.preventDefault();
+                    if (!canInvoice) return;
+                    void handleDownloadInvoicePdf();
                   }}
-                  target="_blank"
-                  rel="noreferrer"
                 >
-                  Скачать PDF
+                  {invoiceDownloading ? "Скачивание..." : "Скачать PDF"}
                 </a>
 
                 <button
