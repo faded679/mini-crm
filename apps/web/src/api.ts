@@ -110,6 +110,10 @@ export interface ShipmentRequestDetail extends ShipmentRequest {
   history: StatusHistoryEntry[];
 }
 
+export interface ClientDetail extends Client {
+  requests: ShipmentRequest[];
+}
+
 export function login(email: string, password: string) {
   return request<LoginResponse>("/auth/login", {
     method: "POST",
@@ -153,6 +157,10 @@ export function sendInvoiceToClient(params: { requestId: number; counterpartyId:
 
 export function getClients() {
   return request<Client[]>("/admin/clients");
+}
+
+export function getClientById(id: number) {
+  return request<ClientDetail>(`/admin/clients/${id}`);
 }
 
 export interface ScheduleEntry {

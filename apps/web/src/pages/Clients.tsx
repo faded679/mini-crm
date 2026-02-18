@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getClients, type Client } from "../api";
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getClients()
@@ -35,7 +37,11 @@ export default function Clients() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {clients.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                <tr
+                  key={c.id}
+                  onClick={() => navigate(`/clients/${c.id}`)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                >
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">
                     {c.firstName} {c.lastName || ""}
                   </td>

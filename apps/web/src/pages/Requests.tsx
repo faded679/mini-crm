@@ -267,7 +267,7 @@ export default function Requests() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {sorted.map((r) => (
                 <tr key={r.id} onClick={() => navigate(`/requests/${r.id}`)} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer">
-                  <td className="px-4 py-3 text-blue-600 font-medium">#{r.id}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {formatDateRu(r.deliveryDate)}

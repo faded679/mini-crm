@@ -173,6 +173,29 @@ router.get("/clients", async (_req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// GET /admin/clients/:id
+router.get("/clients/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const client = await prisma.client.findUnique({
+      where: { id },
+      include: {
+        requests: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!client) throw new ApiError(404, "Client not found");
+
+    res.json(client);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/counterparties
 router.get("/counterparties", async (_req: Request, res: Response, next: NextFunction) => {
   try {

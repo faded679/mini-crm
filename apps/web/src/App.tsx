@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Requests from "./pages/Requests";
 import RequestDetail from "./pages/RequestDetail";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
 import Schedule from "./pages/Schedule";
 import Counterparties from "./pages/Counterparties";
 
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/" element={<Requests />} />
             <Route path="/requests/:id" element={<RequestDetail />} />
             <Route path="/clients" element={<Clients />} />
+            <Route path="/clients/:id" element={<ClientDetail />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/counterparties" element={<Counterparties />} />
           </Route>
