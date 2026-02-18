@@ -20,6 +20,25 @@ const statusColors: Record<RequestStatus, string> = {
 type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "status";
 type SortDir = "asc" | "desc";
 
+const SORT_KEYS: SortKey[] = [
+  "id",
+  "city",
+  "deliveryDate",
+  "volume",
+  "weight",
+  "boxCount",
+  "client",
+  "status",
+];
+
+function isSortKey(v: string | null): v is SortKey {
+  return v !== null && (SORT_KEYS as string[]).includes(v);
+}
+
+function isSortDir(v: string | null): v is SortDir {
+  return v === "asc" || v === "desc";
+}
+
 function formatDateRu(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU");
 }
@@ -33,8 +52,8 @@ export default function Requests() {
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
   const filterDate = searchParams.get("date") || "all";
-  const sortKey = (searchParams.get("sort") as SortKey) || "id";
-  const sortDir = (searchParams.get("dir") as SortDir) || "desc";
+  const sortKey = isSortKey(searchParams.get("sort")) ? searchParams.get("sort") : "id";
+  const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
 
   const setParam = useCallback((key: string, value: string) => {
     setSearchParams((prev) => {
