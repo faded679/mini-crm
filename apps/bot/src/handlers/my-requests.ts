@@ -16,7 +16,7 @@ export async function handleMyRequests(ctx: Context): Promise<void> {
     const requests = await getRequests(String(userId));
 
     if (requests.length === 0) {
-      await ctx.reply("У вас пока нет заявок. Создайте первую командой /new");
+      await ctx.reply("У вас пока нет заявок. Создайте первую через кнопку «📦 Открыть приложение» в /start");
       return;
     }
 
