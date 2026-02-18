@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import { useTheme } from "../theme";
-import { Package, Users, LogOut, Calendar, Moon, Sun } from "lucide-react";
+import { Package, Users, LogOut, Calendar, Moon, Sun, Building2 } from "lucide-react";
 
 export default function Layout() {
   const { manager, logout } = useAuth();
@@ -39,6 +39,10 @@ export default function Layout() {
                 <NavLink to="/schedule" className={linkClass}>
                   <Calendar size={18} />
                   Расписание
+                </NavLink>
+                <NavLink to="/counterparties" className={linkClass}>
+                  <Building2 size={18} />
+                  Организации
                 </NavLink>
               </nav>
             </div>

@@ -24,8 +24,43 @@ model Client {
   consentAt    DateTime?        @map("consent_at")
   createdAt    DateTime         @default(now()) @map("created_at")
   requests     ShipmentRequest[]
+  counterparties CounterpartyContact[]
 
   @@map("clients")
+}
+
+model Counterparty {
+  id                    Int                   @id @default(autoincrement())
+  name                  String
+  inn                   String?
+  kpp                   String?
+  ogrn                  String?
+  address               String?
+  account               String?               @map("account")
+  bik                   String?
+  correspondentAccount  String?               @map("correspondent_account")
+  bank                  String?
+  director              String?
+  contract              String?
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  contacts              CounterpartyContact[]
+
+  @@map("counterparties")
+}
+
+model CounterpartyContact {
+  id             Int          @id @default(autoincrement())
+  counterpartyId Int          @map("counterparty_id")
+  clientId       Int          @map("client_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  counterparty   Counterparty @relation(fields: [counterpartyId], references: [id])
+  client         Client       @relation(fields: [clientId], references: [id])
+
+  @@unique([counterpartyId, clientId])
+  @@map("counterparty_contacts")
 }
 
 model Manager {

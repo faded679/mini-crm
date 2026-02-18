@@ -45,6 +45,44 @@ export interface Client {
   _count?: { requests: number };
 }
 
+export interface CounterpartyContact {
+  id: number;
+  client: Client;
+}
+
+export interface Counterparty {
+  id: number;
+  name: string;
+  inn: string | null;
+  kpp: string | null;
+  ogrn: string | null;
+  address: string | null;
+  account: string | null;
+  bik: string | null;
+  correspondentAccount: string | null;
+  bank: string | null;
+  director: string | null;
+  contract: string | null;
+  contacts: CounterpartyContact[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CounterpartyPayload {
+  name: string;
+  inn?: string | null;
+  kpp?: string | null;
+  ogrn?: string | null;
+  address?: string | null;
+  account?: string | null;
+  bik?: string | null;
+  correspondentAccount?: string | null;
+  bank?: string | null;
+  director?: string | null;
+  contract?: string | null;
+  contactClientIds?: number[];
+}
+
 export type RequestStatus = "new" | "warehouse" | "shipped" | "done";
 
 export interface ShipmentRequest {
@@ -107,4 +145,28 @@ export interface ScheduleEntry {
 
 export function getSchedule() {
   return request<ScheduleEntry[]>("/schedule");
+}
+
+export function getCounterparties() {
+  return request<Counterparty[]>("/admin/counterparties");
+}
+
+export function createCounterparty(payload: CounterpartyPayload) {
+  return request<Counterparty>("/admin/counterparties", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCounterparty(id: number, payload: CounterpartyPayload) {
+  return request<Counterparty>(`/admin/counterparties/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCounterparty(id: number) {
+  return request<void>(`/admin/counterparties/${id}`, {
+    method: "DELETE",
+  });
 }

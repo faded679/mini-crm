@@ -6,6 +6,7 @@ import Requests from "./pages/Requests";
 import RequestDetail from "./pages/RequestDetail";
 import Clients from "./pages/Clients";
 import Schedule from "./pages/Schedule";
+import Counterparties from "./pages/Counterparties";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/requests/:id" element={<RequestDetail />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/schedule" element={<Schedule />} />
+            <Route path="/counterparties" element={<Counterparties />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

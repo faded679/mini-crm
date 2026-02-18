@@ -8,6 +8,21 @@ import { RequestStatus } from "@prisma/client";
 const router = Router();
 router.use(requireAuth);
 
+type CounterpartyPayload = {
+  name: string;
+  inn?: string | null;
+  kpp?: string | null;
+  ogrn?: string | null;
+  address?: string | null;
+  account?: string | null;
+  bik?: string | null;
+  correspondentAccount?: string | null;
+  bank?: string | null;
+  director?: string | null;
+  contract?: string | null;
+  contactClientIds?: number[];
+};
+
 // GET /admin/requests
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -91,6 +106,124 @@ router.get("/clients", async (_req: Request, res: Response, next: NextFunction) 
       orderBy: { createdAt: "desc" },
     });
     res.json(clients);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/counterparties
+router.get("/counterparties", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counterparties = await prisma.counterparty.findMany({
+      include: {
+        contacts: {
+          include: {
+            client: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(counterparties);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/counterparties
+router.post("/counterparties", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = req.body as CounterpartyPayload;
+    if (!body?.name?.trim()) throw new ApiError(400, "Name is required");
+
+    const contactClientIds = Array.isArray(body.contactClientIds) ? body.contactClientIds : [];
+
+    const created = await prisma.counterparty.create({
+      data: {
+        name: body.name.trim(),
+        inn: body.inn ?? null,
+        kpp: body.kpp ?? null,
+        ogrn: body.ogrn ?? null,
+        address: body.address ?? null,
+        account: body.account ?? null,
+        bik: body.bik ?? null,
+        correspondentAccount: body.correspondentAccount ?? null,
+        bank: body.bank ?? null,
+        director: body.director ?? null,
+        contract: body.contract ?? null,
+        contacts: {
+          create: contactClientIds.map((clientId) => ({ clientId })),
+        },
+      },
+      include: {
+        contacts: { include: { client: true } },
+      },
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/counterparties/:id
+router.patch("/counterparties/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const body = req.body as CounterpartyPayload;
+    const contactClientIds = Array.isArray(body.contactClientIds) ? body.contactClientIds : undefined;
+
+    const existing = await prisma.counterparty.findUnique({ where: { id } });
+    if (!existing) throw new ApiError(404, "Counterparty not found");
+
+    const updated = await prisma.counterparty.update({
+      where: { id },
+      data: {
+        name: body.name !== undefined ? body.name.trim() : undefined,
+        inn: body.inn !== undefined ? body.inn : undefined,
+        kpp: body.kpp !== undefined ? body.kpp : undefined,
+        ogrn: body.ogrn !== undefined ? body.ogrn : undefined,
+        address: body.address !== undefined ? body.address : undefined,
+        account: body.account !== undefined ? body.account : undefined,
+        bik: body.bik !== undefined ? body.bik : undefined,
+        correspondentAccount:
+          body.correspondentAccount !== undefined ? body.correspondentAccount : undefined,
+        bank: body.bank !== undefined ? body.bank : undefined,
+        director: body.director !== undefined ? body.director : undefined,
+        contract: body.contract !== undefined ? body.contract : undefined,
+        contacts:
+          contactClientIds !== undefined
+            ? {
+                deleteMany: {},
+                create: contactClientIds.map((clientId) => ({ clientId })),
+              }
+            : undefined,
+      },
+      include: {
+        contacts: { include: { client: true } },
+      },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/counterparties/:id
+router.delete("/counterparties/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    await prisma.counterparty.delete({
+      where: { id },
+    });
+
+    res.status(204).send();
   } catch (err) {
     next(err);
   }
