@@ -52,7 +52,8 @@ export default function Requests() {
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
   const filterDate = searchParams.get("date") || "all";
-  const sortKey = isSortKey(searchParams.get("sort")) ? searchParams.get("sort") : "id";
+  const sortParam = searchParams.get("sort");
+  const sortKey = isSortKey(sortParam) ? sortParam : "id";
   const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
 
   const setParam = useCallback((key: string, value: string) => {
