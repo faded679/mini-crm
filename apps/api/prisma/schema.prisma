@@ -19,6 +19,12 @@ enum PackagingType {
   boxes
 }
 
+enum RateUnit {
+  pallet
+  kg
+  m3
+}
+
 model Client {
   id           Int              @id @default(autoincrement())
   telegramId   String           @unique @map("telegram_id")
@@ -97,6 +103,32 @@ model ShipmentRequest {
   history     RequestStatusHistory[]
 
   @@map("shipment_requests")
+}
+
+model Direction {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  rates     PriceRate[]
+
+  @@map("directions")
+}
+
+model PriceRate {
+  id          Int       @id @default(autoincrement())
+  directionId Int       @map("direction_id")
+  unit        RateUnit
+  price       Int
+  comment     String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  direction   Direction @relation(fields: [directionId], references: [id])
+
+  @@unique([directionId, unit])
+  @@map("price_rates")
 }
 
 model DeliverySchedule {

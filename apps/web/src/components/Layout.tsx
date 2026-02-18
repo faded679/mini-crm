@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import { useTheme } from "../theme";
-import { Package, Users, LogOut, Calendar, Moon, Sun, Building2 } from "lucide-react";
+import { Package, Users, LogOut, Calendar, Moon, Sun, Building2, DollarSign } from "lucide-react";
 
 export default function Layout() {
   const { manager, logout } = useAuth();
@@ -43,6 +43,10 @@ export default function Layout() {
                 <NavLink to="/counterparties" className={linkClass}>
                   <Building2 size={18} />
                   Организации
+                </NavLink>
+                <NavLink to="/prices" className={linkClass}>
+                  <DollarSign size={18} />
+                  Прайс
                 </NavLink>
               </nav>
             </div>

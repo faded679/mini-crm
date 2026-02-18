@@ -216,3 +216,96 @@ export function deleteCounterparty(id: number) {
     method: "DELETE",
   });
 }
+
+// --------------- Directions ---------------
+
+export interface Direction {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function getDirections() {
+  return request<Direction[]>("/admin/directions");
+}
+
+export function createDirection(name: string) {
+  return request<Direction>("/admin/directions", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function updateDirection(id: number, name: string) {
+  return request<Direction>(`/admin/directions/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteDirection(id: number) {
+  return request<void>(`/admin/directions/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// --------------- Rates ---------------
+
+export type RateUnit = "pallet" | "kg" | "m3";
+
+export interface PriceRate {
+  id: number;
+  directionId: number;
+  unit: RateUnit;
+  price: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+  direction: Direction;
+}
+
+export interface PriceRatePayload {
+  directionId: number;
+  unit: RateUnit;
+  price: number;
+  comment?: string | null;
+}
+
+export interface ImportReport {
+  created: number;
+  updated: number;
+  errors: Array<{ row: number; message: string }>;
+}
+
+export function getRates(directionId?: number) {
+  const q = directionId ? `?directionId=${directionId}` : "";
+  return request<PriceRate[]>(`/admin/rates${q}`);
+}
+
+export function createRate(payload: PriceRatePayload) {
+  return request<PriceRate>("/admin/rates", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateRate(id: number, payload: Partial<PriceRatePayload>) {
+  return request<PriceRate>(`/admin/rates/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteRate(id: number) {
+  return request<void>(`/admin/rates/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function importRates(rows: Array<{ direction: string; unit: string; price: number; comment?: string | null }>) {
+  return request<ImportReport>("/admin/rates/import", {
+    method: "POST",
+    body: JSON.stringify(rows),
+  });
+}

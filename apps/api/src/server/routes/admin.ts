@@ -405,4 +405,240 @@ router.delete("/counterparties/:id", async (req: Request, res: Response, next: N
   }
 });
 
+// --------------- Directions ---------------
+
+// GET /admin/directions
+router.get("/directions", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const directions = await (prisma as any).direction.findMany({
+      orderBy: { name: "asc" },
+    });
+    res.json(directions);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/directions
+router.post("/directions", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name } = req.body as { name?: string };
+    if (!name?.trim()) throw new ApiError(400, "Name is required");
+
+    const created = await (prisma as any).direction.create({
+      data: { name: name.trim() },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/directions/:id
+router.patch("/directions/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { name } = req.body as { name?: string };
+    if (!name?.trim()) throw new ApiError(400, "Name is required");
+
+    const updated = await (prisma as any).direction.update({
+      where: { id },
+      data: { name: name.trim() },
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/directions/:id
+router.delete("/directions/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const ratesCount = await (prisma as any).priceRate.count({ where: { directionId: id } });
+    if (ratesCount > 0) {
+      throw new ApiError(400, "Cannot delete direction with existing rates");
+    }
+
+    await (prisma as any).direction.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --------------- Rates ---------------
+
+const VALID_UNITS = ["pallet", "kg", "m3"];
+
+// GET /admin/rates
+router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const where: any = {};
+    if (req.query.directionId) {
+      where.directionId = Number(req.query.directionId);
+    }
+    const rates = await (prisma as any).priceRate.findMany({
+      where,
+      include: { direction: true },
+      orderBy: [{ directionId: "asc" }, { unit: "asc" }],
+    });
+    res.json(rates);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/rates
+router.post("/rates", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { directionId, unit, price, comment } = req.body as {
+      directionId?: number;
+      unit?: string;
+      price?: number;
+      comment?: string | null;
+    };
+
+    if (!Number.isFinite(directionId)) throw new ApiError(400, "Invalid directionId");
+    if (!unit || !VALID_UNITS.includes(unit)) throw new ApiError(400, "Invalid unit (pallet|kg|m3)");
+    if (!Number.isFinite(price) || price! <= 0) throw new ApiError(400, "Invalid price");
+
+    const created = await (prisma as any).priceRate.create({
+      data: {
+        directionId,
+        unit,
+        price,
+        comment: comment?.trim() || null,
+      },
+      include: { direction: true },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/rates/:id
+router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { directionId, unit, price, comment } = req.body as {
+      directionId?: number;
+      unit?: string;
+      price?: number;
+      comment?: string | null;
+    };
+
+    if (unit !== undefined && !VALID_UNITS.includes(unit)) {
+      throw new ApiError(400, "Invalid unit (pallet|kg|m3)");
+    }
+    if (price !== undefined && (!Number.isFinite(price) || price <= 0)) {
+      throw new ApiError(400, "Invalid price");
+    }
+
+    const data: any = {};
+    if (directionId !== undefined) data.directionId = directionId;
+    if (unit !== undefined) data.unit = unit;
+    if (price !== undefined) data.price = price;
+    if (comment !== undefined) data.comment = comment?.trim() || null;
+
+    const updated = await (prisma as any).priceRate.update({
+      where: { id },
+      data,
+      include: { direction: true },
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/rates/:id
+router.delete("/rates/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    await (prisma as any).priceRate.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/rates/import  (JSON array from frontend-parsed Excel)
+router.post("/rates/import", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rows = req.body as Array<{
+      direction: string;
+      unit: string;
+      price: number;
+      comment?: string | null;
+    }>;
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new ApiError(400, "Expected non-empty array of rows");
+    }
+
+    const report = { created: 0, updated: 0, errors: [] as Array<{ row: number; message: string }> };
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const rowNum = i + 2; // Excel row (1-indexed header + data)
+
+      try {
+        const dirName = String(r.direction ?? "").trim();
+        if (!dirName) { report.errors.push({ row: rowNum, message: "direction пустой" }); continue; }
+
+        const unit = String(r.unit ?? "").trim().toLowerCase();
+        if (!VALID_UNITS.includes(unit)) { report.errors.push({ row: rowNum, message: `unit '${r.unit}' невалиден (pallet|kg|m3)` }); continue; }
+
+        const price = Number(r.price);
+        if (!Number.isFinite(price) || price <= 0) { report.errors.push({ row: rowNum, message: `price '${r.price}' невалиден` }); continue; }
+
+        // find-or-create direction
+        let direction = await (prisma as any).direction.findUnique({ where: { name: dirName } });
+        if (!direction) {
+          direction = await (prisma as any).direction.create({ data: { name: dirName } });
+        }
+
+        // upsert rate by (directionId, unit)
+        const existing = await (prisma as any).priceRate.findUnique({
+          where: { directionId_unit: { directionId: direction.id, unit } },
+        });
+
+        if (existing) {
+          await (prisma as any).priceRate.update({
+            where: { id: existing.id },
+            data: { price: Math.round(price), comment: r.comment?.trim() || null },
+          });
+          report.updated++;
+        } else {
+          await (prisma as any).priceRate.create({
+            data: {
+              directionId: direction.id,
+              unit,
+              price: Math.round(price),
+              comment: r.comment?.trim() || null,
+            },
+          });
+          report.created++;
+        }
+      } catch (rowErr: any) {
+        report.errors.push({ row: rowNum, message: rowErr.message || "Неизвестная ошибка" });
+      }
+    }
+
+    res.json(report);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
