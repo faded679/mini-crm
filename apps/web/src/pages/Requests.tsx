@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getRequests, type ShipmentRequest, type RequestStatus } from "../api";
+import { getRequests, type ShipmentRequest, type RequestStatus, type PackagingType } from "../api";
 import { cn } from "../lib/utils";
 
 const statusLabels: Record<RequestStatus, string> = {
@@ -95,6 +95,32 @@ export default function Requests() {
     if (filterDate !== "all" && !r.deliveryDate.startsWith(filterDate)) return false;
     return true;
   });
+
+  const summary = useMemo(() => {
+    const s = {
+      requestCount: filtered.length,
+      totalPlaces: 0,
+      placesByPackaging: { pallets: 0, boxes: 0 } as Record<PackagingType, number>,
+      knownWeightKg: 0,
+      missingWeightCount: 0,
+      missingWeightPlaces: 0,
+    };
+
+    for (const r of filtered) {
+      s.totalPlaces += r.boxCount;
+      s.placesByPackaging[r.packagingType] += r.boxCount;
+
+      if (r.weight == null) {
+        s.missingWeightCount += 1;
+        s.missingWeightPlaces += r.boxCount;
+      } else {
+        s.knownWeightKg += r.weight;
+      }
+    }
+
+    s.knownWeightKg = Math.round(s.knownWeightKg * 100) / 100;
+    return s;
+  }, [filtered]);
 
   const sorted = [...filtered].sort((a, b) => {
     const dirFactor = sortDir === "asc" ? 1 : -1;
@@ -214,6 +240,43 @@ export default function Requests() {
           Найдено: {sorted.length}
         </span>
       </div>
+
+      {filterCity !== "all" && filterDate !== "all" && (
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Итого заявок</div>
+              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.requestCount}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Итого мест</div>
+              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.totalPlaces}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Вес (по указанным)</div>
+              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                {summary.knownWeightKg.toLocaleString("ru-RU")} кг
+                {summary.missingWeightCount > 0 && (
+                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                    (без веса: {summary.missingWeightCount} / мест: {summary.missingWeightPlaces})
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Палеты (мест)</div>
+              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.placesByPackaging.pallets}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Коробки (мест)</div>
+              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.placesByPackaging.boxes}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sorted.length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Заявок нет</div>
