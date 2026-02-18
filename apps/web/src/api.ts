@@ -87,6 +87,15 @@ export type RequestStatus = "new" | "warehouse" | "shipped" | "done";
 
 export type PackagingType = "pallets" | "boxes";
 
+export type UpdateShipmentRequestPayload = {
+  city?: string;
+  deliveryDate?: string;
+  packagingType?: PackagingType;
+  boxCount?: number;
+  weight?: number | null;
+  comment?: string | null;
+};
+
 export interface ShipmentRequest {
   id: number;
   city: string;
@@ -136,6 +145,13 @@ export function updateRequestStatus(id: number, status: RequestStatus) {
   return request<ShipmentRequest>(`/admin/requests/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export function updateRequest(id: number, payload: UpdateShipmentRequestPayload) {
+  return request<ShipmentRequest>(`/admin/requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }
 

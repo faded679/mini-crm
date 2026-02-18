@@ -6,8 +6,10 @@ import {
   getInvoicePdfUrl,
   getRequestById,
   sendInvoiceToClient,
+  updateRequest,
   updateRequestStatus,
   type Counterparty,
+  type PackagingType,
   type ShipmentRequestDetail,
   type RequestStatus,
 } from "../api";
@@ -33,6 +35,13 @@ export default function RequestDetail() {
   const [request, setRequest] = useState<ShipmentRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editCity, setEditCity] = useState("");
+  const [editDeliveryDate, setEditDeliveryDate] = useState("");
+  const [editPackagingType, setEditPackagingType] = useState<PackagingType>("boxes");
+  const [editBoxCount, setEditBoxCount] = useState<string>("");
+  const [editWeight, setEditWeight] = useState<string>("");
+  const [editComment, setEditComment] = useState<string>("");
   const [confirmStatus, setConfirmStatus] = useState<RequestStatus | null>(null);
   const [confirmInvoice, setConfirmInvoice] = useState(false);
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
@@ -45,7 +54,15 @@ export default function RequestDetail() {
   useEffect(() => {
     if (id) {
       getRequestById(Number(id))
-        .then(setRequest)
+        .then((r) => {
+          setRequest(r);
+          setEditCity(r.city);
+          setEditDeliveryDate(new Date(r.deliveryDate).toISOString().slice(0, 10));
+          setEditPackagingType(r.packagingType);
+          setEditBoxCount(String(r.boxCount));
+          setEditWeight(r.weight == null ? "" : String(r.weight));
+          setEditComment(r.comment ?? "");
+        })
         .finally(() => setLoading(false));
     }
   }, [id]);
@@ -64,6 +81,40 @@ export default function RequestDetail() {
 
   const handleIssueInvoice = async () => {
     setConfirmInvoice(false);
+  };
+
+  const handleSaveEdits = async () => {
+    if (!request) return;
+    if (updating) return;
+
+    const city = editCity.trim();
+    if (!city) throw new Error("Город обязателен");
+
+    const deliveryDate = editDeliveryDate;
+    if (!deliveryDate) throw new Error("Дата доставки обязательна");
+
+    const boxCount = Number(editBoxCount);
+    if (!Number.isFinite(boxCount) || boxCount <= 0) throw new Error("Некорректное количество");
+
+    const weight = editWeight.trim() === "" ? null : Number(editWeight);
+    if (weight !== null && (!Number.isFinite(weight) || weight <= 0)) throw new Error("Некорректный вес");
+
+    setUpdating(true);
+    try {
+      await updateRequest(request.id, {
+        city,
+        deliveryDate,
+        packagingType: editPackagingType,
+        boxCount,
+        weight,
+        comment: editComment.trim() ? editComment.trim() : null,
+      });
+      const updated = await getRequestById(request.id);
+      setRequest(updated);
+      setEditing(false);
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleDownloadInvoicePdf = async () => {
@@ -141,14 +192,86 @@ export default function RequestDetail() {
             </span>
           </div>
 
+          <div className="flex items-center justify-end gap-2 mb-6">
+            {editing ? (
+              <>
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditCity(request.city);
+                    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
+                    setEditPackagingType(request.packagingType);
+                    setEditBoxCount(String(request.boxCount));
+                    setEditWeight(request.weight == null ? "" : String(request.weight));
+                    setEditComment(request.comment ?? "");
+                  }}
+                >
+                  Отмена
+                </button>
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => void handleSaveEdits()}
+                >
+                  {updating ? "Сохранение..." : "Сохранить"}
+                </button>
+              </>
+            ) : (
+              <button
+                className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                onClick={() => setEditing(true)}
+              >
+                Редактировать
+              </button>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Город</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{request.city}</p>
+              {editing ? (
+                <input
+                  value={editCity}
+                  onChange={(e) => setEditCity(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">{request.city}</p>
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Дата доставки</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{new Date(request.deliveryDate).toLocaleDateString("ru-RU")}</p>
+              {editing ? (
+                <input
+                  type="date"
+                  value={editDeliveryDate}
+                  onChange={(e) => setEditDeliveryDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {new Date(request.deliveryDate).toLocaleDateString("ru-RU")}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Упаковка</p>
+              {editing ? (
+                <select
+                  value={editPackagingType}
+                  onChange={(e) => setEditPackagingType(e.target.value as PackagingType)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="pallets">Палеты</option>
+                  <option value="boxes">Коробки</option>
+                </select>
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {request.packagingType === "pallets" ? "Палеты" : "Коробки"}
+                </p>
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
@@ -156,11 +279,32 @@ export default function RequestDetail() {
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Вес</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{request.weight} кг</p>
+              {editing ? (
+                <input
+                  value={editWeight}
+                  onChange={(e) => setEditWeight(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="(необязательно)"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {request.weight == null ? "—" : `${request.weight} кг`}
+                </p>
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Кол-во мест</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
+              {editing ? (
+                <input
+                  value={editBoxCount}
+                  onChange={(e) => setEditBoxCount(e.target.value)}
+                  inputMode="numeric"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Клиент</p>
@@ -175,12 +319,21 @@ export default function RequestDetail() {
                 {new Date(request.createdAt).toLocaleString("ru-RU")}
               </p>
             </div>
-            {request.comment && (
-              <div className="col-span-2">
-                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Комментарий</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{request.comment}</p>
-              </div>
-            )}
+            <div className="col-span-2">
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Комментарий</p>
+              {editing ? (
+                <textarea
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : request.comment ? (
+                <p className="text-sm text-gray-900 dark:text-gray-100">{request.comment}</p>
+              ) : (
+                <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
+              )}
+            </div>
           </div>
 
           {/* Status change */}

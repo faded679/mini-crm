@@ -160,6 +160,97 @@ router.patch("/requests/:id/status", async (req: Request, res: Response, next: N
   }
 });
 
+// PATCH /admin/requests/:id
+router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid request id");
+
+    const body = req.body as {
+      city?: string;
+      deliveryDate?: string;
+      packagingType?: "pallets" | "boxes";
+      boxCount?: number;
+      weight?: number | null;
+      comment?: string | null;
+    };
+
+    const existing = await prisma.shipmentRequest.findUnique({
+      where: { id },
+      include: { client: true },
+    });
+    if (!existing) throw new ApiError(404, "Request not found");
+
+    const nextCity = body.city !== undefined ? String(body.city).trim() : undefined;
+    if (nextCity !== undefined && !nextCity) throw new ApiError(400, "City is required");
+
+    const nextDeliveryDate =
+      body.deliveryDate !== undefined ? new Date(String(body.deliveryDate)) : undefined;
+    if (nextDeliveryDate !== undefined && !Number.isFinite(nextDeliveryDate.getTime())) {
+      throw new ApiError(400, "Invalid deliveryDate");
+    }
+
+    if (body.packagingType !== undefined && body.packagingType !== "pallets" && body.packagingType !== "boxes") {
+      throw new ApiError(400, "Invalid packagingType");
+    }
+
+    if (body.boxCount !== undefined) {
+      if (!Number.isFinite(body.boxCount) || body.boxCount <= 0) {
+        throw new ApiError(400, "Invalid boxCount");
+      }
+    }
+
+    if (body.weight !== undefined && body.weight !== null) {
+      if (!Number.isFinite(body.weight) || body.weight <= 0) {
+        throw new ApiError(400, "Invalid weight");
+      }
+    }
+
+    const nextComment =
+      body.comment !== undefined
+        ? body.comment === null
+          ? null
+          : String(body.comment).trim() || null
+        : undefined;
+
+    const updated = await prisma.shipmentRequest.update({
+      where: { id },
+      data: {
+        city: nextCity,
+        deliveryDate: nextDeliveryDate,
+        packagingType: body.packagingType as any,
+        boxCount: body.boxCount,
+        weight: body.weight === null ? (undefined as any) : (body.weight as any),
+        comment: nextComment,
+      } as any,
+      include: { client: true },
+    });
+
+    const changedFields: string[] = [];
+    if (body.city !== undefined && existing.city !== updated.city) changedFields.push("город");
+    if (body.deliveryDate !== undefined && existing.deliveryDate.getTime() !== updated.deliveryDate.getTime()) {
+      changedFields.push("дата");
+    }
+    if (body.packagingType !== undefined && (existing as any).packagingType !== (updated as any).packagingType) {
+      changedFields.push("упаковка");
+    }
+    if (body.boxCount !== undefined && existing.boxCount !== updated.boxCount) changedFields.push("кол-во мест");
+    if (body.weight !== undefined && existing.weight !== updated.weight) changedFields.push("вес");
+    if (body.comment !== undefined && existing.comment !== updated.comment) changedFields.push("комментарий");
+
+    if (changedFields.length) {
+      await notifyClient(
+        existing.client.telegramId,
+        `Заявка #${id} обновлена менеджером (изменено: ${changedFields.join(", ")}).`,
+      );
+    }
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/clients
 router.get("/clients", async (_req: Request, res: Response, next: NextFunction) => {
   try {
