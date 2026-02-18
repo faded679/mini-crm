@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRequests, type ShipmentRequest, type RequestStatus } from "../api";
 import { cn } from "../lib/utils";
@@ -20,10 +20,16 @@ const statusColors: Record<RequestStatus, string> = {
 type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "status";
 type SortDir = "asc" | "desc";
 
+function formatDateRu(iso: string) {
+  return new Date(iso).toLocaleDateString("ru-RU");
+}
+
 export default function Requests() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<RequestStatus | "all">("all");
+  const [filterStatus, setFilterStatus] = useState<RequestStatus | "all">("all");
+  const [filterCity, setFilterCity] = useState<string>("all");
+  const [filterDate, setFilterDate] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const navigate = useNavigate();
@@ -34,7 +40,22 @@ export default function Requests() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = filter === "all" ? requests : requests.filter((r) => r.status === filter);
+  const uniqueCities = useMemo(() => {
+    const set = new Set(requests.map((r) => r.city));
+    return [...set].sort((a, b) => a.localeCompare(b, "ru"));
+  }, [requests]);
+
+  const uniqueDates = useMemo(() => {
+    const set = new Set(requests.map((r) => r.deliveryDate.slice(0, 10)));
+    return [...set].sort();
+  }, [requests]);
+
+  const filtered = requests.filter((r) => {
+    if (filterStatus !== "all" && r.status !== filterStatus) return false;
+    if (filterCity !== "all" && r.city !== filterCity) return false;
+    if (filterDate !== "all" && !r.deliveryDate.startsWith(filterDate)) return false;
+    return true;
+  });
 
   const sorted = [...filtered].sort((a, b) => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -94,18 +115,31 @@ export default function Requests() {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
 
+  const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || filterDate !== "all";
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Заявки</h1>
-        <div className="flex gap-2">
+        {hasActiveFilters && (
+          <button
+            onClick={() => { setFilterStatus("all"); setFilterCity("all"); setFilterDate("all"); }}
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Сбросить фильтры
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex gap-1.5">
           {(["all", "new", "warehouse", "shipped", "done"] as const).map((s) => (
             <button
               key={s}
-              onClick={() => setFilter(s)}
+              onClick={() => setFilterStatus(s)}
               className={cn(
                 "px-3 py-1.5 text-sm rounded-lg font-medium transition",
-                filter === s
+                filterStatus === s
                   ? "bg-blue-600 text-white"
                   : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
               )}
@@ -114,6 +148,32 @@ export default function Requests() {
             </button>
           ))}
         </div>
+
+        <select
+          value={filterCity}
+          onChange={(e) => setFilterCity(e.target.value)}
+          className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+        >
+          <option value="all">Все направления</option>
+          {uniqueCities.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        <select
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+        >
+          <option value="all">Все даты</option>
+          {uniqueDates.map((d) => (
+            <option key={d} value={d}>{formatDateRu(d)}</option>
+          ))}
+        </select>
+
+        <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
+          Найдено: {sorted.length}
+        </span>
       </div>
 
       {sorted.length === 0 ? (
@@ -171,7 +231,7 @@ export default function Requests() {
                   <td className="px-4 py-3 text-blue-600 font-medium">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}
+                    {formatDateRu(r.deliveryDate)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.weight} кг</td>
