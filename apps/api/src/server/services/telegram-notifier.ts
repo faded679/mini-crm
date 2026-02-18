@@ -35,12 +35,18 @@ export async function sendClientDocument(
     const form = new FormData();
     form.append("chat_id", telegramId);
     form.append("caption", caption ?? "");
-    form.append("document", new Blob([fileBuffer]), fileName);
+    form.append("parse_mode", "HTML");
+    form.append("document", new File([fileBuffer], fileName, { type: "application/pdf" }));
 
-    await fetch(`${API_URL}/sendDocument`, {
+    const res = await fetch(`${API_URL}/sendDocument`, {
       method: "POST",
       body: form,
     });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("Telegram document sending failed:", res.status, text);
+    }
   } catch (err) {
     console.error("Telegram document sending failed:", err);
   }
