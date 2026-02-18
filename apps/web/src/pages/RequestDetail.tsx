@@ -5,14 +5,16 @@ import { cn } from "../lib/utils";
 import { ArrowLeft, FileText } from "lucide-react";
 
 const statusLabels: Record<RequestStatus, string> = {
-  open: "Открыта",
-  in_progress: "В работе",
+  new: "Новый",
+  warehouse: "Склад",
+  shipped: "Отгружен",
   done: "Выполнена",
 };
 
 const statusColors: Record<RequestStatus, string> = {
-  open: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  new: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  warehouse: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  shipped: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 };
 
@@ -113,7 +115,7 @@ export default function RequestDetail() {
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Изменить статус:</p>
             <div className="flex items-center gap-2">
-              {(["open", "in_progress", "done"] as RequestStatus[]).map((s) => (
+              {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
                 <button
                   key={s}
                   onClick={() => handleStatusChange(s)}

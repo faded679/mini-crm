@@ -4,14 +4,16 @@ import { getRequests, type ShipmentRequest, type RequestStatus } from "../api";
 import { cn } from "../lib/utils";
 
 const statusLabels: Record<RequestStatus, string> = {
-  open: "Открыта",
-  in_progress: "В работе",
+  new: "Новый",
+  warehouse: "Склад",
+  shipped: "Отгружен",
   done: "Выполнена",
 };
 
 const statusColors: Record<RequestStatus, string> = {
-  open: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  new: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  warehouse: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  shipped: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 };
 
@@ -97,7 +99,7 @@ export default function Requests() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Заявки</h1>
         <div className="flex gap-2">
-          {(["all", "open", "in_progress", "done"] as const).map((s) => (
+          {(["all", "new", "warehouse", "shipped", "done"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s)}

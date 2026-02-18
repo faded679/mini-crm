@@ -45,7 +45,7 @@ export interface Client {
   _count?: { requests: number };
 }
 
-export type RequestStatus = "open" | "in_progress" | "done";
+export type RequestStatus = "new" | "warehouse" | "shipped" | "done";
 
 export interface ShipmentRequest {
   id: number;

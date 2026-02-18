@@ -29,6 +29,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         weight: Number(weight),
         boxCount: Number(boxCount),
         comment: comment || null,
+        status: "new",
       },
     });
 

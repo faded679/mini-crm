@@ -4,14 +4,16 @@ import { getRequests, type ShipmentRequest } from "../api";
 import { getTelegramUser } from "../telegram";
 
 const STATUS_LABELS: Record<string, string> = {
-  open: "🆕 Открыта",
-  in_progress: "🔄 В работе",
+  new: "🆕 Новый",
+  warehouse: "🏬 Склад",
+  shipped: "� Отгружен",
   done: "✅ Выполнена",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-yellow-100 text-yellow-800",
-  in_progress: "bg-blue-100 text-blue-800",
+  new: "bg-yellow-100 text-yellow-800",
+  warehouse: "bg-blue-100 text-blue-800",
+  shipped: "bg-purple-100 text-purple-800",
   done: "bg-green-100 text-green-800",
 };
 
@@ -81,7 +83,7 @@ export default function MyRequests() {
               <div className="text-sm text-tg-hint space-y-1">
                 <p>📍 {r.city}</p>
                 <p>📅 {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}</p>
-                <p>� {(r.volume ?? r.size ?? "—")} м³ · ⚖️ {r.weight} кг · 📦 {r.boxCount} мест</p>
+                <p>📦 {(r.volume ?? r.size ?? "—")} м³ · ⚖️ {r.weight} кг · 📦 {r.boxCount} мест</p>
                 {r.comment && <p className="text-tg-text mt-1">💬 {r.comment}</p>}
               </div>
             </div>

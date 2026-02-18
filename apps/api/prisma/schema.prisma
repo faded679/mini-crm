@@ -8,8 +8,9 @@ datasource db {
 }
 
 enum RequestStatus {
-  open
-  in_progress
+  new
+  warehouse
+  shipped
   done
 }
 
@@ -47,7 +48,7 @@ model ShipmentRequest {
   weight      Float
   boxCount    Int                    @map("box_count")
   comment     String?
-  status      RequestStatus          @default(open)
+  status      RequestStatus          @default(new)
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
 

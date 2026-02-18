@@ -2,8 +2,9 @@ import type { Context } from "grammy";
 import { getRequests } from "../api.js";
 
 const STATUS_LABELS: Record<string, string> = {
-  open: "🆕 Открыта",
-  in_progress: "🔄 В работе",
+  new: "🆕 Новый",
+  warehouse: "🏬 Склад",
+  shipped: "� Отгружен",
   done: "✅ Выполнена",
 };
 

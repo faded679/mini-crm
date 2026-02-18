@@ -66,8 +66,9 @@ router.patch("/requests/:id/status", async (req: Request, res: Response, next: N
     });
 
     const statusLabels: Record<RequestStatus, string> = {
-      open: "Открыта",
-      in_progress: "Взята в работу",
+      new: "Новый",
+      warehouse: "Склад",
+      shipped: "Отгружен",
       done: "Выполнена",
     };
 
