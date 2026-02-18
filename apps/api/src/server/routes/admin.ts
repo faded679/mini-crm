@@ -475,6 +475,57 @@ router.delete("/directions/:id", async (req: Request, res: Response, next: NextF
 
 const VALID_UNITS = ["pallet", "kg", "m3"];
 
+function toIntOrNull(v: any) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return NaN;
+  return Math.trunc(n);
+}
+
+function toFloatOrNull(v: any) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return NaN;
+  return n;
+}
+
+function validateTier(unit: string, payload: any) {
+  const minWeightKg = toIntOrNull(payload.minWeightKg);
+  const maxWeightKg = toIntOrNull(payload.maxWeightKg);
+  const minVolumeM3 = toFloatOrNull(payload.minVolumeM3);
+  const maxVolumeM3 = toFloatOrNull(payload.maxVolumeM3);
+
+  if (Number.isNaN(minWeightKg) || Number.isNaN(maxWeightKg) || Number.isNaN(minVolumeM3) || Number.isNaN(maxVolumeM3)) {
+    throw new ApiError(400, "Invalid tier bounds");
+  }
+
+  if (unit === "pallet") {
+    if (minVolumeM3 !== null || maxVolumeM3 !== null) throw new ApiError(400, "Volume bounds not allowed for pallet");
+    if (minWeightKg !== null && minWeightKg < 0) throw new ApiError(400, "minWeightKg must be >= 0");
+    if (maxWeightKg !== null && maxWeightKg < 0) throw new ApiError(400, "maxWeightKg must be >= 0");
+    if (minWeightKg !== null && maxWeightKg !== null && minWeightKg > maxWeightKg) {
+      throw new ApiError(400, "minWeightKg must be <= maxWeightKg");
+    }
+    return { minWeightKg, maxWeightKg, minVolumeM3: null, maxVolumeM3: null };
+  }
+
+  if (unit === "m3") {
+    if (minWeightKg !== null || maxWeightKg !== null) throw new ApiError(400, "Weight bounds not allowed for m3");
+    if (minVolumeM3 !== null && minVolumeM3 < 0) throw new ApiError(400, "minVolumeM3 must be >= 0");
+    if (maxVolumeM3 !== null && maxVolumeM3 < 0) throw new ApiError(400, "maxVolumeM3 must be >= 0");
+    if (minVolumeM3 !== null && maxVolumeM3 !== null && minVolumeM3 > maxVolumeM3) {
+      throw new ApiError(400, "minVolumeM3 must be <= maxVolumeM3");
+    }
+    return { minWeightKg: null, maxWeightKg: null, minVolumeM3, maxVolumeM3 };
+  }
+
+  // kg
+  if (minWeightKg !== null || maxWeightKg !== null || minVolumeM3 !== null || maxVolumeM3 !== null) {
+    throw new ApiError(400, "No bounds allowed for kg unit");
+  }
+  return { minWeightKg: null, maxWeightKg: null, minVolumeM3: null, maxVolumeM3: null };
+}
+
 // GET /admin/rates
 router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -501,16 +552,23 @@ router.post("/rates", async (req: Request, res: Response, next: NextFunction) =>
       unit?: string;
       price?: number;
       comment?: string | null;
+      minWeightKg?: number | null;
+      maxWeightKg?: number | null;
+      minVolumeM3?: number | null;
+      maxVolumeM3?: number | null;
     };
 
     if (!Number.isFinite(directionId)) throw new ApiError(400, "Invalid directionId");
     if (!unit || !VALID_UNITS.includes(unit)) throw new ApiError(400, "Invalid unit (pallet|kg|m3)");
     if (!Number.isFinite(price) || price! <= 0) throw new ApiError(400, "Invalid price");
 
+    const tier = validateTier(unit, req.body);
+
     const created = await (prisma as any).priceRate.create({
       data: {
         directionId,
         unit,
+        ...tier,
         price,
         comment: comment?.trim() || null,
       },
@@ -533,6 +591,10 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
       unit?: string;
       price?: number;
       comment?: string | null;
+      minWeightKg?: number | null;
+      maxWeightKg?: number | null;
+      minVolumeM3?: number | null;
+      maxVolumeM3?: number | null;
     };
 
     if (unit !== undefined && !VALID_UNITS.includes(unit)) {
@@ -547,6 +609,29 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     if (unit !== undefined) data.unit = unit;
     if (price !== undefined) data.price = price;
     if (comment !== undefined) data.comment = comment?.trim() || null;
+
+    const existing = await (prisma as any).priceRate.findUnique({ where: { id } });
+    if (!existing) throw new ApiError(404, "Not found");
+    const finalUnit = unit ?? existing.unit;
+    const hasTierFields =
+      req.body.minWeightKg !== undefined ||
+      req.body.maxWeightKg !== undefined ||
+      req.body.minVolumeM3 !== undefined ||
+      req.body.maxVolumeM3 !== undefined ||
+      unit !== undefined;
+
+    if (hasTierFields) {
+      const tier = validateTier(finalUnit, {
+        minWeightKg: req.body.minWeightKg ?? existing.minWeightKg,
+        maxWeightKg: req.body.maxWeightKg ?? existing.maxWeightKg,
+        minVolumeM3: req.body.minVolumeM3 ?? existing.minVolumeM3,
+        maxVolumeM3: req.body.maxVolumeM3 ?? existing.maxVolumeM3,
+      });
+      data.minWeightKg = tier.minWeightKg;
+      data.maxWeightKg = tier.maxWeightKg;
+      data.minVolumeM3 = tier.minVolumeM3;
+      data.maxVolumeM3 = tier.maxVolumeM3;
+    }
 
     const updated = await (prisma as any).priceRate.update({
       where: { id },
@@ -567,75 +652,6 @@ router.delete("/rates/:id", async (req: Request, res: Response, next: NextFuncti
 
     await (prisma as any).priceRate.delete({ where: { id } });
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /admin/rates/import  (JSON array from frontend-parsed Excel)
-router.post("/rates/import", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const rows = req.body as Array<{
-      direction: string;
-      unit: string;
-      price: number;
-      comment?: string | null;
-    }>;
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-      throw new ApiError(400, "Expected non-empty array of rows");
-    }
-
-    const report = { created: 0, updated: 0, errors: [] as Array<{ row: number; message: string }> };
-
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const rowNum = i + 2; // Excel row (1-indexed header + data)
-
-      try {
-        const dirName = String(r.direction ?? "").trim();
-        if (!dirName) { report.errors.push({ row: rowNum, message: "direction пустой" }); continue; }
-
-        const unit = String(r.unit ?? "").trim().toLowerCase();
-        if (!VALID_UNITS.includes(unit)) { report.errors.push({ row: rowNum, message: `unit '${r.unit}' невалиден (pallet|kg|m3)` }); continue; }
-
-        const price = Number(r.price);
-        if (!Number.isFinite(price) || price <= 0) { report.errors.push({ row: rowNum, message: `price '${r.price}' невалиден` }); continue; }
-
-        // find-or-create direction
-        let direction = await (prisma as any).direction.findUnique({ where: { name: dirName } });
-        if (!direction) {
-          direction = await (prisma as any).direction.create({ data: { name: dirName } });
-        }
-
-        // upsert rate by (directionId, unit)
-        const existing = await (prisma as any).priceRate.findUnique({
-          where: { directionId_unit: { directionId: direction.id, unit } },
-        });
-
-        if (existing) {
-          await (prisma as any).priceRate.update({
-            where: { id: existing.id },
-            data: { price: Math.round(price), comment: r.comment?.trim() || null },
-          });
-          report.updated++;
-        } else {
-          await (prisma as any).priceRate.create({
-            data: {
-              directionId: direction.id,
-              unit,
-              price: Math.round(price),
-              comment: r.comment?.trim() || null,
-            },
-          });
-          report.created++;
-        }
-      } catch (rowErr: any) {
-        report.errors.push({ row: rowNum, message: rowErr.message || "Неизвестная ошибка" });
-      }
-    }
-
-    res.json(report);
   } catch (err) {
     next(err);
   }

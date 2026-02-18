@@ -120,6 +120,10 @@ model PriceRate {
   id          Int       @id @default(autoincrement())
   directionId Int       @map("direction_id")
   unit        RateUnit
+  minWeightKg Int?      @map("min_weight_kg")
+  maxWeightKg Int?      @map("max_weight_kg")
+  minVolumeM3 Float?    @map("min_volume_m3")
+  maxVolumeM3 Float?    @map("max_volume_m3")
   price       Int
   comment     String?
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -127,7 +131,7 @@ model PriceRate {
 
   direction   Direction @relation(fields: [directionId], references: [id])
 
-  @@unique([directionId, unit])
+  @@index([directionId, unit])
   @@map("price_rates")
 }
 

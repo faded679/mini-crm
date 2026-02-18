@@ -258,6 +258,10 @@ export interface PriceRate {
   id: number;
   directionId: number;
   unit: RateUnit;
+  minWeightKg: number | null;
+  maxWeightKg: number | null;
+  minVolumeM3: number | null;
+  maxVolumeM3: number | null;
   price: number;
   comment: string | null;
   createdAt: string;
@@ -268,14 +272,12 @@ export interface PriceRate {
 export interface PriceRatePayload {
   directionId: number;
   unit: RateUnit;
+  minWeightKg?: number | null;
+  maxWeightKg?: number | null;
+  minVolumeM3?: number | null;
+  maxVolumeM3?: number | null;
   price: number;
   comment?: string | null;
-}
-
-export interface ImportReport {
-  created: number;
-  updated: number;
-  errors: Array<{ row: number; message: string }>;
 }
 
 export function getRates(directionId?: number) {
@@ -300,12 +302,5 @@ export function updateRate(id: number, payload: Partial<PriceRatePayload>) {
 export function deleteRate(id: number) {
   return request<void>(`/admin/rates/${id}`, {
     method: "DELETE",
-  });
-}
-
-export function importRates(rows: Array<{ direction: string; unit: string; price: number; comment?: string | null }>) {
-  return request<ImportReport>("/admin/rates/import", {
-    method: "POST",
-    body: JSON.stringify(rows),
   });
 }
