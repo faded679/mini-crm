@@ -105,21 +105,20 @@ export default function NewRequest() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1 text-tg-hint">Объём (м³)</label>
-          <input
-            type="number"
-            value={volume}
-            onChange={(e) => setVolume(e.target.value)}
-            required
-            min="0.001"
-            step="0.001"
-            className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-            placeholder="0.12"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-tg-hint">Объём (м³)</label>
+            <input
+              type="number"
+              value={volume}
+              onChange={(e) => setVolume(e.target.value)}
+              required
+              min="0.001"
+              step="0.001"
+              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+              placeholder="0.12"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1 text-tg-hint">Вес (кг)</label>
             <input
