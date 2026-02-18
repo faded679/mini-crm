@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getRequests, type ShipmentRequest, type RequestStatus } from "../api";
 import { cn } from "../lib/utils";
 
@@ -27,12 +27,32 @@ function formatDateRu(iso: string) {
 export default function Requests() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<RequestStatus | "all">("all");
-  const [filterCity, setFilterCity] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("id");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
+  const filterCity = searchParams.get("city") || "all";
+  const filterDate = searchParams.get("date") || "all";
+  const sortKey = (searchParams.get("sort") as SortKey) || "id";
+  const sortDir = (searchParams.get("dir") as SortDir) || "desc";
+
+  const setParam = useCallback((key: string, value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value === "all" || value === "") {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setFilterStatus = (v: RequestStatus | "all") => setParam("status", v);
+  const setFilterCity = (v: string) => setParam("city", v);
+  const setFilterDate = (v: string) => setParam("date", v);
+  const setSortKey = (v: SortKey) => setParam("sort", v);
+  const setSortDir = (v: SortDir) => setParam("dir", v);
 
   useEffect(() => {
     getRequests()
@@ -99,7 +119,7 @@ export default function Requests() {
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
       return;
     }
     setSortKey(key);
@@ -123,7 +143,7 @@ export default function Requests() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Заявки</h1>
         {hasActiveFilters && (
           <button
-            onClick={() => { setFilterStatus("all"); setFilterCity("all"); setFilterDate("all"); }}
+            onClick={() => setSearchParams({}, { replace: true })}
             className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
             Сбросить фильтры
