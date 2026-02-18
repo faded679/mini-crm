@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getRequestById, updateRequestStatus, type ShipmentRequestDetail, type RequestStatus } from "../api";
+import {
+  getCounterparties,
+  getInvoicePdfUrl,
+  getRequestById,
+  sendInvoiceToClient,
+  updateRequestStatus,
+  type Counterparty,
+  type ShipmentRequestDetail,
+  type RequestStatus,
+} from "../api";
 import { cn } from "../lib/utils";
 import { ArrowLeft, FileText } from "lucide-react";
 
@@ -23,6 +32,13 @@ export default function RequestDetail() {
   const [request, setRequest] = useState<ShipmentRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [confirmStatus, setConfirmStatus] = useState<RequestStatus | null>(null);
+  const [confirmInvoice, setConfirmInvoice] = useState(false);
+  const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
+  const [invoiceCounterpartyId, setInvoiceCounterpartyId] = useState<number | "">("");
+  const [invoiceAmount, setInvoiceAmount] = useState<string>("");
+  const [invoiceSending, setInvoiceSending] = useState(false);
+  const [confirmInvoiceSend, setConfirmInvoiceSend] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -43,6 +59,13 @@ export default function RequestDetail() {
       setUpdating(false);
     }
   };
+
+  const handleIssueInvoice = async () => {
+    setConfirmInvoice(false);
+  };
+
+  const parsedInvoiceAmount = Number(String(invoiceAmount).replace(",", "."));
+  const canInvoice = Number.isFinite(parsedInvoiceAmount) && parsedInvoiceAmount > 0 && invoiceCounterpartyId !== "";
 
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
@@ -118,7 +141,7 @@ export default function RequestDetail() {
               {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
                 <button
                   key={s}
-                  onClick={() => handleStatusChange(s)}
+                  onClick={() => setConfirmStatus(s)}
                   disabled={updating || request.status === s}
                   className={cn(
                     "px-3 py-1.5 text-xs rounded-lg font-medium transition",
@@ -132,6 +155,7 @@ export default function RequestDetail() {
               ))}
               <div className="ml-auto">
                 <button
+                  onClick={() => setConfirmInvoice(true)}
                   className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
                 >
                   <FileText size={16} />
@@ -166,6 +190,202 @@ export default function RequestDetail() {
           )}
         </div>
       </div>
+
+      {confirmStatus && request && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="font-semibold text-gray-900 dark:text-white">Подтверждение</div>
+              <button
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                onClick={() => setConfirmStatus(null)}
+                disabled={updating}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 text-sm text-gray-700 dark:text-gray-200">
+              Подтвердите смену статуса клиенту по заявке #{request.id}: <b>{statusLabels[request.status]}</b> →{" "}
+              <b>{statusLabels[confirmStatus]}</b>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
+              <button
+                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                onClick={() => setConfirmStatus(null)}
+                disabled={updating}
+              >
+                Отмена
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={async () => {
+                  const next = confirmStatus;
+                  setConfirmStatus(null);
+                  await handleStatusChange(next);
+                }}
+                disabled={updating}
+              >
+                Подтвердить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmInvoice && request && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="font-semibold text-gray-900 dark:text-white">Выставление счёта</div>
+              <button
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                onClick={() => setConfirmInvoice(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент</label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  value={invoiceCounterpartyId}
+                  onChange={(e) => setInvoiceCounterpartyId(e.target.value ? Number(e.target.value) : "")}
+                  onFocus={async () => {
+                    if (counterparties.length) return;
+                    try {
+                      const cp = await getCounterparties();
+                      setCounterparties(cp);
+                    } catch {
+                      setCounterparties([]);
+                    }
+                  }}
+                >
+                  <option value="">Выберите...</option>
+                  {counterparties.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Сумма, руб.</label>
+                <input
+                  value={invoiceAmount}
+                  onChange={(e) => setInvoiceAmount(e.target.value)}
+                  inputMode="decimal"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+              <button
+                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                onClick={() => setConfirmInvoice(false)}
+              >
+                Отмена
+              </button>
+
+              <div className="flex items-center gap-2">
+                <a
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium",
+                    canInvoice
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
+                  )}
+                  href={
+                    canInvoice
+                      ? getInvoicePdfUrl({
+                          requestId: request.id,
+                          counterpartyId: invoiceCounterpartyId as number,
+                          amount: parsedInvoiceAmount,
+                        })
+                      : undefined
+                  }
+                  onClick={(e) => {
+                    if (!canInvoice) e.preventDefault();
+                  }}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Скачать PDF
+                </a>
+
+                <button
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium",
+                    canInvoice
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
+                  )}
+                  onClick={() => {
+                    if (!canInvoice) return;
+                    setConfirmInvoiceSend(true);
+                  }}
+                >
+                  Отправить
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmInvoiceSend && request && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="font-semibold text-gray-900 dark:text-white">Подтверждение</div>
+              <button
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                onClick={() => setConfirmInvoiceSend(false)}
+                disabled={invoiceSending}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 text-sm text-gray-700 dark:text-gray-200">
+              Подтвердите отправку счёта клиенту по заявке #{request.id}.
+            </div>
+            <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
+              <button
+                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                onClick={() => setConfirmInvoiceSend(false)}
+                disabled={invoiceSending}
+              >
+                Отмена
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={async () => {
+                  if (!request) return;
+                  if (!canInvoice) return;
+                  setInvoiceSending(true);
+                  try {
+                    await sendInvoiceToClient({
+                      requestId: request.id,
+                      counterpartyId: invoiceCounterpartyId as number,
+                      amount: parsedInvoiceAmount,
+                    });
+                    setConfirmInvoiceSend(false);
+                    setConfirmInvoice(false);
+                  } finally {
+                    setInvoiceSending(false);
+                  }
+                }}
+                disabled={invoiceSending}
+              >
+                {invoiceSending ? "Отправка..." : "Подтвердить"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

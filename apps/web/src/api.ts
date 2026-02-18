@@ -132,6 +132,25 @@ export function updateRequestStatus(id: number, status: RequestStatus) {
   });
 }
 
+export function getInvoicePdfUrl(params: {
+  requestId: number;
+  counterpartyId: number;
+  amount: number;
+}): string {
+  const q = new URLSearchParams({
+    counterpartyId: String(params.counterpartyId),
+    amount: String(params.amount),
+  });
+  return `${API_URL}/admin/requests/${params.requestId}/invoice.pdf?${q.toString()}`;
+}
+
+export function sendInvoiceToClient(params: { requestId: number; counterpartyId: number; amount: number }) {
+  return request<{ ok: true }>(`/admin/requests/${params.requestId}/invoice/send`, {
+    method: "POST",
+    body: JSON.stringify({ counterpartyId: params.counterpartyId, amount: params.amount }),
+  });
+}
+
 export function getClients() {
   return request<Client[]>("/admin/clients");
 }

@@ -3,7 +3,9 @@ import { prisma } from "../db/prisma.js";
 import { requireAuth } from "../auth/middleware.js";
 import { ApiError } from "../errors.js";
 import { notifyClient } from "../services/telegram-notifier.js";
+import { sendClientDocument } from "../services/telegram-notifier.js";
 import { RequestStatus } from "@prisma/client";
+import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -46,6 +48,66 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
     });
     if (!request) throw new ApiError(404, "Request not found");
     res.json(request);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/requests/:id/invoice.pdf?counterpartyId=...&amount=...
+router.get("/requests/:id/invoice.pdf", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const counterpartyId = Number(req.query.counterpartyId);
+    const amount = Number(req.query.amount);
+
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid request id");
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+    if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, "Invalid amount");
+
+    const request = await prisma.shipmentRequest.findUnique({ where: { id }, include: { client: true } });
+    if (!request) throw new ApiError(404, "Request not found");
+
+    const counterparty = await prisma.counterparty.findUnique({ where: { id: counterpartyId } });
+    if (!counterparty) throw new ApiError(404, "Counterparty not found");
+
+    const pdf = await generateInvoicePdfBuffer({ request, counterparty, amountRub: amount });
+    const fileName = `Счет_заявка_${request.id}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    res.send(pdf);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/requests/:id/invoice/send
+router.post("/requests/:id/invoice/send", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const { counterpartyId, amount } = req.body as { counterpartyId: number; amount: number };
+
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid request id");
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+    if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, "Invalid amount");
+
+    const request = await prisma.shipmentRequest.findUnique({ where: { id }, include: { client: true } });
+    if (!request) throw new ApiError(404, "Request not found");
+
+    const counterparty = await prisma.counterparty.findUnique({ where: { id: counterpartyId } });
+    if (!counterparty) throw new ApiError(404, "Counterparty not found");
+
+    const pdf = await generateInvoicePdfBuffer({ request, counterparty, amountRub: amount });
+    const fileName = `Счет_заявка_${request.id}.pdf`;
+
+    await sendClientDocument(
+      request.client.telegramId,
+      pdf,
+      fileName,
+      `Счёт по заявке #${request.id} на сумму ${amount.toLocaleString("ru-RU")} руб.`,
+    );
+
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
