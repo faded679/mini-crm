@@ -97,7 +97,7 @@ export default function Requests() {
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    const dir = sortDir === "asc" ? 1 : -1;
+    const dirFactor = sortDir === "asc" ? 1 : -1;
 
     const getClientName = (r: ShipmentRequest) => `${r.client.firstName ?? ""} ${r.client.lastName ?? ""}`.trim();
 
@@ -132,8 +132,8 @@ export default function Requests() {
         break;
     }
 
-    if (res !== 0) return res * dir;
-    return (a.id - b.id) * dir;
+    if (res !== 0) return res * dirFactor;
+    return a.id - b.id;
   });
 
   const toggleSort = (key: SortKey) => {
