@@ -64,7 +64,7 @@ export default function Requests() {
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Город</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Габариты / Вес</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Объём / Вес</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Клиент</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Статус</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Дата</th>
@@ -76,7 +76,7 @@ export default function Requests() {
                   <td className="px-4 py-3 text-blue-600 font-medium">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {r.size} · {r.weight} кг · {r.boxCount} мест
+                    {(r.volume ?? r.size) + " · "}{r.weight} кг · {r.boxCount} мест
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.client.firstName} {r.client.lastName || ""}

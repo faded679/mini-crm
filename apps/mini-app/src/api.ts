@@ -7,7 +7,7 @@ interface CreateRequestPayload {
   lastName?: string;
   city: string;
   deliveryDate: string;
-  size: string;
+  volume: number;
   weight: number;
   boxCount: number;
   comment?: string;
@@ -17,7 +17,8 @@ export interface ShipmentRequest {
   id: number;
   city: string;
   deliveryDate: string;
-  size: string;
+  volume?: number | null;
+  size?: string;
   weight: number;
   boxCount: number;
   comment: string | null;

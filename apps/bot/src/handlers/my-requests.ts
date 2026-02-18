@@ -2,11 +2,9 @@ import type { Context } from "grammy";
 import { getRequests } from "../api.js";
 
 const STATUS_LABELS: Record<string, string> = {
-  NEW: "🆕 Новая",
-  IN_PROGRESS: "🔄 В работе",
-  SHIPPED: "🚚 Отправлен",
-  DELIVERED: "✅ Доставлен",
-  CANCELLED: "❌ Отменена",
+  open: "🆕 Открыта",
+  in_progress: "🔄 В работе",
+  done: "✅ Выполнена",
 };
 
 export async function handleMyRequests(ctx: Context): Promise<void> {
@@ -27,7 +25,7 @@ export async function handleMyRequests(ctx: Context): Promise<void> {
       return (
         `${i + 1}. Заявка #${r.id}\n` +
         `   📍 ${r.city} | 📅 ${date}\n` +
-        `   📐 ${r.size} | ⚖️ ${r.weight} кг | 📦 ${r.boxCount} мест\n` +
+        `   � ${(r.volume ?? r.size ?? "—")} м³ | ⚖️ ${r.weight} кг | 📦 ${r.boxCount} мест\n` +
         `   ${status}`
       );
     });

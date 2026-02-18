@@ -51,6 +51,7 @@ export interface ShipmentRequest {
   id: number;
   city: string;
   deliveryDate: string;
+  volume?: number | null;
   size: string;
   weight: number;
   boxCount: number;

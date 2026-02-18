@@ -7,9 +7,9 @@ const router = Router();
 // POST /bot/requests — create a shipment request
 router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { telegramId, username, firstName, lastName, city, deliveryDate, size, weight, boxCount, comment } = req.body;
+    const { telegramId, username, firstName, lastName, city, deliveryDate, volume, size, weight, boxCount, comment } = req.body;
 
-    if (!telegramId || !city || !deliveryDate || !size || !weight || !boxCount) {
+    if (!telegramId || !city || !deliveryDate || (!volume && !size) || !weight || !boxCount) {
       throw new ApiError(400, "Missing required fields");
     }
 
@@ -24,7 +24,8 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         clientId: client.id,
         city,
         deliveryDate: new Date(deliveryDate),
-        size,
+        volume: volume !== undefined ? Number(volume) : null,
+        size: size ?? "-",
         weight: Number(weight),
         boxCount: Number(boxCount),
         comment: comment || null,

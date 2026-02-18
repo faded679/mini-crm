@@ -5,7 +5,7 @@ interface SessionData {
   step: string;
   city?: string;
   deliveryDate?: string;
-  size?: string;
+  volume?: number;
   weight?: number;
   boxCount?: number;
   comment?: string;
@@ -59,16 +59,22 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
         return;
       }
       session.deliveryDate = date.toISOString();
-      session.step = "size";
-      await ctx.reply("📐 Укажите габариты груза (например: 120x80x60 см):");
+      session.step = "volume";
+      await ctx.reply("� Укажите объём груза (м³), например 0.12:");
       break;
     }
 
-    case "size":
-      session.size = text;
+    case "volume": {
+      const v = parseFloat(text.replace(",", "."));
+      if (isNaN(v) || v <= 0) {
+        await ctx.reply("❌ Укажите корректный объём (число > 0), например 0.12:");
+        return;
+      }
+      session.volume = v;
       session.step = "weight";
       await ctx.reply("⚖️ Укажите вес груза (кг):");
       break;
+    }
 
     case "weight": {
       const weight = parseFloat(text);
@@ -105,7 +111,7 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
           lastName: ctx.from?.last_name,
           city: session.city!,
           deliveryDate: session.deliveryDate!,
-          size: session.size!,
+          volume: session.volume!,
           weight: session.weight!,
           boxCount: session.boxCount!,
           comment: session.comment,
@@ -116,7 +122,7 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
         await ctx.reply(
           `✅ Заявка #${request.id} создана!\n\n` +
           `📍 Город: ${session.city}\n` +
-          `📐 Габариты: ${session.size}\n` +
+          `� Объём: ${session.volume} м³\n` +
           `⚖️ Вес: ${session.weight} кг\n` +
           `📦 Мест: ${session.boxCount}\n` +
           `📊 Статус: Новая\n\n` +

@@ -51,7 +51,7 @@ export default function RequestDetail() {
   }
 
   return (
-    <div>
+    <div className="max-w-5xl">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-6 transition">
         <ArrowLeft size={16} />
         Назад к заявкам
@@ -77,8 +77,8 @@ export default function RequestDetail() {
               <p className="text-sm text-gray-900 dark:text-gray-100">{new Date(request.deliveryDate).toLocaleDateString("ru-RU")}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Габариты</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{request.size}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
+              <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Вес</p>
@@ -119,7 +119,7 @@ export default function RequestDetail() {
                   onClick={() => handleStatusChange(s)}
                   disabled={updating || request.status === s}
                   className={cn(
-                    "px-4 py-2 text-sm rounded-lg font-medium transition",
+                    "px-3 py-1.5 text-xs rounded-lg font-medium transition",
                     request.status === s
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
                       : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -130,7 +130,7 @@ export default function RequestDetail() {
               ))}
               <div className="ml-auto">
                 <button
-                  className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
                 >
                   <FileText size={16} />
                   Выписать счёт

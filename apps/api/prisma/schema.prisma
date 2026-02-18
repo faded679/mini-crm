@@ -42,6 +42,7 @@ model ShipmentRequest {
   clientId    Int                    @map("client_id")
   city        String
   deliveryDate DateTime             @map("delivery_date")
+  volume      Float?
   size        String
   weight      Float
   boxCount    Int                    @map("box_count")

@@ -81,7 +81,7 @@ export default function MyRequests() {
               <div className="text-sm text-tg-hint space-y-1">
                 <p>📍 {r.city}</p>
                 <p>📅 {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}</p>
-                <p>📐 {r.size} · ⚖️ {r.weight} кг · 📦 {r.boxCount} мест</p>
+                <p>� {(r.volume ?? r.size ?? "—")} м³ · ⚖️ {r.weight} кг · 📦 {r.boxCount} мест</p>
                 {r.comment && <p className="text-tg-text mt-1">💬 {r.comment}</p>}
               </div>
             </div>

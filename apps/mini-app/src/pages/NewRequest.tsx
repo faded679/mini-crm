@@ -8,7 +8,7 @@ export default function NewRequest() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [city, setCity] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
-  const [size, setSize] = useState("");
+  const [volume, setVolume] = useState("");
   const [weight, setWeight] = useState("");
   const [boxCount, setBoxCount] = useState("");
   const [comment, setComment] = useState("");
@@ -43,7 +43,7 @@ export default function NewRequest() {
         lastName: user.lastName,
         city,
         deliveryDate: new Date(deliveryDate).toISOString(),
-        size,
+        volume: Number(volume),
         weight: Number(weight),
         boxCount: Number(boxCount),
         comment: comment || undefined,
@@ -106,14 +106,16 @@ export default function NewRequest() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-tg-hint">Габариты (ДxШxВ см)</label>
+          <label className="block text-sm font-medium mb-1 text-tg-hint">Объём (м³)</label>
           <input
-            type="text"
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
+            type="number"
+            value={volume}
+            onChange={(e) => setVolume(e.target.value)}
             required
+            min="0.001"
+            step="0.001"
             className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-            placeholder="120x80x60"
+            placeholder="0.12"
           />
         </div>
 
