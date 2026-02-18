@@ -241,42 +241,41 @@ export default function Requests() {
         </span>
       </div>
 
-      {filterCity !== "all" && filterDate !== "all" && (
-        <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Итого заявок</div>
-              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.requestCount}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Итого мест</div>
-              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.totalPlaces}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Вес (по указанным)</div>
-              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                {summary.knownWeightKg.toLocaleString("ru-RU")} кг
-                {summary.missingWeightCount > 0 && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
-                    (без веса: {summary.missingWeightCount} / мест: {summary.missingWeightPlaces})
-                  </span>
-                )}
-              </div>
-            </div>
+      <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+          <div className="text-gray-600 dark:text-gray-300">
+            <span className="text-gray-400 dark:text-gray-500">Заявок:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-gray-100">{summary.requestCount}</span>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Палеты (мест)</div>
-              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.placesByPackaging.pallets}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">Коробки (мест)</div>
-              <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{summary.placesByPackaging.boxes}</div>
-            </div>
+          <div className="text-gray-600 dark:text-gray-300">
+            <span className="text-gray-400 dark:text-gray-500">Мест:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-gray-100">{summary.totalPlaces}</span>
+          </div>
+
+          <div className="text-gray-600 dark:text-gray-300">
+            <span className="text-gray-400 dark:text-gray-500">Палеты:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-gray-100">{summary.placesByPackaging.pallets}</span>
+          </div>
+
+          <div className="text-gray-600 dark:text-gray-300">
+            <span className="text-gray-400 dark:text-gray-500">Коробки:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-gray-100">{summary.placesByPackaging.boxes}</span>
+          </div>
+
+          <div className="text-gray-600 dark:text-gray-300">
+            <span className="text-gray-400 dark:text-gray-500">Вес:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              {summary.knownWeightKg.toLocaleString("ru-RU")} кг
+            </span>
+            {summary.missingWeightCount > 0 && (
+              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                (без веса: {summary.missingWeightCount} / мест: {summary.missingWeightPlaces})
+              </span>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {sorted.length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Заявок нет</div>
