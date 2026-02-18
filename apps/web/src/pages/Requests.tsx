@@ -64,10 +64,12 @@ export default function Requests() {
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Город</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Объём / Вес</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Дата доставки</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Объём</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Вес</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Мест</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Клиент</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Статус</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Дата</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -76,8 +78,11 @@ export default function Requests() {
                   <td className="px-4 py-3 text-blue-600 font-medium">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {(r.volume ?? r.size) + " · "}{r.weight} кг · {r.boxCount} мест
+                    {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}
                   </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.weight} кг</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.boxCount}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.client.firstName} {r.client.lastName || ""}
                   </td>
@@ -85,9 +90,6 @@ export default function Requests() {
                     <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[r.status])}>
                       {statusLabels[r.status]}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
-                    {new Date(r.createdAt).toLocaleDateString("ru-RU")}
                   </td>
                 </tr>
               ))}
