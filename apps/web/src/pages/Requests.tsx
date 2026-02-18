@@ -56,7 +56,7 @@ export default function Requests() {
   const sortKey = isSortKey(sortParam) ? sortParam : "id";
   const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
 
-  const setParam = useCallback((key: string, value: string) => {
+  const setParam = useCallback((key: string, value: string | "") => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (value === "all" || value === "") {
@@ -71,8 +71,6 @@ export default function Requests() {
   const setFilterStatus = (v: RequestStatus | "all") => setParam("status", v);
   const setFilterCity = (v: string) => setParam("city", v);
   const setFilterDate = (v: string) => setParam("date", v);
-  const setSortKey = (v: SortKey) => setParam("sort", v);
-  const setSortDir = (v: SortDir) => setParam("dir", v);
 
   useEffect(() => {
     getRequests()
@@ -164,12 +162,21 @@ export default function Requests() {
   });
 
   const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-      return;
-    }
-    setSortKey(key);
-    setSortDir("asc");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+
+        if (sortKey === key) {
+          next.set("dir", sortDir === "asc" ? "desc" : "asc");
+          return next;
+        }
+
+        next.set("sort", key);
+        next.set("dir", "asc");
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const sortIndicator = (key: SortKey) => {
