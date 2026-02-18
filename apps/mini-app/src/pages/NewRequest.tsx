@@ -8,9 +8,9 @@ export default function NewRequest() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [city, setCity] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
-  const [volume, setVolume] = useState("");
   const [weight, setWeight] = useState("");
   const [boxCount, setBoxCount] = useState("");
+  const [packagingType, setPackagingType] = useState<"pallets" | "boxes" | "">("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,8 +43,8 @@ export default function NewRequest() {
         lastName: user.lastName,
         city,
         deliveryDate: new Date(deliveryDate).toISOString(),
-        volume: Number(volume),
-        weight: Number(weight),
+        packagingType: packagingType as "pallets" | "boxes",
+        ...(weight ? { weight: Number(weight) } : {}),
         boxCount: Number(boxCount),
         comment: comment || undefined,
       });
@@ -71,7 +71,13 @@ export default function NewRequest() {
           <label className="block text-sm font-medium mb-1 text-tg-hint">Направление</label>
           <select
             value={city}
-            onChange={(e) => { setCity(e.target.value); setDeliveryDate(""); }}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setDeliveryDate("");
+              setPackagingType("");
+              setBoxCount("");
+              setWeight("");
+            }}
             required
             className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
           >
@@ -86,7 +92,12 @@ export default function NewRequest() {
           <label className="block text-sm font-medium mb-1 text-tg-hint">Дата выгрузки</label>
           <select
             value={deliveryDate}
-            onChange={(e) => setDeliveryDate(e.target.value)}
+            onChange={(e) => {
+              setDeliveryDate(e.target.value);
+              setPackagingType("");
+              setBoxCount("");
+              setWeight("");
+            }}
             required
             disabled={!city}
             className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text disabled:opacity-50"
@@ -105,43 +116,64 @@ export default function NewRequest() {
           </select>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-tg-hint">Объём (м³)</label>
-            <input
-              type="number"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
-              required
-              min="0.001"
-              step="0.001"
-              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-              placeholder="0.12"
-            />
+        <div>
+          <label className="block text-sm font-medium mb-1 text-tg-hint">Тип груза</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={!deliveryDate}
+              onClick={() => {
+                setPackagingType("pallets");
+                setBoxCount("");
+              }}
+              className={`w-full p-3 rounded-lg font-medium transition disabled:opacity-50 ${
+                packagingType === "pallets" ? "bg-tg-button text-tg-button-text" : "bg-tg-secondary-bg text-tg-text"
+              }`}
+            >
+              Палеты
+            </button>
+            <button
+              type="button"
+              disabled={!deliveryDate}
+              onClick={() => {
+                setPackagingType("boxes");
+                setBoxCount("");
+              }}
+              className={`w-full p-3 rounded-lg font-medium transition disabled:opacity-50 ${
+                packagingType === "boxes" ? "bg-tg-button text-tg-button-text" : "bg-tg-secondary-bg text-tg-text"
+              }`}
+            >
+              Коробки
+            </button>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1 text-tg-hint">Вес (кг)</label>
-            <input
-              type="number"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              required
-              min="0.1"
-              step="0.1"
-              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-              placeholder="25"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-tg-hint">Кол-во мест</label>
+            <label className="block text-sm font-medium mb-1 text-tg-hint">
+              {packagingType === "pallets" ? "Кол-во палет" : packagingType === "boxes" ? "Кол-во коробок" : "Количество"}
+            </label>
             <input
               type="number"
               value={boxCount}
               onChange={(e) => setBoxCount(e.target.value)}
               required
+              disabled={!packagingType}
               min="1"
-              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text disabled:opacity-50"
               placeholder="1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-tg-hint">Вес (кг) (необязательно)</label>
+            <input
+              type="number"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              min="0.1"
+              step="0.1"
+              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+              placeholder="25"
             />
           </div>
         </div>
