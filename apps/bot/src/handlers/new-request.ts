@@ -1,13 +1,14 @@
 import type { Context } from "grammy";
+import { InlineKeyboard } from "grammy";
 import { createRequest } from "../api.js";
 
 interface SessionData {
   step: string;
   city?: string;
   deliveryDate?: string;
-  volume?: number;
   weight?: number;
   boxCount?: number;
+  packagingType?: "pallets" | "boxes";
   comment?: string;
 }
 
@@ -28,6 +29,10 @@ export async function handleNewRequest(ctx: Context): Promise<void> {
   sessions.set(userId, { step: "city" });
   await ctx.reply("📦 Создание новой заявки на перевозку\n\nВ какой город доставка?");
 }
+
+const packagingKeyboard = new InlineKeyboard()
+  .text("Палеты", "packaging:pallets")
+  .text("Коробки", "packaging:boxes");
 
 export async function handleNewRequestStep(ctx: Context): Promise<void> {
   const userId = ctx.from?.id;
@@ -59,32 +64,13 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
         return;
       }
       session.deliveryDate = date.toISOString();
-      session.step = "volume";
-      await ctx.reply("� Укажите объём груза (м³), например 0.12:");
+      session.step = "packagingType";
+      await ctx.reply("Выберите тип груза:", { reply_markup: packagingKeyboard });
       break;
     }
 
-    case "volume": {
-      const v = parseFloat(text.replace(",", "."));
-      if (isNaN(v) || v <= 0) {
-        await ctx.reply("❌ Укажите корректный объём (число > 0), например 0.12:");
-        return;
-      }
-      session.volume = v;
-      session.step = "weight";
-      await ctx.reply("⚖️ Укажите вес груза (кг):");
-      break;
-    }
-
-    case "weight": {
-      const weight = parseFloat(text);
-      if (isNaN(weight) || weight <= 0) {
-        await ctx.reply("❌ Укажите корректный вес (число > 0):");
-        return;
-      }
-      session.weight = weight;
-      session.step = "boxCount";
-      await ctx.reply("📦 Количество мест (коробок):");
+    case "packagingType": {
+      await ctx.reply("Пожалуйста, выберите тип кнопками выше.");
       break;
     }
 
@@ -95,6 +81,25 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
         return;
       }
       session.boxCount = boxCount;
+      session.step = "weight";
+      await ctx.reply("⚖️ Укажите вес (кг) или отправьте /skip чтобы пропустить:");
+      break;
+    }
+
+    case "weight": {
+      if (text === "/skip") {
+        session.weight = undefined;
+        session.step = "comment";
+        await ctx.reply("� Комментарий к заявке (или отправьте /skip чтобы пропустить):");
+        return;
+      }
+
+      const weight = parseFloat(text.replace(",", "."));
+      if (isNaN(weight) || weight <= 0) {
+        await ctx.reply("❌ Укажите корректный вес (число > 0) или /skip:");
+        return;
+      }
+      session.weight = weight;
       session.step = "comment";
       await ctx.reply("💬 Комментарий к заявке (или отправьте /skip чтобы пропустить):");
       break;
@@ -111,9 +116,9 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
           lastName: ctx.from?.last_name,
           city: session.city!,
           deliveryDate: session.deliveryDate!,
-          volume: session.volume!,
-          weight: session.weight!,
+          packagingType: session.packagingType!,
           boxCount: session.boxCount!,
+          ...(session.weight !== undefined ? { weight: session.weight } : {}),
           comment: session.comment,
         });
 
@@ -122,9 +127,9 @@ export async function handleNewRequestStep(ctx: Context): Promise<void> {
         await ctx.reply(
           `✅ Заявка #${request.id} создана!\n\n` +
           `📍 Город: ${session.city}\n` +
-          `� Объём: ${session.volume} м³\n` +
-          `⚖️ Вес: ${session.weight} кг\n` +
-          `📦 Мест: ${session.boxCount}\n` +
+          `📦 Тип: ${session.packagingType === "pallets" ? "Палеты" : "Коробки"}\n` +
+          `📦 Кол-во: ${session.boxCount}\n` +
+          `⚖️ Вес: ${session.weight ?? "—"} кг\n` +
           `📊 Статус: Новая\n\n` +
           `Отслеживайте статус командой /my`
         );

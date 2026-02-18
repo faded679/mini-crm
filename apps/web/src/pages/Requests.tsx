@@ -119,7 +119,7 @@ export default function Requests() {
         res = compareNum(a.volume ?? -1, b.volume ?? -1);
         break;
       case "weight":
-        res = compareNum(a.weight, b.weight);
+        res = compareNum(a.weight ?? -1, b.weight ?? -1);
         break;
       case "boxCount":
         res = compareNum(a.boxCount, b.boxCount);
@@ -273,7 +273,7 @@ export default function Requests() {
                     {formatDateRu(r.deliveryDate)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.weight} кг</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.weight ?? "—"} кг</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.boxCount}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.client.firstName} {r.client.lastName || ""}

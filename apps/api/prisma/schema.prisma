@@ -14,6 +14,11 @@ enum RequestStatus {
   done
 }
 
+enum PackagingType {
+  pallets
+  boxes
+}
+
 model Client {
   id           Int              @id @default(autoincrement())
   telegramId   String           @unique @map("telegram_id")
@@ -80,8 +85,9 @@ model ShipmentRequest {
   deliveryDate DateTime             @map("delivery_date")
   volume      Float?
   size        String
-  weight      Float
+  weight      Float?
   boxCount    Int                    @map("box_count")
+  packagingType PackagingType        @default(boxes) @map("packaging_type")
   comment     String?
   status      RequestStatus          @default(new)
   createdAt   DateTime               @default(now()) @map("created_at")

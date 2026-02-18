@@ -7,10 +7,27 @@ const router = Router();
 // POST /bot/requests — create a shipment request
 router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { telegramId, username, firstName, lastName, city, deliveryDate, volume, size, weight, boxCount, comment } = req.body;
+    const {
+      telegramId,
+      username,
+      firstName,
+      lastName,
+      city,
+      deliveryDate,
+      volume,
+      size,
+      weight,
+      boxCount,
+      packagingType,
+      comment,
+    } = req.body;
 
-    if (!telegramId || !city || !deliveryDate || (!volume && !size) || !weight || !boxCount) {
+    if (!telegramId || !city || !deliveryDate || !boxCount || !packagingType) {
       throw new ApiError(400, "Missing required fields");
+    }
+
+    if (packagingType !== "pallets" && packagingType !== "boxes") {
+      throw new ApiError(400, "Invalid packagingType");
     }
 
     const client = await prisma.client.upsert({
@@ -19,6 +36,12 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       create: { telegramId: String(telegramId), username, firstName, lastName },
     });
 
+    const parsedWeight =
+      weight !== undefined && weight !== null && weight !== "" ? Number(weight) : undefined;
+    if (parsedWeight !== undefined && (!Number.isFinite(parsedWeight) || parsedWeight <= 0)) {
+      throw new ApiError(400, "Invalid weight");
+    }
+
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
@@ -26,11 +49,12 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         deliveryDate: new Date(deliveryDate),
         volume: volume !== undefined ? Number(volume) : null,
         size: size ?? "-",
-        weight: Number(weight),
         boxCount: Number(boxCount),
+        packagingType,
         comment: comment || null,
         status: "new",
-      },
+        ...(parsedWeight !== undefined ? { weight: parsedWeight } : {}),
+      } as any,
     });
 
     res.status(201).json(request);

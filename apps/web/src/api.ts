@@ -85,14 +85,17 @@ export interface CounterpartyPayload {
 
 export type RequestStatus = "new" | "warehouse" | "shipped" | "done";
 
+export type PackagingType = "pallets" | "boxes";
+
 export interface ShipmentRequest {
   id: number;
   city: string;
   deliveryDate: string;
   volume?: number | null;
   size: string;
-  weight: number;
+  weight?: number | null;
   boxCount: number;
+  packagingType: PackagingType;
   comment: string | null;
   status: RequestStatus;
   createdAt: string;

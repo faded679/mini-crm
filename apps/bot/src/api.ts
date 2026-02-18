@@ -7,9 +7,10 @@ interface CreateRequestPayload {
   lastName?: string;
   city: string;
   deliveryDate: string;
-  volume: number;
+  packagingType: "pallets" | "boxes";
+  volume?: number;
   size?: string;
-  weight: number;
+  weight?: number;
   boxCount: number;
   comment?: string;
 }
@@ -20,8 +21,9 @@ interface ShipmentRequest {
   deliveryDate: string;
   volume?: number | null;
   size?: string;
-  weight: number;
+  weight?: number | null;
   boxCount: number;
+  packagingType: "pallets" | "boxes";
   comment: string | null;
   status: string;
   createdAt: string;

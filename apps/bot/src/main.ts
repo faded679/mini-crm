@@ -18,6 +18,27 @@ bot.command("new", async (ctx) => {
   }
   await handleNewRequest(ctx);
 });
+
+// Handle packaging type selection in /new flow
+bot.callbackQuery(/^packaging:(pallets|boxes)$/, async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+
+  const session = getSession(userId);
+  if (!session) {
+    await ctx.answerCallbackQuery({ text: "Сессия не найдена. Введите /new" });
+    return;
+  }
+
+  const match = ctx.match as RegExpMatchArray;
+  const packagingType = match[1] as "pallets" | "boxes";
+
+  session.packagingType = packagingType;
+  session.step = "boxCount";
+
+  await ctx.answerCallbackQuery({ text: packagingType === "pallets" ? "Палеты" : "Коробки" });
+  await ctx.reply(`📦 Укажите количество (${packagingType === "pallets" ? "палет" : "коробок"}):`);
+});
 bot.command("my", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
