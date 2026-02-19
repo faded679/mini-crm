@@ -57,6 +57,7 @@ model Counterparty {
   updatedAt             DateTime              @updatedAt @map("updated_at")
 
   contacts              CounterpartyContact[]
+  invoices              Invoice[]
 
   @@map("counterparties")
 }
@@ -133,6 +134,35 @@ model PriceRate {
 
   @@index([directionId, unit])
   @@map("price_rates")
+}
+
+model Invoice {
+  id              Int           @id @default(autoincrement())
+  number          String        @unique
+  date            DateTime      @default(now())
+  counterpartyId  Int           @map("counterparty_id")
+  requestId       Int?          @map("request_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  counterparty    Counterparty  @relation(fields: [counterpartyId], references: [id])
+  items           InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int      @map("invoice_id")
+  description String
+  quantity    Float    @default(1)
+  unit        String   @default("шт")
+  price       Float
+  amount      Float
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
 }
 
 model DeliverySchedule {

@@ -174,6 +174,70 @@ export function sendInvoiceToClient(params: { requestId: number; counterpartyId:
   });
 }
 
+// --------------- Invoices ---------------
+
+export interface InvoiceItemPayload {
+  description: string;
+  quantity: number;
+  unit: string;
+  price: number;
+  amount: number;
+}
+
+export interface InvoiceItem extends InvoiceItemPayload {
+  id: number;
+  invoiceId: number;
+}
+
+export interface Invoice {
+  id: number;
+  number: string;
+  date: string;
+  counterpartyId: number;
+  requestId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  counterparty: Counterparty;
+  items: InvoiceItem[];
+}
+
+export interface CreateInvoicePayload {
+  counterpartyId: number;
+  requestId?: number | null;
+  date?: string;
+  items: InvoiceItemPayload[];
+}
+
+export function createInvoice(payload: CreateInvoicePayload) {
+  return request<Invoice>("/admin/invoices", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getInvoices() {
+  return request<Invoice[]>("/admin/invoices");
+}
+
+export function getInvoiceById(id: number) {
+  return request<Invoice>(`/admin/invoices/${id}`);
+}
+
+export function deleteInvoice(id: number) {
+  return request<void>(`/admin/invoices/${id}`, { method: "DELETE" });
+}
+
+export function getInvoicePdfUrlById(id: number): string {
+  return `${API_URL}/admin/invoices/${id}/pdf`;
+}
+
+export function sendInvoicePdf(id: number, clientTelegramId: string) {
+  return request<{ ok: true }>(`/admin/invoices/${id}/send`, {
+    method: "POST",
+    body: JSON.stringify({ clientTelegramId }),
+  });
+}
+
 export function getClients() {
   return request<Client[]>("/admin/clients");
 }

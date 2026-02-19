@@ -28,6 +28,7 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/assets ./assets
 
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/main.js"]

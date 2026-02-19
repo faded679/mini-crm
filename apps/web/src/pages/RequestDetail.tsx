@@ -3,18 +3,21 @@ import { useParams, Link } from "react-router-dom";
 import {
   getToken,
   getCounterparties,
-  getInvoicePdfUrl,
+  getInvoicePdfUrlById,
   getRequestById,
-  sendInvoiceToClient,
+  createInvoice,
+  sendInvoicePdf,
   updateRequest,
   updateRequestStatus,
   type Counterparty,
   type PackagingType,
   type ShipmentRequestDetail,
   type RequestStatus,
+  type InvoiceItemPayload,
+  type Invoice,
 } from "../api";
 import { cn } from "../lib/utils";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Trash2 } from "lucide-react";
 
 const statusLabels: Record<RequestStatus, string> = {
   new: "Новый",
@@ -46,10 +49,36 @@ export default function RequestDetail() {
   const [confirmInvoice, setConfirmInvoice] = useState(false);
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [invoiceCounterpartyId, setInvoiceCounterpartyId] = useState<number | "">("");
-  const [invoiceAmount, setInvoiceAmount] = useState<string>("");
   const [invoiceSending, setInvoiceSending] = useState(false);
-  const [confirmInvoiceSend, setConfirmInvoiceSend] = useState(false);
   const [invoiceDownloading, setInvoiceDownloading] = useState(false);
+
+  // Multi-item invoice
+  const emptyItem = (): InvoiceItemPayload => ({ description: "", quantity: 1, unit: "усл", price: 0, amount: 0 });
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItemPayload[]>([emptyItem()]);
+  const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
+  const [invoiceCreating, setInvoiceCreating] = useState(false);
+
+  const updateItem = (idx: number, field: keyof InvoiceItemPayload, value: string | number) => {
+    setInvoiceItems((prev) => {
+      const items = [...prev];
+      const item = { ...items[idx] };
+      if (field === "description" || field === "unit") {
+        (item as any)[field] = value;
+      } else {
+        (item as any)[field] = Number(value) || 0;
+      }
+      if (field === "quantity" || field === "price") {
+        item.amount = item.quantity * item.price;
+      }
+      items[idx] = item;
+      return items;
+    });
+  };
+
+  const addItem = () => setInvoiceItems((prev) => [...prev, emptyItem()]);
+  const removeItem = (idx: number) => setInvoiceItems((prev) => prev.filter((_, i) => i !== idx));
+  const invoiceTotal = invoiceItems.reduce((s, it) => s + it.amount, 0);
+  const canCreateInvoice = invoiceCounterpartyId !== "" && invoiceItems.length > 0 && invoiceItems.every((it) => it.description && it.amount > 0);
 
   useEffect(() => {
     if (id) {
@@ -77,10 +106,6 @@ export default function RequestDetail() {
     } finally {
       setUpdating(false);
     }
-  };
-
-  const handleIssueInvoice = async () => {
-    setConfirmInvoice(false);
   };
 
   const handleSaveEdits = async () => {
@@ -116,56 +141,6 @@ export default function RequestDetail() {
       setUpdating(false);
     }
   };
-
-  const handleDownloadInvoicePdf = async () => {
-    if (!request) return;
-    if (!canInvoice) return;
-    if (invoiceDownloading) return;
-
-    setInvoiceDownloading(true);
-    try {
-      const token = getToken();
-      if (!token) throw new Error("Not authenticated");
-
-      const url = getInvoicePdfUrl({
-        requestId: request.id,
-        counterpartyId: invoiceCounterpartyId as number,
-        amount: parsedInvoiceAmount,
-      });
-
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        let msg = "";
-        try {
-          const data = (await res.json()) as { message?: string };
-          msg = data.message ?? "";
-        } catch {
-          msg = await res.text().catch(() => "");
-        }
-        throw new Error(msg || `HTTP ${res.status}`);
-      }
-
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = `invoice-request-${request.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(objectUrl);
-    } finally {
-      setInvoiceDownloading(false);
-    }
-  };
-
-  const parsedInvoiceAmount = Number(String(invoiceAmount).replace(",", "."));
-  const canInvoice = Number.isFinite(parsedInvoiceAmount) && parsedInvoiceAmount > 0 && invoiceCounterpartyId !== "";
 
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
@@ -435,147 +410,215 @@ export default function RequestDetail() {
       )}
 
       {confirmInvoice && request && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden my-8">
             <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <div className="font-semibold text-gray-900 dark:text-white">Выставление счёта</div>
+              <div className="font-semibold text-gray-900 dark:text-white">
+                {createdInvoice ? `Счёт ${createdInvoice.number}` : "Выставление счёта"}
+              </div>
               <button
                 className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                onClick={() => setConfirmInvoice(false)}
+                onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент</label>
-                <select
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                  value={invoiceCounterpartyId}
-                  onChange={(e) => setInvoiceCounterpartyId(e.target.value ? Number(e.target.value) : "")}
-                  onFocus={async () => {
-                    if (counterparties.length) return;
-                    try {
-                      const cp = await getCounterparties();
-                      setCounterparties(cp);
-                    } catch {
-                      setCounterparties([]);
-                    }
-                  }}
-                >
-                  <option value="">Выберите...</option>
-                  {counterparties.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {!createdInvoice ? (
+              <>
+                <div className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент (заказчик)</label>
+                    <select
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                      value={invoiceCounterpartyId}
+                      onChange={(e) => setInvoiceCounterpartyId(e.target.value ? Number(e.target.value) : "")}
+                      onFocus={async () => {
+                        if (counterparties.length) return;
+                        try {
+                          const cp = await getCounterparties();
+                          setCounterparties(cp);
+                        } catch {
+                          setCounterparties([]);
+                        }
+                      }}
+                    >
+                      <option value="">Выберите...</option>
+                      {counterparties.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Сумма, руб.</label>
-                <input
-                  value={invoiceAmount}
-                  onChange={(e) => setInvoiceAmount(e.target.value)}
-                  inputMode="decimal"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-            </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Услуги</label>
+                      <button onClick={addItem} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                        <Plus size={14} /> Добавить строку
+                      </button>
+                    </div>
 
-            <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
-              <button
-                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
-                onClick={() => setConfirmInvoice(false)}
-              >
-                Отмена
-              </button>
+                    <div className="space-y-2">
+                      {invoiceItems.map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
+                          <div className="flex-1">
+                            <input
+                              value={item.description}
+                              onChange={(e) => updateItem(idx, "description", e.target.value)}
+                              placeholder="Наименование услуги"
+                              className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            />
+                          </div>
+                          <div className="w-16">
+                            <input
+                              value={item.quantity || ""}
+                              onChange={(e) => updateItem(idx, "quantity", e.target.value)}
+                              placeholder="Кол"
+                              inputMode="numeric"
+                              className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
+                            />
+                          </div>
+                          <div className="w-16">
+                            <input
+                              value={item.unit}
+                              onChange={(e) => updateItem(idx, "unit", e.target.value)}
+                              placeholder="Ед."
+                              className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
+                            />
+                          </div>
+                          <div className="w-24">
+                            <input
+                              value={item.price || ""}
+                              onChange={(e) => updateItem(idx, "price", e.target.value)}
+                              placeholder="Цена"
+                              inputMode="decimal"
+                              className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-right"
+                            />
+                          </div>
+                          <div className="w-24 flex items-center">
+                            <span className="text-sm text-gray-700 dark:text-gray-300 w-full text-right">
+                              {item.amount.toLocaleString("ru-RU")}
+                            </span>
+                          </div>
+                          {invoiceItems.length > 1 && (
+                            <button onClick={() => removeItem(idx)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 mt-0.5">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
 
-              <div className="flex items-center gap-2">
-                <a
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium",
-                    canInvoice
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
-                  )}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!canInvoice) return;
-                    void handleDownloadInvoicePdf();
-                  }}
-                >
-                  {invoiceDownloading ? "Скачивание..." : "Скачать PDF"}
-                </a>
+                    <div className="mt-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
+                      Итого: {invoiceTotal.toLocaleString("ru-RU")} руб.
+                    </div>
+                  </div>
+                </div>
 
-                <button
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium",
-                    canInvoice
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
-                  )}
-                  onClick={() => {
-                    if (!canInvoice) return;
-                    setConfirmInvoiceSend(true);
-                  }}
-                >
-                  Отправить
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmInvoiceSend && request && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <div className="font-semibold text-gray-900 dark:text-white">Подтверждение</div>
-              <button
-                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                onClick={() => setConfirmInvoiceSend(false)}
-                disabled={invoiceSending}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-5 text-sm text-gray-700 dark:text-gray-200">
-              Подтвердите отправку счёта клиенту по заявке #{request.id}.
-            </div>
-            <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
-              <button
-                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
-                onClick={() => setConfirmInvoiceSend(false)}
-                disabled={invoiceSending}
-              >
-                Отмена
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={async () => {
-                  if (!request) return;
-                  if (!canInvoice) return;
-                  setInvoiceSending(true);
-                  try {
-                    await sendInvoiceToClient({
-                      requestId: request.id,
-                      counterpartyId: invoiceCounterpartyId as number,
-                      amount: parsedInvoiceAmount,
-                    });
-                    setConfirmInvoiceSend(false);
-                    setConfirmInvoice(false);
-                  } finally {
-                    setInvoiceSending(false);
-                  }
-                }}
-                disabled={invoiceSending}
-              >
-                {invoiceSending ? "Отправка..." : "Подтвердить"}
-              </button>
-            </div>
+                <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                  <button
+                    className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                    onClick={() => setConfirmInvoice(false)}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-medium",
+                      canCreateInvoice
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
+                    )}
+                    disabled={!canCreateInvoice || invoiceCreating}
+                    onClick={async () => {
+                      if (!canCreateInvoice || invoiceCreating) return;
+                      setInvoiceCreating(true);
+                      try {
+                        const inv = await createInvoice({
+                          counterpartyId: invoiceCounterpartyId as number,
+                          requestId: request.id,
+                          items: invoiceItems,
+                        });
+                        setCreatedInvoice(inv);
+                      } finally {
+                        setInvoiceCreating(false);
+                      }
+                    }}
+                  >
+                    {invoiceCreating ? "Создание..." : "Создать счёт"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="p-5 space-y-3">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Счёт <b>{createdInvoice.number}</b> создан. Заказчик: <b>{createdInvoice.counterparty.name}</b>.
+                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Итого: <b>{createdInvoice.items.reduce((s, it) => s + it.amount, 0).toLocaleString("ru-RU")} руб.</b>
+                  </p>
+                </div>
+                <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                  <button
+                    className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                    onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
+                  >
+                    Закрыть
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <a
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        if (invoiceDownloading || !createdInvoice) return;
+                        setInvoiceDownloading(true);
+                        try {
+                          const token = getToken();
+                          if (!token) throw new Error("Not authenticated");
+                          const url = getInvoicePdfUrlById(createdInvoice.id);
+                          const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                          const blob = await res.blob();
+                          const objectUrl = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = objectUrl;
+                          a.download = `Счет_${createdInvoice.number}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          URL.revokeObjectURL(objectUrl);
+                        } finally {
+                          setInvoiceDownloading(false);
+                        }
+                      }}
+                    >
+                      {invoiceDownloading ? "Скачивание..." : "Скачать PDF"}
+                    </a>
+                    <button
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-sm font-medium",
+                        "bg-emerald-600 hover:bg-emerald-700 text-white",
+                      )}
+                      disabled={invoiceSending}
+                      onClick={async () => {
+                        if (!createdInvoice || !request || invoiceSending) return;
+                        setInvoiceSending(true);
+                        try {
+                          await sendInvoicePdf(createdInvoice.id, request.client.telegramId);
+                          setConfirmInvoice(false);
+                          setCreatedInvoice(null);
+                        } finally {
+                          setInvoiceSending(false);
+                        }
+                      }}
+                    >
+                      {invoiceSending ? "Отправка..." : "Отправить клиенту"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
