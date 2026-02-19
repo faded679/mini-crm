@@ -165,13 +165,13 @@ router.get("/invoices/:id/pdf", async (req: Request, res: Response, next: NextFu
       invoiceNumber: invoice.number,
       invoiceDate: invoice.date.toISOString(),
       counterparty: invoice.counterparty,
-      items: invoice.items.map((it) => ({
+      items: (invoice.items.map((it: any) => ({
         description: it.description,
         quantity: it.quantity,
         unit: it.unit,
         price: it.price,
         amount: it.amount,
-      })),
+      }))) as any,
     });
 
     const fileName = `Счет_${invoice.number}.pdf`;
@@ -248,15 +248,15 @@ router.get("/requests/:id/invoice.pdf", async (req: Request, res: Response, next
     const invoiceNumber = `З-${String(shipReq.id).padStart(6, "0")}`;
     const pdf = await generateInvoicePdfBuffer({
       invoiceNumber,
-      invoiceDate: new Date(),
+      invoiceDate: new Date().toISOString(),
       counterparty,
-      items: [{
+      items: ([{
         description: `Транспортные услуги по заявке №${shipReq.id}. ${shipReq.city}`,
         quantity: 1,
         unit: "усл",
         price: amount,
         amount,
-      }],
+      }]) as any,
     });
     const fileName = `Счет_заявка_${shipReq.id}.pdf`;
 
@@ -287,15 +287,15 @@ router.post("/requests/:id/invoice/send", async (req: Request, res: Response, ne
     const invoiceNumber = `З-${String(shipReq.id).padStart(6, "0")}`;
     const pdf = await generateInvoicePdfBuffer({
       invoiceNumber,
-      invoiceDate: new Date(),
+      invoiceDate: new Date().toISOString(),
       counterparty,
-      items: [{
+      items: ([{
         description: `Транспортные услуги по заявке №${shipReq.id}. ${shipReq.city}`,
         quantity: 1,
         unit: "усл",
         price: amount,
         amount,
-      }],
+      }]) as any,
     });
     const fileName = `Счет_заявка_${shipReq.id}.pdf`;
 
