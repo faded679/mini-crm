@@ -108,12 +108,35 @@ function drawRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: n
   doc.lineWidth(lineW).rect(x, y, w, h).stroke("#000");
 }
 
+// Resolve TTF font path for Cyrillic support
+function findFont(name: string): string {
+  const candidates = [
+    // assets folder (local dev or Docker COPY)
+    path.join(__dirname, "..", "..", "..", "assets", "fonts", `${name}.ttf`),
+    // Debian/Ubuntu system fonts
+    `/usr/share/fonts/truetype/dejavu/${name}.ttf`,
+    `/usr/share/fonts/truetype/dejavu/${name}.ttf`,
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  throw new Error(`Шрифт ${name}.ttf не найден. Кандидаты: ${candidates.join(", ")}`);
+}
+
 export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promise<Buffer> {
   const { invoiceNumber, invoiceDate, counterparty, items } = params;
   const total = items.reduce((s, i) => s + i.amount, 0);
 
+  const FONT = findFont("DejaVuSans");
+  const FONT_BOLD = fs.existsSync(FONT.replace("DejaVuSans", "DejaVuSans-Bold"))
+    ? FONT.replace("DejaVuSans", "DejaVuSans-Bold")
+    : FONT;
+
   const M = 36; // margin
   const doc = new PDFDocument({ size: "A4", margin: M });
+  doc.registerFont("Main", FONT);
+  doc.registerFont("Bold", FONT_BOLD);
+
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer | string | Uint8Array) =>
     chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)),
@@ -147,7 +170,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     drawLine(doc, M, y + 60, M + bankLeftW, y + 60, 0.5);
 
     // Bank info
-    doc.font("Helvetica").fontSize(7);
+    doc.font("Main").fontSize(7);
     doc.text(`${SELLER.bank}`, M + 3, y + 3, { width: bankLeftW - 6 });
     doc.text(`БИК`, M + 3, y + 23);
     doc.text(SELLER.bik, M + 80, y + 23);
@@ -165,19 +188,19 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     const sellerRowH = 30;
     drawRect(doc, M, y, W, sellerRowH, 0.5);
     doc.fontSize(7).text("Получатель", M + 3, y + 2);
-    doc.fontSize(8).font("Helvetica-Bold").text(SELLER.name, M + 3, y + 12, { width: W - 6 });
-    doc.font("Helvetica");
+    doc.fontSize(8).font("Bold").text(SELLER.name, M + 3, y + 12, { width: W - 6 });
+    doc.font("Main");
     doc.fontSize(7).text(`ИНН ${SELLER.inn}`, M + W - 150, y + 2);
 
     y += sellerRowH + 10;
 
     // ============ ЗАГОЛОВОК СЧЁТА ============
-    doc.font("Helvetica-Bold").fontSize(14);
+    doc.font("Bold").fontSize(14);
     doc.text(`Счёт на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, y, {
       width: W,
       align: "center",
     });
-    doc.font("Helvetica");
+    doc.font("Main");
     y += 22;
 
     drawLine(doc, M, y, M + W, y, 1.5);
@@ -185,23 +208,23 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
 
     // ============ ИСПОЛНИТЕЛЬ (СТАТИЧНЫЙ) ============
     doc.fontSize(9);
-    doc.font("Helvetica-Bold").text("Исполнитель:", M, y, { continued: true });
-    doc.font("Helvetica").text(` ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`);
+    doc.font("Bold").text("Исполнитель:", M, y, { continued: true });
+    doc.font("Main").text(` ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`);
     y = doc.y + 4;
 
     // ============ ЗАКАЗЧИК (ИЗ БД) ============
-    doc.font("Helvetica-Bold").text("Заказчик:", M, y, { continued: true });
+    doc.font("Bold").text("Заказчик:", M, y, { continued: true });
     const cpParts = [counterparty.name];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
     if (counterparty.kpp) cpParts.push(`КПП ${counterparty.kpp}`);
     if (counterparty.address) cpParts.push(counterparty.address);
-    doc.font("Helvetica").text(` ${cpParts.join(", ")}`);
+    doc.font("Main").text(` ${cpParts.join(", ")}`);
     y = doc.y + 4;
 
     // ============ ПРИМЕЧАНИЕ (ДОГОВОР ИЗ БД) ============
     if (counterparty.contract) {
-      doc.font("Helvetica-Bold").text("Основание:", M, y, { continued: true });
-      doc.font("Helvetica").text(` ${counterparty.contract}`);
+      doc.font("Bold").text("Основание:", M, y, { continued: true });
+      doc.font("Main").text(` ${counterparty.contract}`);
       y = doc.y + 4;
     }
 
@@ -220,7 +243,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     for (let i = 1; i < colX.length; i++) {
       drawLine(doc, colX[i], y, colX[i], y + headerH, 0.5);
     }
-    doc.font("Helvetica-Bold").fontSize(7);
+    doc.font("Bold").fontSize(7);
     const headers = ["№", "Наименование", "Кол-во", "Ед.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
       doc.text(h, colX[i] + 2, y + 6, { width: colWidths[i] - 4, align: "center" });
@@ -228,7 +251,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     y += headerH;
 
     // Rows
-    doc.font("Helvetica").fontSize(8);
+    doc.font("Main").fontSize(8);
     items.forEach((item, idx) => {
       const descH = Math.max(16, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 8);
       drawRect(doc, M, y, W, descH, 0.5);
@@ -248,20 +271,20 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     y += 6;
 
     // ============ ИТОГО ============
-    doc.font("Helvetica-Bold").fontSize(9);
+    doc.font("Bold").fontSize(9);
     doc.text(`Итого: ${formatMoney(total)} руб.`, M, y, { width: W, align: "right" });
     y += 14;
     doc.text(`Без налога (НДС)`, M, y, { width: W, align: "right" });
     y += 14;
-    doc.font("Helvetica-Bold").fontSize(10);
+    doc.font("Bold").fontSize(10);
     doc.text(`Всего к оплате: ${formatMoney(total)} руб.`, M, y, { width: W, align: "right" });
     y += 16;
 
     // Сумма прописью
-    doc.font("Helvetica").fontSize(9);
+    doc.font("Main").fontSize(9);
     doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y);
     y += 14;
-    doc.font("Helvetica-Bold").fontSize(9);
+    doc.font("Bold").fontSize(9);
     doc.text(numberToWordsRu(total), M, y);
     y += 20;
 
@@ -269,13 +292,13 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     y += 12;
 
     // ============ ИСПОЛНИТЕЛЬ + ПЕЧАТЬ ============
-    doc.font("Helvetica-Bold").fontSize(9);
+    doc.font("Bold").fontSize(9);
     doc.text("Исполнитель", M, y);
     y += 14;
 
     // Signature line
     drawLine(doc, M + 80, y + 2, M + 220, y + 2, 0.5);
-    doc.font("Helvetica").fontSize(8);
+    doc.font("Main").fontSize(8);
     doc.text(`/${SELLER.director}/`, M + 225, y - 4);
 
     // Stamp image (if exists)
