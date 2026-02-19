@@ -163,9 +163,9 @@ router.get("/invoices/:id/pdf", async (req: Request, res: Response, next: NextFu
 
     const pdf = await generateInvoicePdfBuffer({
       invoiceNumber: invoice.number,
-      invoiceDate: invoice.date,
+      invoiceDate: invoice.date.toISOString(),
       counterparty: invoice.counterparty,
-      items: invoice.items.map((it: any) => ({
+      items: invoice.items.map((it) => ({
         description: it.description,
         quantity: it.quantity,
         unit: it.unit,
@@ -202,9 +202,9 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
 
     const pdf = await generateInvoicePdfBuffer({
       invoiceNumber: invoice.number,
-      invoiceDate: invoice.date,
+      invoiceDate: invoice.date.toISOString(),
       counterparty: invoice.counterparty,
-      items: invoice.items.map((it: any) => ({
+      items: invoice.items.map((it) => ({
         description: it.description,
         quantity: it.quantity,
         unit: it.unit,
