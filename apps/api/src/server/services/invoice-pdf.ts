@@ -39,13 +39,13 @@ type Counterparty = {
 
 export type InvoicePdfParams = {
   invoiceNumber: string;
-  invoiceDate: Date;
+  invoiceDate: string;
   counterparty: Counterparty;
   items: InvoiceItem[];
 };
 
-function formatDate(d: Date): string {
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 function formatMoney(n: number): string {
