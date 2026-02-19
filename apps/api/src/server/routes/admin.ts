@@ -204,13 +204,13 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
       invoiceNumber: invoice.number,
       invoiceDate: invoice.date.toISOString(),
       counterparty: invoice.counterparty,
-      items: invoice.items.map((it) => ({
+      items: (invoice.items.map((it: any) => ({
         description: it.description,
         quantity: it.quantity,
         unit: it.unit,
         price: it.price,
         amount: it.amount,
-      })),
+      }))) as any,
     });
 
     const fileName = `Счет_${invoice.number}.pdf`;
