@@ -2,6 +2,9 @@ import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ===================== РЕКВИЗИТЫ ИП (СТАТИЧНЫЕ) =====================
 // TODO: заменить на реальные реквизиты ИП Соловьёв
