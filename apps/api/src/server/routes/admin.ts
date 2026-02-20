@@ -161,7 +161,7 @@ router.get("/requests/:id/services/suggest", async (req: Request, res: Response,
       rangeLabel = `${matched.minVolumeM3 ?? 0}–${matched.maxVolumeM3 ?? "∞"} м³`;
     }
 
-    const description = `${cityName} — ${unitLabel} — ${rangeLabel}`.trim();
+    const description = `${cityName} — ${rangeLabel}`.trim();
     const qty = shipment.packagingType === "pallets" ? shipment.boxCount : 1;
 
     res.json({ found: true, description, unit: unitLabel, quantity: qty, price: matched.price, amount: qty * matched.price });
