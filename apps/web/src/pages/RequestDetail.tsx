@@ -407,13 +407,15 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 </button>
               ))}
               <div className="ml-auto">
-                <button
-                  onClick={() => setConfirmInvoice(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                >
-                  <FileText size={16} />
-                  Выписать счёт
-                </button>
+                {false && (
+                  <button
+                    onClick={() => setConfirmInvoice(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                  >
+                    <FileText size={16} />
+                    Выписать счёт
+                  </button>
+                )}
               </div>
             </div>
           </div>
