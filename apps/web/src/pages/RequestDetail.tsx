@@ -235,7 +235,40 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
           </div>
 
           <div className="flex items-center justify-end gap-2 mb-6">
-            {""}
+            {editing ? (
+              <>
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditCity(request.city);
+                    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
+                    setEditPackagingType(request.packagingType);
+                    setEditBoxCount(String(request.boxCount));
+                    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
+                    setEditWeight(request.weight == null ? "" : String(request.weight));
+                    setEditComment(request.comment ?? "");
+                  }}
+                >
+                  Отмена
+                </button>
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => void handleSaveEdits()}
+                >
+                  {updating ? "Сохранение..." : "Сохранить"}
+                </button>
+              </>
+            ) : (
+              <button
+                className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                onClick={() => setEditing(true)}
+              >
+                Редактировать
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -622,40 +655,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 </div>
                 <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {editing ? (
-                      <>
-                        <button
-                          disabled={updating}
-                          className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
-                          onClick={() => {
-                            setEditing(false);
-                            setEditCity(request.city);
-                            setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
-                            setEditPackagingType(request.packagingType);
-                            setEditBoxCount(String(request.boxCount));
-                            setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
-                            setEditWeight(request.weight == null ? "" : String(request.weight));
-                            setEditComment(request.comment ?? "");
-                          }}
-                        >
-                          Отмена
-                        </button>
-                        <button
-                          disabled={updating}
-                          className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
-                          onClick={() => void handleSaveEdits()}
-                        >
-                          {updating ? "Сохранение..." : "Сохранить"}
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="px-3 py-1.5 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                        onClick={() => setEditing(true)}
-                      >
-                        Редактировать
-                      </button>
-                    )}
                     <button
                       className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
                       onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
