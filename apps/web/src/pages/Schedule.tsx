@@ -160,7 +160,7 @@ export default function Schedule() {
             <input
               value={addAcceptDays}
               onChange={(e) => setAddAcceptDays(e.target.value)}
-              placeholder="Понедельник: 9:00–18:00, Вторник: 9:00–15:00"
+              placeholder="Например:Понедельник: 9:00–18:00, Вторник: 9:00–15:00"
               className="w-[28rem] max-w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-900/60 dark:placeholder:text-gray-100/50"
             />
           </div>

@@ -4,11 +4,13 @@ import {
   getToken,
   getCounterparties,
   getInvoicePdfUrlById,
+  getCities,
   getRequestById,
   createInvoice,
   sendInvoicePdf,
   updateRequest,
   updateRequestStatus,
+  type City,
   type Counterparty,
   type PackagingType,
   type ShipmentRequestDetail,
@@ -40,10 +42,12 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [cities, setCities] = useState<City[]>([]);
   const [editCity, setEditCity] = useState("");
   const [editDeliveryDate, setEditDeliveryDate] = useState("");
   const [editPackagingType, setEditPackagingType] = useState<PackagingType>("boxes");
   const [editBoxCount, setEditBoxCount] = useState<string>("");
+  const [editVolume, setEditVolume] = useState<string>("");
   const [editWeight, setEditWeight] = useState<string>("");
   const [editComment, setEditComment] = useState<string>("");
   const [confirmStatus, setConfirmStatus] = useState<RequestStatus | null>(null);
@@ -60,6 +64,10 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [invoiceCreating, setInvoiceCreating] = useState(false);
 
   useEffect(() => {
+    getCities().then(setCities).catch(() => setCities([]));
+  }, []);
+
+  useEffect(() => {
     if (!resolvedRequestId) {
       setRequest(null);
       setLoading(false);
@@ -74,6 +82,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         setEditDeliveryDate(r.deliveryDate.slice(0, 16));
         setEditPackagingType(r.packagingType);
         setEditBoxCount(String(r.boxCount));
+        setEditVolume((r as any).volume == null ? "" : String((r as any).volume));
         setEditWeight(r.weight == null ? "" : String(r.weight));
         setEditComment(r.comment ?? "");
       })
@@ -121,6 +130,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     const city = editCity.trim();
     if (!city) throw new Error("Город обязателен");
 
+    const volume = editVolume.trim() === "" ? null : Number(editVolume);
+    if (volume !== null && (!Number.isFinite(volume) || volume <= 0)) throw new Error("Некорректный объём");
+
     const deliveryDate = editDeliveryDate;
     if (!deliveryDate) throw new Error("Дата доставки обязательна");
 
@@ -137,6 +149,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         deliveryDate,
         packagingType: editPackagingType,
         boxCount,
+        volume,
         weight,
         comment: editComment.trim() ? editComment.trim() : null,
       });
@@ -187,6 +200,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                     setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
                     setEditPackagingType(request.packagingType);
                     setEditBoxCount(String(request.boxCount));
+                    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
                     setEditWeight(request.weight == null ? "" : String(request.weight));
                     setEditComment(request.comment ?? "");
                   }}
@@ -215,11 +229,16 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Город</p>
               {editing ? (
-                <input
+                <select
                   value={editCity}
                   onChange={(e) => setEditCity(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
+                >
+                  <option value="">Выберите...</option>
+                  {cities.map((c) => (
+                    <option key={c.id} value={c.shortName}>{c.shortName}</option>
+                  ))}
+                </select>
               ) : (
                 <p className="text-sm text-gray-900 dark:text-gray-100">{request.city}</p>
               )}
@@ -258,7 +277,17 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
+              {editing ? (
+                <input
+                  value={editVolume}
+                  onChange={(e) => setEditVolume(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="(необязательно)"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Вес</p>

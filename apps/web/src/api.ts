@@ -91,6 +91,7 @@ export type UpdateShipmentRequestPayload = {
   city?: string;
   deliveryDate?: string;
   packagingType?: PackagingType;
+  volume?: number | null;
   boxCount?: number;
   weight?: number | null;
   comment?: string | null;
