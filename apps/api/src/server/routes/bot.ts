@@ -36,6 +36,9 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       create: { telegramId: String(telegramId), username, firstName, lastName },
     });
 
+    const cityRecord = await (prisma as any).city.findUnique({ where: { shortName: city } });
+    if (!cityRecord) throw new ApiError(400, `City not found: ${city}`);
+
     const parsedWeight =
       weight !== undefined && weight !== null && weight !== "" ? Number(weight) : undefined;
     if (parsedWeight !== undefined && (!Number.isFinite(parsedWeight) || parsedWeight <= 0)) {
@@ -45,6 +48,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
+        cityId: cityRecord.id,
         city,
         deliveryDate: new Date(deliveryDate),
         volume: volume !== undefined ? Number(volume) : null,
