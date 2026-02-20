@@ -384,7 +384,7 @@ export default function Requests() {
             if (e.target === e.currentTarget) { setSelectedRequestId(null); setModalEditing(false); }
           }}
         >
-          <div className="w-full max-w-7xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="w-full max-w-[80vw] mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mr-2">
                 {modalEditing ? (
