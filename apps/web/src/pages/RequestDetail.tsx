@@ -353,22 +353,20 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
         {/* History */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">История</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">История</h2>
           {request.history.length === 0 ? (
-            <p className="text-sm text-gray-400 dark:text-gray-500">Нет изменений</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Нет изменений</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {request.history.map((h) => (
-                <div key={h.id} className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      {statusLabels[h.oldStatus]} → <span className="font-medium">{statusLabels[h.newStatus]}</span>
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {new Date(h.changedAt).toLocaleString("ru-RU")}
-                    </p>
-                  </div>
+                <div key={h.id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{new Date(h.createdAt).toLocaleString("ru-RU")}</p>
+                  <p className="text-xs text-gray-900 dark:text-gray-100">
+                    Статус: <span className="font-medium">{statusLabels[h.status]}</span>
+                  </p>
+                  {h.comment && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{h.comment}</p>
+                  )}
                 </div>
               ))}
             </div>
