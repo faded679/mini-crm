@@ -88,7 +88,8 @@ model Manager {
 model ShipmentRequest {
   id          Int                    @id @default(autoincrement())
   clientId    Int                    @map("client_id")
-  city        String
+  cityId      Int                    @map("city_id")
+  city        String                 @default("")
   deliveryDate DateTime             @map("delivery_date")
   volume      Float?
   size        String
@@ -101,25 +102,29 @@ model ShipmentRequest {
   updatedAt   DateTime               @updatedAt @map("updated_at")
 
   client      Client                 @relation(fields: [clientId], references: [id])
+  cityRef     City                   @relation(fields: [cityId], references: [id])
   history     RequestStatusHistory[]
 
   @@map("shipment_requests")
 }
 
-model Direction {
+model City {
   id        Int         @id @default(autoincrement())
-  name      String      @unique
+  shortName String      @unique @map("short_name")
+  fullName  String      @map("full_name")
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
 
   rates     PriceRate[]
+  requests  ShipmentRequest[]
+  schedules DeliverySchedule[]
 
-  @@map("directions")
+  @@map("cities")
 }
 
 model PriceRate {
   id          Int       @id @default(autoincrement())
-  directionId Int       @map("direction_id")
+  cityId      Int       @map("city_id")
   unit        RateUnit
   minWeightKg Int?      @map("min_weight_kg")
   maxWeightKg Int?      @map("max_weight_kg")
@@ -130,9 +135,9 @@ model PriceRate {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  direction   Direction @relation(fields: [directionId], references: [id])
+  city        City      @relation(fields: [cityId], references: [id])
 
-  @@index([directionId, unit])
+  @@index([cityId, unit])
   @@map("price_rates")
 }
 
@@ -167,10 +172,13 @@ model InvoiceItem {
 
 model DeliverySchedule {
   id            Int      @id @default(autoincrement())
-  destination   String
+  cityId        Int      @map("city_id")
+  destination   String   @default("")
   deliveryDate  DateTime @map("delivery_date")
   acceptDays    String   @map("accept_days")
   createdAt     DateTime @default(now()) @map("created_at")
+
+  cityRef       City     @relation(fields: [cityId], references: [id])
 
   @@map("delivery_schedules")
 }

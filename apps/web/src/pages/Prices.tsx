@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
-  getDirections,
-  createDirection,
+  getCities,
+  createCity,
   getRates,
   createRate,
   updateRate,
   deleteRate,
-  type Direction,
+  type City,
   type PriceRate,
   type RateUnit,
 } from "../api";
@@ -20,13 +20,13 @@ const unitLabels: Record<RateUnit, string> = {
 };
 
 export default function Prices() {
-  const [directions, setDirections] = useState<Direction[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterDir, setFilterDir] = useState<number | "all">("all");
+  const [filterCity, setFilterCity] = useState<number | "all">("all");
 
   // add form
-  const [addDirId, setAddDirId] = useState<number | "">("");
+  const [addCityId, setAddCityId] = useState<number | "">("")
   const [addUnit, setAddUnit] = useState<RateUnit>("pallet");
   const [addMinWeightKg, setAddMinWeightKg] = useState("");
   const [addMaxWeightKg, setAddMaxWeightKg] = useState("");
@@ -36,9 +36,9 @@ export default function Prices() {
   const [addComment, setAddComment] = useState("");
   const [adding, setAdding] = useState(false);
 
-  // new direction
-  const [newDirName, setNewDirName] = useState("");
-  const [creatingDir, setCreatingDir] = useState(false);
+  // new city
+  const [newCityName, setNewCityName] = useState("");
+  const [creatingCity, setCreatingCity] = useState(false);
 
   // inline edit
   const [editId, setEditId] = useState<number | null>(null);
@@ -51,8 +51,8 @@ export default function Prices() {
   const [saving, setSaving] = useState(false);
 
   const reload = async () => {
-    const [d, r] = await Promise.all([getDirections(), getRates()]);
-    setDirections(d);
+    const [c, r] = await Promise.all([getCities(), getRates()]);
+    setCities(c);
     setRates(r);
   };
 
@@ -61,12 +61,12 @@ export default function Prices() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (filterDir === "all") return rates;
-    return rates.filter((r) => r.directionId === filterDir);
-  }, [rates, filterDir]);
+    if (filterCity === "all") return rates;
+    return rates.filter((r) => r.cityId === filterCity);
+  }, [rates, filterCity]);
 
   const handleAddRate = async () => {
-    if (adding || addDirId === "" || !addPrice) return;
+    if (adding || addCityId === "" || !addPrice) return;
     setAdding(true);
     try {
       const tier: any = {};
@@ -80,7 +80,7 @@ export default function Prices() {
       }
 
       await createRate({
-        directionId: addDirId as number,
+        cityId: addCityId as number,
         unit: addUnit,
         ...tier,
         price: Number(addPrice),
@@ -98,16 +98,16 @@ export default function Prices() {
     }
   };
 
-  const handleAddDirection = async () => {
-    if (creatingDir || !newDirName.trim()) return;
-    setCreatingDir(true);
+  const handleAddCity = async () => {
+    if (creatingCity || !newCityName.trim()) return;
+    setCreatingCity(true);
     try {
-      const d = await createDirection(newDirName.trim());
-      setDirections((prev) => [...prev, d].sort((a, b) => a.name.localeCompare(b.name, "ru")));
-      setNewDirName("");
-      setAddDirId(d.id);
+      const c = await createCity(newCityName.trim());
+      setCities((prev) => [...prev, c].sort((a, b) => a.shortName.localeCompare(b.shortName, "ru")));
+      setNewCityName("");
+      setAddCityId(c.id);
     } finally {
-      setCreatingDir(false);
+      setCreatingCity(false);
     }
   };
 
@@ -154,13 +154,13 @@ export default function Prices() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <select
-          value={filterDir === "all" ? "all" : filterDir}
-          onChange={(e) => setFilterDir(e.target.value === "all" ? "all" : Number(e.target.value))}
+          value={filterCity === "all" ? "all" : filterCity}
+          onChange={(e) => setFilterCity(e.target.value === "all" ? "all" : Number(e.target.value))}
           className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
         >
           <option value="all">Все направления</option>
-          {directions.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
+          {cities.map((c) => (
+            <option key={c.id} value={c.id}>{c.shortName}</option>
           ))}
         </select>
 
@@ -177,13 +177,13 @@ export default function Prices() {
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Направление</label>
             <div className="flex gap-1">
               <select
-                value={addDirId}
-                onChange={(e) => setAddDirId(e.target.value ? Number(e.target.value) : "")}
+                value={addCityId}
+                onChange={(e) => setAddCityId(e.target.value ? Number(e.target.value) : "")}
                 className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               >
                 <option value="">Выберите...</option>
-                {directions.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
+                {cities.map((c) => (
+                  <option key={c.id} value={c.id}>{c.shortName}</option>
                 ))}
               </select>
             </div>
@@ -269,7 +269,7 @@ export default function Prices() {
 
           <button
             onClick={handleAddRate}
-            disabled={adding || addDirId === "" || !addPrice}
+            disabled={adding || addCityId === "" || !addPrice}
             className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
           >
             <Plus size={16} />
@@ -277,20 +277,20 @@ export default function Prices() {
           </button>
         </div>
 
-        {/* New direction inline */}
+        {/* New city inline */}
         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-end gap-2">
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Новое направление</label>
             <input
-              value={newDirName}
-              onChange={(e) => setNewDirName(e.target.value)}
+              value={newCityName}
+              onChange={(e) => setNewCityName(e.target.value)}
               placeholder="Название..."
               className="w-48 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
             />
           </div>
           <button
-            onClick={handleAddDirection}
-            disabled={creatingDir || !newDirName.trim()}
+            onClick={handleAddCity}
+            disabled={creatingCity || !newCityName.trim()}
             className="px-3 py-2 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition"
           >
             Создать
@@ -317,7 +317,7 @@ export default function Prices() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.direction.name}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.city.shortName}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{unitLabels[r.unit]}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {editId === r.id ? (

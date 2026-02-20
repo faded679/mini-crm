@@ -604,28 +604,28 @@ router.delete("/counterparties/:id", async (req: Request, res: Response, next: N
   }
 });
 
-// --------------- Directions ---------------
+// --------------- Cities ---------------
 
-// GET /admin/directions
-router.get("/directions", async (_req: Request, res: Response, next: NextFunction) => {
+// GET /admin/cities
+router.get("/cities", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const directions = await (prisma as any).direction.findMany({
-      orderBy: { name: "asc" },
+    const cities = await (prisma as any).city.findMany({
+      orderBy: { shortName: "asc" },
     });
-    res.json(directions);
+    res.json(cities);
   } catch (err) {
     next(err);
   }
 });
 
-// POST /admin/directions
-router.post("/directions", async (req: Request, res: Response, next: NextFunction) => {
+// POST /admin/cities
+router.post("/cities", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name } = req.body as { name?: string };
-    if (!name?.trim()) throw new ApiError(400, "Name is required");
+    const { shortName, fullName } = req.body as { shortName?: string; fullName?: string };
+    if (!shortName?.trim()) throw new ApiError(400, "shortName is required");
 
-    const created = await (prisma as any).direction.create({
-      data: { name: name.trim() },
+    const created = await (prisma as any).city.create({
+      data: { shortName: shortName.trim(), fullName: (fullName?.trim() || shortName.trim()) },
     });
     res.status(201).json(created);
   } catch (err) {
@@ -633,18 +633,21 @@ router.post("/directions", async (req: Request, res: Response, next: NextFunctio
   }
 });
 
-// PATCH /admin/directions/:id
-router.patch("/directions/:id", async (req: Request, res: Response, next: NextFunction) => {
+// PATCH /admin/cities/:id
+router.patch("/cities/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const { name } = req.body as { name?: string };
-    if (!name?.trim()) throw new ApiError(400, "Name is required");
+    const { shortName, fullName } = req.body as { shortName?: string; fullName?: string };
+    const data: any = {};
+    if (shortName?.trim()) data.shortName = shortName.trim();
+    if (fullName?.trim()) data.fullName = fullName.trim();
+    if (Object.keys(data).length === 0) throw new ApiError(400, "Nothing to update");
 
-    const updated = await (prisma as any).direction.update({
+    const updated = await (prisma as any).city.update({
       where: { id },
-      data: { name: name.trim() },
+      data,
     });
     res.json(updated);
   } catch (err) {
@@ -652,19 +655,31 @@ router.patch("/directions/:id", async (req: Request, res: Response, next: NextFu
   }
 });
 
-// DELETE /admin/directions/:id
-router.delete("/directions/:id", async (req: Request, res: Response, next: NextFunction) => {
+// DELETE /admin/cities/:id
+router.delete("/cities/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const ratesCount = await (prisma as any).priceRate.count({ where: { directionId: id } });
-    if (ratesCount > 0) {
-      throw new ApiError(400, "Cannot delete direction with existing rates");
+    const ratesCount = await (prisma as any).priceRate.count({ where: { cityId: id } });
+    const requestsCount = await (prisma as any).shipmentRequest.count({ where: { cityId: id } });
+    const schedulesCount = await (prisma as any).deliverySchedule.count({ where: { cityId: id } });
+    if (ratesCount + requestsCount + schedulesCount > 0) {
+      throw new ApiError(400, "Cannot delete city with existing rates, requests or schedules");
     }
 
-    await (prisma as any).direction.delete({ where: { id } });
+    await (prisma as any).city.delete({ where: { id } });
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Legacy alias: GET /admin/directions -> GET /admin/cities
+router.get("/directions", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cities = await (prisma as any).city.findMany({ orderBy: { shortName: "asc" } });
+    res.json(cities.map((c: any) => ({ id: c.id, name: c.shortName, createdAt: c.createdAt, updatedAt: c.updatedAt })));
   } catch (err) {
     next(err);
   }
@@ -729,13 +744,15 @@ function validateTier(unit: string, payload: any) {
 router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const where: any = {};
-    if (req.query.directionId) {
-      where.directionId = Number(req.query.directionId);
+    if (req.query.cityId) {
+      where.cityId = Number(req.query.cityId);
+    } else if (req.query.directionId) {
+      where.cityId = Number(req.query.directionId);
     }
     const rates = await (prisma as any).priceRate.findMany({
       where,
-      include: { direction: true },
-      orderBy: [{ directionId: "asc" }, { unit: "asc" }],
+      include: { city: true },
+      orderBy: [{ cityId: "asc" }, { unit: "asc" }],
     });
     res.json(rates);
   } catch (err) {
@@ -746,7 +763,8 @@ router.get("/rates", async (req: Request, res: Response, next: NextFunction) => 
 // POST /admin/rates
 router.post("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { directionId, unit, price, comment } = req.body as {
+    const { cityId, directionId, unit, price, comment } = req.body as {
+      cityId?: number;
       directionId?: number;
       unit?: string;
       price?: number;
@@ -757,7 +775,8 @@ router.post("/rates", async (req: Request, res: Response, next: NextFunction) =>
       maxVolumeM3?: number | null;
     };
 
-    if (!Number.isFinite(directionId)) throw new ApiError(400, "Invalid directionId");
+    const resolvedCityId = cityId ?? directionId;
+    if (!Number.isFinite(resolvedCityId)) throw new ApiError(400, "Invalid cityId");
     if (!unit || !VALID_UNITS.includes(unit)) throw new ApiError(400, "Invalid unit (pallet|kg|m3)");
     if (!Number.isFinite(price) || price! <= 0) throw new ApiError(400, "Invalid price");
 
@@ -765,13 +784,13 @@ router.post("/rates", async (req: Request, res: Response, next: NextFunction) =>
 
     const created = await (prisma as any).priceRate.create({
       data: {
-        directionId,
+        cityId: resolvedCityId,
         unit,
         ...tier,
         price,
         comment: comment?.trim() || null,
       },
-      include: { direction: true },
+      include: { city: true },
     });
     res.status(201).json(created);
   } catch (err) {
@@ -785,7 +804,8 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const { directionId, unit, price, comment } = req.body as {
+    const { cityId, directionId, unit, price, comment } = req.body as {
+      cityId?: number;
       directionId?: number;
       unit?: string;
       price?: number;
@@ -804,7 +824,8 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     }
 
     const data: any = {};
-    if (directionId !== undefined) data.directionId = directionId;
+    const resolvedCityId = cityId ?? directionId;
+    if (resolvedCityId !== undefined) data.cityId = resolvedCityId;
     if (unit !== undefined) data.unit = unit;
     if (price !== undefined) data.price = price;
     if (comment !== undefined) data.comment = comment?.trim() || null;
@@ -835,7 +856,7 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     const updated = await (prisma as any).priceRate.update({
       where: { id },
       data,
-      include: { direction: true },
+      include: { city: true },
     });
     res.json(updated);
   } catch (err) {

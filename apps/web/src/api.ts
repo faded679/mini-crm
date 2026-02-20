@@ -281,38 +281,43 @@ export function deleteCounterparty(id: number) {
   });
 }
 
-// --------------- Directions ---------------
+// --------------- Cities ---------------
 
-export interface Direction {
+export interface City {
   id: number;
-  name: string;
+  shortName: string;
+  fullName: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export function getDirections() {
-  return request<Direction[]>("/admin/directions");
+export function getCities() {
+  return request<City[]>("/admin/cities");
 }
 
-export function createDirection(name: string) {
-  return request<Direction>("/admin/directions", {
+export function createCity(shortName: string, fullName?: string) {
+  return request<City>("/admin/cities", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ shortName, fullName: fullName || shortName }),
   });
 }
 
-export function updateDirection(id: number, name: string) {
-  return request<Direction>(`/admin/directions/${id}`, {
+export function updateCity(id: number, data: { shortName?: string; fullName?: string }) {
+  return request<City>(`/admin/cities/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(data),
   });
 }
 
-export function deleteDirection(id: number) {
-  return request<void>(`/admin/directions/${id}`, {
+export function deleteCity(id: number) {
+  return request<void>(`/admin/cities/${id}`, {
     method: "DELETE",
   });
 }
+
+// Legacy aliases
+export type Direction = City;
+export const getDirections = getCities;
 
 // --------------- Rates ---------------
 
@@ -320,7 +325,7 @@ export type RateUnit = "pallet" | "kg" | "m3";
 
 export interface PriceRate {
   id: number;
-  directionId: number;
+  cityId: number;
   unit: RateUnit;
   minWeightKg: number | null;
   maxWeightKg: number | null;
@@ -330,11 +335,11 @@ export interface PriceRate {
   comment: string | null;
   createdAt: string;
   updatedAt: string;
-  direction: Direction;
+  city: City;
 }
 
 export interface PriceRatePayload {
-  directionId: number;
+  cityId: number;
   unit: RateUnit;
   minWeightKg?: number | null;
   maxWeightKg?: number | null;
@@ -344,8 +349,8 @@ export interface PriceRatePayload {
   comment?: string | null;
 }
 
-export function getRates(directionId?: number) {
-  const q = directionId ? `?directionId=${directionId}` : "";
+export function getRates(cityId?: number) {
+  const q = cityId ? `?cityId=${cityId}` : "";
   return request<PriceRate[]>(`/admin/rates${q}`);
 }
 
