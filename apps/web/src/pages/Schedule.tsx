@@ -62,13 +62,17 @@ export default function Schedule() {
     return acc;
   }, {});
 
+  const addCity = useMemo(() => cities.find((c) => c.shortName === addDestination) ?? null, [cities, addDestination]);
+
   async function onAdd() {
     if (adding) return;
     const dest = addDestination.trim();
     if (!dest || !addDeliveryDate || !addAcceptDays.trim()) return;
+    if (!addCity) return;
     setAdding(true);
     try {
       await createScheduleEntry({
+        cityId: addCity.id,
         destination: dest,
         deliveryDate: addDeliveryDate,
         acceptDays: addAcceptDays.trim(),
@@ -163,7 +167,7 @@ export default function Schedule() {
           <button
             type="button"
             onClick={onAdd}
-            disabled={adding || addDestination === "" || !addDeliveryDate || !addAcceptDays.trim()}
+            disabled={adding || !addCity || addDestination === "" || !addDeliveryDate || !addAcceptDays.trim()}
             className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
           >
             <Plus size={16} />
