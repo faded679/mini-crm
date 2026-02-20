@@ -111,6 +111,11 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const invoiceTotal = invoiceItems.reduce((s, it) => s + it.amount, 0);
   const canCreateInvoice = invoiceCounterpartyId !== "" && invoiceItems.length > 0 && invoiceItems.every((it) => it.description && it.amount > 0);
 
+  const formatDateTime = (value: unknown) => {
+    const d = new Date(String(value));
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU");
+  };
+
   const handleStatusChange = async (status: RequestStatus) => {
     if (!request || updating) return;
     setUpdating(true);
@@ -323,12 +328,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 {request.client.username && <span className="text-gray-400 dark:text-gray-500 ml-1">@{request.client.username}</span>}
               </p>
             </div>
-            <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Дата создания</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">
-                {new Date(request.createdAt).toLocaleString("ru-RU")}
-              </p>
-            </div>
             <div className="col-span-2">
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Комментарий</p>
               {editing ? (
@@ -381,23 +380,29 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         {/* History */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">История</h2>
-          {request.history.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500">Нет изменений</p>
-          ) : (
-            <div className="space-y-4">
-              {request.history.map((h) => (
-                <div key={h.id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{new Date(h.createdAt).toLocaleString("ru-RU")}</p>
-                  <p className="text-xs text-gray-900 dark:text-gray-100">
-                    Статус: <span className="font-medium">{statusLabels[h.status]}</span>
-                  </p>
-                  {h.comment && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{h.comment}</p>
-                  )}
-                </div>
-              ))}
+          <div className="space-y-4">
+            <div className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatDateTime(request.createdAt)}</p>
+              <p className="text-xs text-gray-900 dark:text-gray-100">
+                Статус: <span className="font-medium">{statusLabels.new}</span>
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Создание заявки</p>
             </div>
-          )}
+
+            {request.history.length === 0 ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500">Нет изменений</p>
+            ) : (
+              request.history.map((h) => (
+                <div key={h.id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatDateTime(h.createdAt)}</p>
+                  <p className="text-xs text-gray-900 dark:text-gray-100">
+                    Статус: <span className="font-medium">{statusLabels[h.status] ?? String(h.status)}</span>
+                  </p>
+                  {h.comment && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{h.comment}</p>}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
