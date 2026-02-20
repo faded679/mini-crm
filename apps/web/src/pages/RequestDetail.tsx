@@ -79,7 +79,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
       .then((r) => {
         setRequest(r);
         setEditCity(r.city);
-        setEditDeliveryDate(r.deliveryDate.slice(0, 16));
+        setEditDeliveryDate(new Date(r.deliveryDate).toISOString().slice(0, 10));
         setEditPackagingType(r.packagingType);
         setEditBoxCount(String(r.boxCount));
         setEditVolume((r as any).volume == null ? "" : String((r as any).volume));
@@ -282,7 +282,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   value={editVolume}
                   onChange={(e) => setEditVolume(e.target.value)}
                   inputMode="decimal"
-                  placeholder="(необязательно)"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
@@ -296,7 +295,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   value={editWeight}
                   onChange={(e) => setEditWeight(e.target.value)}
                   inputMode="decimal"
-                  placeholder="(необязательно)"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
