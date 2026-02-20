@@ -17,6 +17,7 @@ export default function Schedule() {
   const [addDeliveryDate, setAddDeliveryDate] = useState("");
   const [addAcceptDays, setAddAcceptDays] = useState("");
   const [adding, setAdding] = useState(false);
+  const [addDestinationCustom, setAddDestinationCustom] = useState("");
 
   const [editId, setEditId] = useState<number | null>(null);
   const [editDestination, setEditDestination] = useState("");
@@ -54,15 +55,17 @@ export default function Schedule() {
 
   async function onAdd() {
     if (adding) return;
-    if (!addDestination.trim() || !addDeliveryDate || !addAcceptDays.trim()) return;
+    const dest = addDestination === "__other__" ? addDestinationCustom.trim() : addDestination.trim();
+    if (!dest || !addDeliveryDate || !addAcceptDays.trim()) return;
     setAdding(true);
     try {
       await createScheduleEntry({
-        destination: addDestination.trim(),
+        destination: dest,
         deliveryDate: addDeliveryDate,
         acceptDays: addAcceptDays.trim(),
       });
       setAddDestination("");
+      setAddDestinationCustom("");
       setAddDeliveryDate("");
       setAddAcceptDays("");
       await reload();
@@ -110,16 +113,6 @@ export default function Schedule() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Расписание отправок</h1>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-        >
-          <option value="">Все направления</option>
-          {destinations.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
       </div>
 
       {/* Add schedule entry */}
@@ -128,12 +121,30 @@ export default function Schedule() {
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Направление</label>
-            <input
-              value={addDestination}
-              onChange={(e) => setAddDestination(e.target.value)}
-              placeholder="Например: ВБ СЦ Курск"
-              className="w-56 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-            />
+            <div className="flex gap-1">
+              <select
+                value={addDestination}
+                onChange={(e) => {
+                  setAddDestination(e.target.value);
+                  if (e.target.value !== "__other__") setAddDestinationCustom("");
+                }}
+                className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              >
+                <option value="">Выберите...</option>
+                {destinations.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+                <option value="__other__">Другое...</option>
+              </select>
+              {addDestination === "__other__" && (
+                <input
+                  value={addDestinationCustom}
+                  onChange={(e) => setAddDestinationCustom(e.target.value)}
+                  placeholder="Название..."
+                  className="w-48 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Дата выгрузки</label>
@@ -156,7 +167,7 @@ export default function Schedule() {
           <button
             type="button"
             onClick={onAdd}
-            disabled={adding || !addDestination.trim() || !addDeliveryDate || !addAcceptDays.trim()}
+            disabled={adding || (addDestination === "" || (addDestination === "__other__" && !addDestinationCustom.trim())) || !addDeliveryDate || !addAcceptDays.trim()}
             className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
           >
             <Plus size={16} />
