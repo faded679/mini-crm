@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { getRequests, type ShipmentRequest, type RequestStatus, type PackagingType } from "../api";
 import { cn } from "../lib/utils";
+import RequestDetail from "./RequestDetail";
 
 const statusLabels: Record<RequestStatus, string> = {
   new: "Новый",
@@ -47,7 +48,7 @@ export default function Requests() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
 
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
@@ -77,6 +78,17 @@ export default function Requests() {
       .then(setRequests)
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (selectedRequestId === null) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedRequestId(null);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedRequestId]);
 
   const uniqueCities = useMemo(() => {
     const set = new Set(requests.map((r) => r.city));
@@ -336,7 +348,11 @@ export default function Requests() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {sorted.map((r) => (
-                <tr key={r.id} onClick={() => navigate(`/requests/${r.id}`)} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer">
+                <tr
+                  key={r.id}
+                  onClick={() => setSelectedRequestId(r.id)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                >
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -357,6 +373,29 @@ export default function Requests() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {selectedRequestId !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setSelectedRequestId(null);
+          }}
+        >
+          <div className="w-full max-w-6xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setSelectedRequestId(null)}
+                className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
+              >
+                Закрыть
+              </button>
+            </div>
+            <div className="p-4">
+              <RequestDetail embedded />
+            </div>
+          </div>
         </div>
       )}
     </div>
