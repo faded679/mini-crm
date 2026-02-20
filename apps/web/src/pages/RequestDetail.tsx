@@ -258,6 +258,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
+            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Клиент</p>
             <span className={cn("px-3 py-1 rounded-full text-sm font-medium", statusColors[request.status])}>
               {statusLabels[request.status]}
             </span>
@@ -355,7 +356,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Клиент</p>
+
               <p className="text-sm text-gray-900 dark:text-gray-100">
                 {request.client.firstName} {request.client.lastName || ""}
                 {request.client.username && <span className="text-gray-400 dark:text-gray-500 ml-1">@{request.client.username}</span>}
