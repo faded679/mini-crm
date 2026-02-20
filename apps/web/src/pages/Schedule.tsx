@@ -139,7 +139,7 @@ export default function Schedule() {
                 onChange={(e) => setAddDestination(e.target.value)}
                 className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               >
-                <option value="">Выберите...</option>
+                <option value="" className="text-gray-900/50 dark:text-gray-100/50">Выберите...</option>
                 {destinations.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
@@ -152,7 +152,7 @@ export default function Schedule() {
               type="date"
               value={addDeliveryDate}
               onChange={(e) => setAddDeliveryDate(e.target.value)}
-              className="w-44 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              className="w-44 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-900/50 dark:placeholder:text-gray-100/50"
             />
           </div>
           <div>
@@ -161,7 +161,7 @@ export default function Schedule() {
               value={addAcceptDays}
               onChange={(e) => setAddAcceptDays(e.target.value)}
               placeholder="Понедельник: 9:00–18:00, Вторник: 9:00–15:00"
-              className="w-[28rem] max-w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              className="w-[28rem] max-w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-900/50 dark:placeholder:text-gray-100/50"
             />
           </div>
           <button
