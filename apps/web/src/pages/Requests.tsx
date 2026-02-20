@@ -385,6 +385,26 @@ export default function Requests() {
         >
           <div className="w-full max-w-6xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2 mr-2">
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent("requestDetail:edit"))}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Редактировать
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent("requestDetail:cancel"))}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent("requestDetail:save"))}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  Сохранить
+                </button>
+              </div>
               <button
                 onClick={() => setSelectedRequestId(null)}
                 className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"

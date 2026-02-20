@@ -207,6 +207,35 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     }
   };
 
+  useEffect(() => {
+    if (!embedded) return;
+
+    const onEdit = () => setEditing(true);
+    const onCancel = () => {
+      if (!request) return;
+      setEditing(false);
+      setEditCity(request.city);
+      setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
+      setEditPackagingType(request.packagingType);
+      setEditBoxCount(String(request.boxCount));
+      setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
+      setEditWeight(request.weight == null ? "" : String(request.weight));
+      setEditComment(request.comment ?? "");
+    };
+    const onSave = () => {
+      void handleSaveEdits();
+    };
+
+    window.addEventListener("requestDetail:edit", onEdit as EventListener);
+    window.addEventListener("requestDetail:cancel", onCancel as EventListener);
+    window.addEventListener("requestDetail:save", onSave as EventListener);
+    return () => {
+      window.removeEventListener("requestDetail:edit", onEdit as EventListener);
+      window.removeEventListener("requestDetail:cancel", onCancel as EventListener);
+      window.removeEventListener("requestDetail:save", onSave as EventListener);
+    };
+  }, [embedded, request]);
+
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
