@@ -49,6 +49,7 @@ export default function Requests() {
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+  const [modalEditing, setModalEditing] = useState(false);
 
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
@@ -380,33 +381,38 @@ export default function Requests() {
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setSelectedRequestId(null);
+            if (e.target === e.currentTarget) { setSelectedRequestId(null); setModalEditing(false); }
           }}
         >
           <div className="w-full max-w-6xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mr-2">
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent("requestDetail:edit"))}
-                  className="px-3 py-1.5 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  Редактировать
-                </button>
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent("requestDetail:cancel"))}
-                  className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
-                >
-                  Отмена
-                </button>
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent("requestDetail:save"))}
-                  className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  Сохранить
-                </button>
+                {modalEditing ? (
+                  <>
+                    <button
+                      onClick={() => { window.dispatchEvent(new CustomEvent("requestDetail:cancel")); setModalEditing(false); }}
+                      className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      onClick={() => { window.dispatchEvent(new CustomEvent("requestDetail:save")); setModalEditing(false); }}
+                      className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      Сохранить
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => { window.dispatchEvent(new CustomEvent("requestDetail:edit")); setModalEditing(true); }}
+                    className="px-3 py-1.5 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    Редактировать
+                  </button>
+                )}
               </div>
               <button
-                onClick={() => setSelectedRequestId(null)}
+                onClick={() => { setSelectedRequestId(null); setModalEditing(false); }}
                 className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
               >
                 Закрыть
