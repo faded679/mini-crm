@@ -2,13 +2,16 @@ import { useState, useEffect, useMemo } from "react";
 import {
   createScheduleEntry,
   deleteScheduleEntry,
+  getCities,
   getAdminSchedule,
+  type City,
   type ScheduleEntry,
   updateScheduleEntry,
 } from "../api";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 export default function Schedule() {
+  const [cities, setCities] = useState<City[]>([]);
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
@@ -26,22 +29,29 @@ export default function Schedule() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getAdminSchedule()
-      .then(setEntries)
+    Promise.all([getCities(), getAdminSchedule()])
+      .then(([c, e]) => {
+        setCities(c);
+        setEntries(e);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   async function reload() {
     setLoading(true);
     try {
-      const data = await getAdminSchedule();
-      setEntries(data);
+      const [c, e] = await Promise.all([getCities(), getAdminSchedule()]);
+      setCities(c);
+      setEntries(e);
     } finally {
       setLoading(false);
     }
   }
 
-  const destinations = useMemo(() => [...new Set(entries.map((e) => e.destination))].sort(), [entries]);
+  const destinations = useMemo(
+    () => [...new Set(cities.map((c) => c.shortName))].sort((a, b) => a.localeCompare(b, "ru")),
+    [cities],
+  );
 
   const filtered = filter
     ? entries.filter((e) => e.destination === filter)
