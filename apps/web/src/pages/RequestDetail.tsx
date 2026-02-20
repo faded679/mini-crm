@@ -237,7 +237,29 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
           <div className="flex items-center justify-end gap-2 mb-6">
             {editing ? (
               <>
-
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditCity(request.city);
+                    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
+                    setEditPackagingType(request.packagingType);
+                    setEditBoxCount(String(request.boxCount));
+                    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
+                    setEditWeight(request.weight == null ? "" : String(request.weight));
+                    setEditComment(request.comment ?? "");
+                  }}
+                >
+                  Отмена
+                </button>
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => void handleSaveEdits()}
+                >
+                  {updating ? "Сохранение..." : "Сохранить"}
+                </button>
               </>
             ) : (
               <button
@@ -632,29 +654,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   </p>
                 </div>
                 <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
-                                  <button
-                  disabled={updating}
-                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
-                  onClick={() => {
-                    setEditing(false);
-                    setEditCity(request.city);
-                    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
-                    setEditPackagingType(request.packagingType);
-                    setEditBoxCount(String(request.boxCount));
-                    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
-                    setEditWeight(request.weight == null ? "" : String(request.weight));
-                    setEditComment(request.comment ?? "");
-                  }}
-                >
-                  Отмена
-                </button>
-                <button
-                  disabled={updating}
-                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={() => void handleSaveEdits()}
-                >
-                  {updating ? "Сохранение..." : "Сохранить"}
-                </button>
                   <button
                     className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
                     onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
