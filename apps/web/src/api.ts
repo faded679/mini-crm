@@ -257,6 +257,39 @@ export function getSchedule() {
   return request<ScheduleEntry[]>("/schedule");
 }
 
+export type ScheduleEntryPayload = {
+  cityId?: number;
+  destination?: string;
+  deliveryDate: string;
+  acceptDays: string;
+};
+
+export function getAdminSchedule() {
+  return request<ScheduleEntry[]>("/admin/schedule");
+}
+
+export function createScheduleEntry(payload: ScheduleEntryPayload) {
+  return request<ScheduleEntry>("/admin/schedule", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateScheduleEntry(id: number, payload: Partial<ScheduleEntryPayload>) {
+  return request<ScheduleEntry>(`/admin/schedule/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function deleteScheduleEntry(id: number) {
+  return request<void>(`/admin/schedule/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export function getCounterparties() {
   return request<Counterparty[]>("/admin/counterparties");
 }
