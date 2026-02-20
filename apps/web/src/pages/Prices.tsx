@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import {
   getCities,
   createCity,
+  updateCity,
+  deleteCity,
   getRates,
   createRate,
   updateRate,
@@ -26,7 +28,7 @@ export default function Prices() {
   const [filterCity, setFilterCity] = useState<number | "all">("all");
 
   // add form
-  const [addCityId, setAddCityId] = useState<number | "">("")
+  const [addCityId, setAddCityId] = useState<number | "">("");
   const [addUnit, setAddUnit] = useState<RateUnit>("pallet");
   const [addMinWeightKg, setAddMinWeightKg] = useState("");
   const [addMaxWeightKg, setAddMaxWeightKg] = useState("");
@@ -39,6 +41,13 @@ export default function Prices() {
   // new city
   const [newCityName, setNewCityName] = useState("");
   const [creatingCity, setCreatingCity] = useState(false);
+  const [newCityFullName, setNewCityFullName] = useState("");
+
+  // city edit
+  const [cityEditId, setCityEditId] = useState<number | null>(null);
+  const [cityEditShortName, setCityEditShortName] = useState("");
+  const [cityEditFullName, setCityEditFullName] = useState("");
+  const [savingCity, setSavingCity] = useState(false);
 
   // inline edit
   const [editId, setEditId] = useState<number | null>(null);
@@ -102,13 +111,36 @@ export default function Prices() {
     if (creatingCity || !newCityName.trim()) return;
     setCreatingCity(true);
     try {
-      const c = await createCity(newCityName.trim());
+      const c = await createCity(newCityName.trim(), newCityFullName.trim() || undefined);
       setCities((prev) => [...prev, c].sort((a, b) => a.shortName.localeCompare(b.shortName, "ru")));
       setNewCityName("");
+      setNewCityFullName("");
       setAddCityId(c.id);
     } finally {
       setCreatingCity(false);
     }
+  };
+
+  const handleSaveCityEdit = async () => {
+    if (savingCity || cityEditId === null) return;
+    if (!cityEditShortName.trim()) return;
+    setSavingCity(true);
+    try {
+      await updateCity(cityEditId, {
+        shortName: cityEditShortName.trim(),
+        fullName: cityEditFullName.trim() || cityEditShortName.trim(),
+      });
+      setCityEditId(null);
+      await reload();
+    } finally {
+      setSavingCity(false);
+    }
+  };
+
+  const handleDeleteCity = async (id: number) => {
+    if (!confirm("Удалить город?")) return;
+    await deleteCity(id);
+    await reload();
   };
 
   const handleSaveEdit = async () => {
@@ -150,6 +182,122 @@ export default function Prices() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Прайс-лист</h1>
+
+      {/* Cities management */}
+      <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Города / направления</p>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Короткое название</label>
+            <input
+              value={newCityName}
+              onChange={(e) => setNewCityName(e.target.value)}
+              placeholder="Например: ВБ Воронеж"
+              className="w-56 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Полное название</label>
+            <input
+              value={newCityFullName}
+              onChange={(e) => setNewCityFullName(e.target.value)}
+              placeholder="(опционально)"
+              className="w-72 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+
+          <button
+            onClick={handleAddCity}
+            disabled={creatingCity || !newCityName.trim()}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition"
+          >
+            <Plus size={16} />
+            Добавить город
+          </button>
+        </div>
+
+        {cities.length > 0 && (
+          <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Короткое</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Полное</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {cities.map((c) => (
+                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {cityEditId === c.id ? (
+                        <input
+                          value={cityEditShortName}
+                          onChange={(e) => setCityEditShortName(e.target.value)}
+                          className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        />
+                      ) : (
+                        c.shortName
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {cityEditId === c.id ? (
+                        <input
+                          value={cityEditFullName}
+                          onChange={(e) => setCityEditFullName(e.target.value)}
+                          className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        />
+                      ) : (
+                        c.fullName
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {cityEditId === c.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={handleSaveCityEdit}
+                            disabled={savingCity}
+                            className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => setCityEditId(null)}
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setCityEditId(c.id);
+                              setCityEditShortName(c.shortName);
+                              setCityEditFullName(c.fullName);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCity(c.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
