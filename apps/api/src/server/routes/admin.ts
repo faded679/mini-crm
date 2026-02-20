@@ -48,10 +48,62 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
         client: true,
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
+        services: { orderBy: { id: "asc" } },
       },
     });
     if (!request) throw new ApiError(404, "Request not found");
     res.json(request);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --------------- Request Services ---------------
+
+// POST /admin/requests/:id/services
+router.post("/requests/:id/services", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requestId = Number(req.params.id);
+    const { description, unit, quantity, price } = req.body;
+    const amount = (Number(quantity) || 0) * (Number(price) || 0);
+    const service = await (prisma as any).requestService.create({
+      data: { requestId, description: description || "", unit: unit || "шт", quantity: Number(quantity) || 1, price: Number(price) || 0, amount },
+    });
+    res.json(service);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/requests/:id/services/:serviceId
+router.patch("/requests/:id/services/:serviceId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const serviceId = Number(req.params.serviceId);
+    const { description, unit, quantity, price } = req.body;
+    const data: Record<string, unknown> = {};
+    if (description !== undefined) data.description = description;
+    if (unit !== undefined) data.unit = unit;
+    if (quantity !== undefined) data.quantity = Number(quantity);
+    if (price !== undefined) data.price = Number(price);
+    if (quantity !== undefined || price !== undefined) {
+      const existing = await (prisma as any).requestService.findUnique({ where: { id: serviceId } });
+      const q = quantity !== undefined ? Number(quantity) : existing.quantity;
+      const p = price !== undefined ? Number(price) : existing.price;
+      data.amount = q * p;
+    }
+    const service = await (prisma as any).requestService.update({ where: { id: serviceId }, data });
+    res.json(service);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/requests/:id/services/:serviceId
+router.delete("/requests/:id/services/:serviceId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const serviceId = Number(req.params.serviceId);
+    await (prisma as any).requestService.delete({ where: { id: serviceId } });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

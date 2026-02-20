@@ -10,11 +10,15 @@ import {
   sendInvoicePdf,
   updateRequest,
   updateRequestStatus,
+  createRequestService,
+  updateRequestService,
+  deleteRequestService,
   type City,
   type Counterparty,
   type PackagingType,
   type ShipmentRequestDetail,
   type RequestStatus,
+  type RequestService,
   type InvoiceItemPayload,
   type Invoice,
 } from "../api";
@@ -63,6 +67,10 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
   const [invoiceCreating, setInvoiceCreating] = useState(false);
 
+  // Services
+  const [services, setServices] = useState<RequestService[]>([]);
+  const [savingServiceId, setSavingServiceId] = useState<number | null>(null);
+
   useEffect(() => {
     getCities().then(setCities).catch(() => setCities([]));
   }, []);
@@ -78,6 +86,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     getRequestById(resolvedRequestId)
       .then((r) => {
         setRequest(r);
+        setServices(r.services ?? []);
         setEditCity(r.city);
         setEditDeliveryDate(new Date(r.deliveryDate).toISOString().slice(0, 10));
         setEditPackagingType(r.packagingType);
@@ -406,6 +415,111 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Services */}
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Выполненные услуги</p>
+              <button
+                onClick={async () => {
+                  if (!request) return;
+                  const svc = await createRequestService(request.id, { description: "", unit: "шт", quantity: 1, price: 0 });
+                  setServices((prev) => [...prev, svc]);
+                }}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+              >
+                <Plus size={14} /> Добавить строку
+              </button>
+            </div>
+
+            {services.length === 0 ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500">Нет услуг</p>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                        <th className="text-left py-2 pr-2 w-8">№</th>
+                        <th className="text-left py-2 px-2">Наименование</th>
+                        <th className="text-left py-2 px-2 w-20">Ед.</th>
+                        <th className="text-right py-2 px-2 w-20">Кол-во</th>
+                        <th className="text-right py-2 px-2 w-24">Цена</th>
+                        <th className="text-right py-2 px-2 w-28">Стоимость</th>
+                        <th className="w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      {services.map((svc, idx) => (
+                        <tr key={svc.id} className="group">
+                          <td className="py-1.5 pr-2 text-xs text-gray-400">{idx + 1}</td>
+                          <td className="py-1.5 px-1">
+                            <input
+                              value={svc.description}
+                              onChange={(e) => setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, description: e.target.value } : s))}
+                              onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { description: svc.description }).finally(() => setSavingServiceId(null)); } }}
+                              placeholder="Наименование"
+                              className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                            />
+                          </td>
+                          <td className="py-1.5 px-1">
+                            <input
+                              value={svc.unit}
+                              onChange={(e) => setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, unit: e.target.value } : s))}
+                              onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { unit: svc.unit }).finally(() => setSavingServiceId(null)); } }}
+                              className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-center"
+                            />
+                          </td>
+                          <td className="py-1.5 px-1">
+                            <input
+                              value={svc.quantity || ""}
+                              onChange={(e) => {
+                                const q = Number(e.target.value) || 0;
+                                setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
+                              }}
+                              onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { quantity: svc.quantity, price: svc.price }).finally(() => setSavingServiceId(null)); } }}
+                              inputMode="numeric"
+                              className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-right"
+                            />
+                          </td>
+                          <td className="py-1.5 px-1">
+                            <input
+                              value={svc.price || ""}
+                              onChange={(e) => {
+                                const p = Number(e.target.value) || 0;
+                                setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, price: p, amount: s.quantity * p } : s));
+                              }}
+                              onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { quantity: svc.quantity, price: svc.price }).finally(() => setSavingServiceId(null)); } }}
+                              inputMode="decimal"
+                              className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-right"
+                            />
+                          </td>
+                          <td className="py-1.5 px-2 text-right text-sm text-gray-900 dark:text-gray-100 font-medium">
+                            {svc.amount.toLocaleString("ru-RU")}
+                          </td>
+                          <td className="py-1.5 pl-1">
+                            <button
+                              onClick={async () => {
+                                if (!request) return;
+                                await deleteRequestService(request.id, svc.id);
+                                setServices((prev) => prev.filter((s) => s.id !== svc.id));
+                              }}
+                              className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
+                  Итого: {services.reduce((sum, s) => sum + s.amount, 0).toLocaleString("ru-RU")} руб.
+                </div>
+              </>
+            )}
           </div>
         </div>
 

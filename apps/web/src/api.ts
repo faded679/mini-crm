@@ -129,9 +129,28 @@ export interface FieldHistoryEntry {
   manager: { id: number; name: string };
 }
 
+export interface RequestService {
+  id: number;
+  requestId: number;
+  description: string;
+  unit: string;
+  quantity: number;
+  price: number;
+  amount: number;
+  createdAt: string;
+}
+
+export interface RequestServicePayload {
+  description: string;
+  unit: string;
+  quantity: number;
+  price: number;
+}
+
 export interface ShipmentRequestDetail extends ShipmentRequest {
   history: StatusHistoryEntry[];
   fieldHistory: FieldHistoryEntry[];
+  services: RequestService[];
 }
 
 export interface ClientDetail extends Client {
@@ -164,6 +183,28 @@ export function updateRequest(id: number, payload: UpdateShipmentRequestPayload)
   return request<ShipmentRequest>(`/admin/requests/${id}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
+  });
+}
+
+// --------------- Request Services ---------------
+
+export function createRequestService(requestId: number, payload: RequestServicePayload) {
+  return request<RequestService>(`/admin/requests/${requestId}/services`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateRequestService(requestId: number, serviceId: number, payload: Partial<RequestServicePayload>) {
+  return request<RequestService>(`/admin/requests/${requestId}/services/${serviceId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteRequestService(requestId: number, serviceId: number) {
+  return request<{ ok: true }>(`/admin/requests/${requestId}/services/${serviceId}`, {
+    method: "DELETE",
   });
 }
 

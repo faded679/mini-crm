@@ -107,6 +107,7 @@ model ShipmentRequest {
   cityRef      City                   @relation(fields: [cityId], references: [id])
   history      RequestStatusHistory[]
   fieldHistory RequestFieldHistory[]
+  services     RequestService[]
 
   @@map("shipment_requests")
 }
@@ -196,6 +197,21 @@ model RequestStatusHistory {
   request   ShipmentRequest @relation(fields: [requestId], references: [id])
 
   @@map("request_status_history")
+}
+
+model RequestService {
+  id          Int             @id @default(autoincrement())
+  requestId   Int             @map("request_id")
+  description String
+  unit        String          @default("шт")
+  quantity    Float           @default(1)
+  price       Float           @default(0)
+  amount      Float           @default(0)
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  request     ShipmentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("request_services")
 }
 
 model RequestFieldHistory {
