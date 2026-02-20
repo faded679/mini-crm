@@ -280,7 +280,7 @@ export default function Requests() {
           </div>
 
           <div className="text-gray-600 dark:text-gray-300">
-            <span className="text-gray-400 dark:font-medium">Коробки:</span>{" "}
+            <span className="text-gray-400 dark:font-medium">Короба:</span>{" "}
             <span className="font-medium text-gray-900 dark:text-gray-100">{summary.placesByPackaging.boxes}</span>
           </div>
 
