@@ -378,12 +378,12 @@ export default function Requests() {
 
       {selectedRequestId !== null && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setSelectedRequestId(null);
           }}
         >
-          <div className="w-full max-w-6xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="w-full  max-w-7xl mt-12 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setSelectedRequestId(null)}
