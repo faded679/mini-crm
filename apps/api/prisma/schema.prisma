@@ -82,6 +82,8 @@ model Manager {
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  fieldChanges RequestFieldHistory[]
+
   @@map("managers")
 }
 
@@ -101,9 +103,10 @@ model ShipmentRequest {
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
 
-  client      Client                 @relation(fields: [clientId], references: [id])
-  cityRef     City                   @relation(fields: [cityId], references: [id])
-  history     RequestStatusHistory[]
+  client       Client                 @relation(fields: [clientId], references: [id])
+  cityRef      City                   @relation(fields: [cityId], references: [id])
+  history      RequestStatusHistory[]
+  fieldHistory RequestFieldHistory[]
 
   @@map("shipment_requests")
 }
@@ -193,4 +196,19 @@ model RequestStatusHistory {
   request   ShipmentRequest @relation(fields: [requestId], references: [id])
 
   @@map("request_status_history")
+}
+
+model RequestFieldHistory {
+  id        Int      @id @default(autoincrement())
+  requestId Int      @map("request_id")
+  managerId Int      @map("manager_id")
+  field     String
+  oldValue  String?  @map("old_value")
+  newValue  String?  @map("new_value")
+  changedAt DateTime @default(now()) @map("changed_at")
+
+  request   ShipmentRequest @relation(fields: [requestId], references: [id])
+  manager   Manager         @relation(fields: [managerId], references: [id])
+
+  @@map("request_field_history")
 }

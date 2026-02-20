@@ -42,9 +42,13 @@ router.get("/requests", async (_req: Request, res: Response, next: NextFunction)
 router.get("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    const request = await prisma.shipmentRequest.findUnique({
+    const request = await (prisma as any).shipmentRequest.findUnique({
       where: { id },
-      include: { client: true, history: { orderBy: { changedAt: "desc" } } },
+      include: {
+        client: true,
+        history: { orderBy: { changedAt: "desc" } },
+        fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
+      },
     });
     if (!request) throw new ApiError(404, "Request not found");
     res.json(request);
@@ -365,10 +369,13 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid request id");
 
+    const managerId = ((req as any).manager as { managerId: number }).managerId;
+
     const body = req.body as {
       city?: string;
       deliveryDate?: string;
       packagingType?: "pallets" | "boxes";
+      volume?: number | null;
       boxCount?: number;
       weight?: number | null;
       comment?: string | null;
@@ -391,6 +398,12 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
 
     if (body.packagingType !== undefined && body.packagingType !== "pallets" && body.packagingType !== "boxes") {
       throw new ApiError(400, "Invalid packagingType");
+    }
+
+    if (body.volume !== undefined && body.volume !== null) {
+      if (!Number.isFinite(body.volume) || body.volume <= 0) {
+        throw new ApiError(400, "Invalid volume");
+      }
     }
 
     if (body.boxCount !== undefined) {
@@ -418,12 +431,64 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         city: nextCity,
         deliveryDate: nextDeliveryDate,
         packagingType: body.packagingType as any,
+        volume: body.volume === undefined ? undefined : body.volume,
         boxCount: body.boxCount,
         weight: body.weight === null ? (undefined as any) : (body.weight as any),
         comment: nextComment,
       } as any,
       include: { client: true },
     });
+
+    // Log field-level changes (weight, boxCount, volume, packagingType, deliveryDate)
+    const fieldChanges: { field: string; oldValue: string | null; newValue: string | null }[] = [];
+
+    if (body.weight !== undefined && existing.weight !== updated.weight) {
+      fieldChanges.push({
+        field: "weight",
+        oldValue: existing.weight == null ? null : String(existing.weight),
+        newValue: updated.weight == null ? null : String(updated.weight),
+      });
+    }
+    if (body.boxCount !== undefined && existing.boxCount !== updated.boxCount) {
+      fieldChanges.push({
+        field: "boxCount",
+        oldValue: String(existing.boxCount),
+        newValue: String(updated.boxCount),
+      });
+    }
+    if (body.volume !== undefined && (existing as any).volume !== (updated as any).volume) {
+      fieldChanges.push({
+        field: "volume",
+        oldValue: (existing as any).volume == null ? null : String((existing as any).volume),
+        newValue: (updated as any).volume == null ? null : String((updated as any).volume),
+      });
+    }
+    if (body.packagingType !== undefined && (existing as any).packagingType !== (updated as any).packagingType) {
+      fieldChanges.push({
+        field: "packagingType",
+        oldValue: String((existing as any).packagingType),
+        newValue: String((updated as any).packagingType),
+      });
+    }
+    if (body.deliveryDate !== undefined && existing.deliveryDate.getTime() !== updated.deliveryDate.getTime()) {
+      fieldChanges.push({
+        field: "deliveryDate",
+        oldValue: existing.deliveryDate.toISOString(),
+        newValue: updated.deliveryDate.toISOString(),
+      });
+    }
+
+    if (fieldChanges.length) {
+      await (prisma as any).requestFieldHistory.createMany({
+        data: fieldChanges.map((fc) => ({
+          requestId: id,
+          managerId,
+          field: fc.field,
+          oldValue: fc.oldValue,
+          newValue: fc.newValue,
+        })),
+      });
+    }
 
     const changedFields: string[] = [];
     if (body.city !== undefined && existing.city !== updated.city) changedFields.push("город");
@@ -434,6 +499,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       changedFields.push("упаковка");
     }
     if (body.boxCount !== undefined && existing.boxCount !== updated.boxCount) changedFields.push("кол-во мест");
+    if (body.volume !== undefined && (existing as any).volume !== (updated as any).volume) changedFields.push("объём");
     if (body.weight !== undefined && existing.weight !== updated.weight) changedFields.push("вес");
     if (body.comment !== undefined && existing.comment !== updated.comment) changedFields.push("комментарий");
 

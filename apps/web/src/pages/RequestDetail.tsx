@@ -116,6 +116,47 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU");
   };
 
+  const formatDate = (value: unknown) => {
+    const d = new Date(String(value));
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ru-RU");
+  };
+
+  const historyEntryStatus = (h: any): string => {
+    const s = h?.newStatus ?? h?.status;
+    return statusLabels[s as RequestStatus] ?? (s ? String(s) : "—");
+  };
+
+  const fieldLabels: Record<string, string> = {
+    weight: "Вес",
+    boxCount: "Кол-во мест",
+    volume: "Объём",
+    packagingType: "Упаковка",
+    deliveryDate: "Дата доставки",
+  };
+
+  const formatFieldValue = (field: string, value: string | null): string => {
+    if (value == null) return "—";
+    if (field === "packagingType") return value === "pallets" ? "Палеты" : "Коробки";
+    if (field === "deliveryDate") return formatDate(value);
+    return value;
+  };
+
+  // Merge status history + field history into one sorted timeline
+  const mergedHistory = (() => {
+    if (!request) return [];
+    const items: { type: "status" | "field"; date: number; data: any }[] = [];
+
+    for (const h of request.history) {
+      items.push({ type: "status", date: new Date(h.changedAt).getTime(), data: h });
+    }
+    for (const fh of (request.fieldHistory ?? [])) {
+      items.push({ type: "field", date: new Date(fh.changedAt).getTime(), data: fh });
+    }
+
+    items.sort((a, b) => a.date - b.date);
+    return items;
+  })();
+
   const handleStatusChange = async (status: RequestStatus) => {
     if (!request || updating) return;
     setUpdating(true);
@@ -196,29 +237,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
           <div className="flex items-center justify-end gap-2 mb-6">
             {editing ? (
               <>
-                <button
-                  disabled={updating}
-                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
-                  onClick={() => {
-                    setEditing(false);
-                    setEditCity(request.city);
-                    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
-                    setEditPackagingType(request.packagingType);
-                    setEditBoxCount(String(request.boxCount));
-                    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
-                    setEditWeight(request.weight == null ? "" : String(request.weight));
-                    setEditComment(request.comment ?? "");
-                  }}
-                >
-                  Отмена
-                </button>
-                <button
-                  disabled={updating}
-                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={() => void handleSaveEdits()}
-                >
-                  {updating ? "Сохранение..." : "Сохранить"}
-                </button>
+
               </>
             ) : (
               <button
@@ -389,18 +408,33 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Создание заявки</p>
             </div>
 
-            {request.history.length === 0 ? (
+            {mergedHistory.length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-gray-500">Нет изменений</p>
             ) : (
-              request.history.map((h) => (
-                <div key={h.id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatDateTime(h.createdAt)}</p>
-                  <p className="text-xs text-gray-900 dark:text-gray-100">
-                    Статус: <span className="font-medium">{statusLabels[h.status] ?? String(h.status)}</span>
-                  </p>
-                  {h.comment && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{h.comment}</p>}
-                </div>
-              ))
+              mergedHistory.map((item, idx) =>
+                item.type === "status" ? (
+                  <div key={`s-${item.data.id}`} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatDateTime(item.data.changedAt)}</p>
+                    <p className="text-xs text-gray-900 dark:text-gray-100">
+                      Статус: <span className="font-medium">{historyEntryStatus(item.data)}</span>
+                    </p>
+                    {item.data.comment && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.data.comment}</p>}
+                  </div>
+                ) : (
+                  <div key={`f-${item.data.id}`} className="border-l-2 border-blue-300 dark:border-blue-600 pl-3">
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatDateTime(item.data.changedAt)}</p>
+                    <p className="text-xs text-gray-900 dark:text-gray-100">
+                      {fieldLabels[item.data.field] ?? item.data.field}:{" "}
+                      <span className="text-gray-500">{formatFieldValue(item.data.field, item.data.oldValue)}</span>
+                      {" → "}
+                      <span className="font-medium">{formatFieldValue(item.data.field, item.data.newValue)}</span>
+                    </p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                      Менеджер: {item.data.manager?.name ?? "—"}
+                    </p>
+                  </div>
+                )
+              )
             )}
           </div>
         </div>
@@ -598,6 +632,29 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   </p>
                 </div>
                 <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                                  <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                  onClick={() => {
+                    setEditing(false);
+                    setEditCity(request.city);
+                    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
+                    setEditPackagingType(request.packagingType);
+                    setEditBoxCount(String(request.boxCount));
+                    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
+                    setEditWeight(request.weight == null ? "" : String(request.weight));
+                    setEditComment(request.comment ?? "");
+                  }}
+                >
+                  Отмена
+                </button>
+                <button
+                  disabled={updating}
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => void handleSaveEdits()}
+                >
+                  {updating ? "Сохранение..." : "Сохранить"}
+                </button>
                   <button
                     className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
                     onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}

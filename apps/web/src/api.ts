@@ -114,13 +114,24 @@ export interface ShipmentRequest {
 
 export interface StatusHistoryEntry {
   id: number;
-  status: RequestStatus;
+  oldStatus: RequestStatus;
+  newStatus: RequestStatus;
   comment?: string | null;
-  createdAt: string;
+  changedAt: string;
+}
+
+export interface FieldHistoryEntry {
+  id: number;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  changedAt: string;
+  manager: { id: number; name: string };
 }
 
 export interface ShipmentRequestDetail extends ShipmentRequest {
   history: StatusHistoryEntry[];
+  fieldHistory: FieldHistoryEntry[];
 }
 
 export interface ClientDetail extends Client {
