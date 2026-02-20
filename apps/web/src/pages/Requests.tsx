@@ -304,42 +304,42 @@ export default function Requests() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("id")} className="hover:text-gray-900 dark:hover:text-white">
                     # {sortIndicator("id")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("city")} className="hover:text-gray-900 dark:hover:text-white">
                     Город {sortIndicator("city")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("deliveryDate")} className="hover:text-gray-900 dark:hover:text-white">
                     Дата доставки {sortIndicator("deliveryDate")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("volume")} className="hover:text-gray-900 dark:hover:text-white">
                     Объём {sortIndicator("volume")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("weight")} className="hover:text-gray-900 dark:hover:text-white">
                     Вес {sortIndicator("weight")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("boxCount")} className="hover:text-gray-900 dark:hover:text-white">
                     Мест {sortIndicator("boxCount")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("client")} className="hover:text-gray-900 dark:hover:text-white">
                     Клиент {sortIndicator("client")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("status")} className="hover:text-gray-900 dark:hover:text-white">
                     Статус {sortIndicator("status")}
                   </button>
@@ -378,12 +378,12 @@ export default function Requests() {
 
       {selectedRequestId !== null && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setSelectedRequestId(null);
           }}
         >
-          <div className="w-full  max-w-7xl mt-12 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="w-full max-w-6xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setSelectedRequestId(null)}
