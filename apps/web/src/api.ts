@@ -113,9 +113,9 @@ export interface ShipmentRequest {
 
 export interface StatusHistoryEntry {
   id: number;
-  oldStatus: RequestStatus;
-  newStatus: RequestStatus;
-  changedAt: string;
+  status: RequestStatus;
+  comment?: string | null;
+  createdAt: string;
 }
 
 export interface ShipmentRequestDetail extends ShipmentRequest {
