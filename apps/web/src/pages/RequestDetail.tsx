@@ -655,6 +655,12 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 </div>
                 <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
+                      <button
+                      className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
+                      onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
+                    >
+                      Закрыть
+                    </button>                  
                     <button
                       className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
                       onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
