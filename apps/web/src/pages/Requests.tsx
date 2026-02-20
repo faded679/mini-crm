@@ -270,22 +270,22 @@ export default function Requests() {
           </div>
 
           <div className="text-gray-600 dark:text-gray-300">
-            <span className="text-gray-400 dark:text-gray-500">Мест:</span>{" "}
+            <span className="text-gray-400 dark:font-medium">Мест:</span>{" "}
             <span className="font-medium text-gray-900 dark:text-gray-100">{summary.totalPlaces}</span>
           </div>
 
           <div className="text-gray-600 dark:text-gray-300">
-            <span className="text-gray-400 dark:text-gray-500">Палеты:</span>{" "}
+            <span className="text-gray-400 dark:font-medium">Палеты:</span>{" "}
             <span className="font-medium text-gray-900 dark:text-gray-100">{summary.placesByPackaging.pallets}</span>
           </div>
 
           <div className="text-gray-600 dark:text-gray-300">
-            <span className="text-gray-400 dark:text-gray-500">Коробки:</span>{" "}
+            <span className="text-gray-400 dark:font-medium">Коробки:</span>{" "}
             <span className="font-medium text-gray-900 dark:text-gray-100">{summary.placesByPackaging.boxes}</span>
           </div>
 
           <div className="text-gray-600 dark:text-gray-300">
-            <span className="text-gray-400 dark:text-gray-500">Вес:</span>{" "}
+            <span className="text-gray-400 dark:font-medium">Вес:</span>{" "}
             <span className="font-medium text-gray-900 dark:text-gray-100">
               {summary.knownWeightKg.toLocaleString("ru-RU")} кг
             </span>
