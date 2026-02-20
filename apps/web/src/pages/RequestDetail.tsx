@@ -438,12 +438,12 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                     <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatDateTime(item.data.changedAt)}</p>
                     <p className="text-xs text-gray-900 dark:text-gray-100">
                       {fieldLabels[item.data.field] ?? item.data.field}:{" "}
-                      <span className="text-gray-500">{formatFieldValue(item.data.field, item.data.oldValue)}</span>
+                      <span className="font-medium">{formatFieldValue(item.data.field, item.data.oldValue)}</span>
                       {" → "}
                       <span className="font-medium">{formatFieldValue(item.data.field, item.data.newValue)}</span>
                     </p>
                     <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                      Менеджер: {item.data.manager?.name ?? "—"}
+                      Аккаунт: {item.data.manager?.name ?? "—"}
                     </p>
                   </div>
                 )
