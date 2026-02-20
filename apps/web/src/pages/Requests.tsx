@@ -393,7 +393,7 @@ export default function Requests() {
               </button>
             </div>
             <div className="p-4">
-              <RequestDetail embedded />
+              <RequestDetail embedded requestId={selectedRequestId} />
             </div>
           </div>
         </div>

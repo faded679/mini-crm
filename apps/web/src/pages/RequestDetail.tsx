@@ -33,8 +33,9 @@ const statusColors: Record<RequestStatus, string> = {
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 };
 
-export default function RequestDetail({ embedded = false }: { embedded?: boolean }) {
+export default function RequestDetail({ embedded = false, requestId }: { embedded?: boolean; requestId?: number }) {
   const { id } = useParams<{ id: string }>();
+  const resolvedRequestId = requestId ?? (id ? Number(id) : null);
   const [request, setRequest] = useState<ShipmentRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -58,6 +59,27 @@ export default function RequestDetail({ embedded = false }: { embedded?: boolean
   const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
   const [invoiceCreating, setInvoiceCreating] = useState(false);
 
+  useEffect(() => {
+    if (!resolvedRequestId) {
+      setRequest(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    getRequestById(resolvedRequestId)
+      .then((r) => {
+        setRequest(r);
+        setEditCity(r.city);
+        setEditDeliveryDate(r.deliveryDate.slice(0, 16));
+        setEditPackagingType(r.packagingType);
+        setEditBoxCount(String(r.boxCount));
+        setEditWeight(r.weight == null ? "" : String(r.weight));
+        setEditComment(r.comment ?? "");
+      })
+      .finally(() => setLoading(false));
+  }, [resolvedRequestId]);
+
   const updateItem = (idx: number, field: keyof InvoiceItemPayload, value: string | number) => {
     setInvoiceItems((prev) => {
       const items = [...prev];
@@ -79,22 +101,6 @@ export default function RequestDetail({ embedded = false }: { embedded?: boolean
   const removeItem = (idx: number) => setInvoiceItems((prev) => prev.filter((_, i) => i !== idx));
   const invoiceTotal = invoiceItems.reduce((s, it) => s + it.amount, 0);
   const canCreateInvoice = invoiceCounterpartyId !== "" && invoiceItems.length > 0 && invoiceItems.every((it) => it.description && it.amount > 0);
-
-  useEffect(() => {
-    if (id) {
-      getRequestById(Number(id))
-        .then((r) => {
-          setRequest(r);
-          setEditCity(r.city);
-          setEditDeliveryDate(new Date(r.deliveryDate).toISOString().slice(0, 10));
-          setEditPackagingType(r.packagingType);
-          setEditBoxCount(String(r.boxCount));
-          setEditWeight(r.weight == null ? "" : String(r.weight));
-          setEditComment(r.comment ?? "");
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [id]);
 
   const handleStatusChange = async (status: RequestStatus) => {
     if (!request || updating) return;
