@@ -208,6 +208,20 @@ export function deleteRequestService(requestId: number, serviceId: number) {
   });
 }
 
+export interface SuggestedService {
+  found: boolean;
+  message?: string;
+  description?: string;
+  unit?: string;
+  quantity?: number;
+  price?: number;
+  amount?: number;
+}
+
+export function suggestRequestService(requestId: number) {
+  return request<SuggestedService>(`/admin/requests/${requestId}/services/suggest`);
+}
+
 export function getInvoicePdfUrl(params: {
   requestId: number;
   counterpartyId: number;

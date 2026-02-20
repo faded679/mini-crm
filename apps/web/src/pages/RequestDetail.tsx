@@ -13,6 +13,7 @@ import {
   createRequestService,
   updateRequestService,
   deleteRequestService,
+  suggestRequestService,
   type City,
   type Counterparty,
   type PackagingType,
@@ -421,16 +422,42 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Выполненные услуги</p>
-              <button
-                onClick={async () => {
-                  if (!request) return;
-                  const svc = await createRequestService(request.id, { description: "", unit: "шт", quantity: 1, price: 0 });
-                  setServices((prev) => [...prev, svc]);
-                }}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-              >
-                <Plus size={14} /> Добавить строку
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    if (!request) return;
+                    try {
+                      const suggestion = await suggestRequestService(request.id);
+                      if (!suggestion.found) {
+                        alert(suggestion.message || "Подходящий тариф не найден");
+                        return;
+                      }
+                      const svc = await createRequestService(request.id, {
+                        description: suggestion.description!,
+                        unit: suggestion.unit!,
+                        quantity: suggestion.quantity!,
+                        price: suggestion.price!,
+                      });
+                      setServices((prev) => [...prev, svc]);
+                    } catch {
+                      alert("Ошибка при подборе тарифа");
+                    }
+                  }}
+                  className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"
+                >
+                  <FileText size={14} /> Подставить
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!request) return;
+                    const svc = await createRequestService(request.id, { description: "", unit: "шт", quantity: 1, price: 0 });
+                    setServices((prev) => [...prev, svc]);
+                  }}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                >
+                  <Plus size={14} /> Добавить строку
+                </button>
+              </div>
             </div>
 
             {services.length === 0 ? (

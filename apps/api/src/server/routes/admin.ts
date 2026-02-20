@@ -109,6 +109,67 @@ router.delete("/requests/:id/services/:serviceId", async (req: Request, res: Res
   }
 });
 
+// GET /admin/requests/:id/services/suggest — suggest service line from price_rates
+router.get("/requests/:id/services/suggest", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requestId = Number(req.params.id);
+    const shipment = await (prisma as any).shipmentRequest.findUnique({
+      where: { id: requestId },
+      include: { cityRef: true },
+    });
+    if (!shipment) throw new ApiError(404, "Request not found");
+
+    const unitMap: Record<string, string> = { pallets: "pallet", boxes: "kg" };
+    const rateUnit = unitMap[shipment.packagingType] || "kg";
+    const weight = shipment.weight ?? 0;
+
+    const rates = await (prisma as any).priceRate.findMany({
+      where: { cityId: shipment.cityId, unit: rateUnit },
+      orderBy: { minWeightKg: "asc" },
+    });
+
+    let matched = rates.find((r: any) => {
+      const min = r.minWeightKg ?? 0;
+      const max = r.maxWeightKg ?? Infinity;
+      return weight >= min && weight <= max;
+    });
+
+    if (!matched && shipment.volume) {
+      const volRates = await (prisma as any).priceRate.findMany({
+        where: { cityId: shipment.cityId, unit: "m3" },
+        orderBy: { minVolumeM3: "asc" },
+      });
+      matched = volRates.find((r: any) => {
+        const min = r.minVolumeM3 ?? 0;
+        const max = r.maxVolumeM3 ?? Infinity;
+        return shipment.volume >= min && shipment.volume <= max;
+      });
+    }
+
+    if (!matched) {
+      res.json({ found: false, message: "Подходящий тариф не найден" });
+      return;
+    }
+
+    const cityName = shipment.cityRef?.fullName || shipment.city;
+    const unitLabels: Record<string, string> = { pallet: "Паллет", kg: "кг", m3: "м³" };
+    const unitLabel = unitLabels[matched.unit] || matched.unit;
+    let rangeLabel = "";
+    if (matched.minWeightKg != null || matched.maxWeightKg != null) {
+      rangeLabel = `${matched.minWeightKg ?? 0}–${matched.maxWeightKg ?? "∞"} кг`;
+    } else if (matched.minVolumeM3 != null || matched.maxVolumeM3 != null) {
+      rangeLabel = `${matched.minVolumeM3 ?? 0}–${matched.maxVolumeM3 ?? "∞"} м³`;
+    }
+
+    const description = `${cityName} — ${unitLabel} — ${rangeLabel}`.trim();
+    const qty = shipment.packagingType === "pallets" ? shipment.boxCount : 1;
+
+    res.json({ found: true, description, unit: unitLabel, quantity: qty, price: matched.price, amount: qty * matched.price });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // --------------- Invoices ---------------
 
 // Helper: next invoice number like "СЧ-000001"
