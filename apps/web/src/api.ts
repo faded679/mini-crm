@@ -43,6 +43,7 @@ export interface Client {
   username: string | null;
   createdAt: string;
   _count?: { requests: number };
+  counterparties?: Array<{ id: number; counterparty: Counterparty }>;
 }
 
 export interface CounterpartyContact {

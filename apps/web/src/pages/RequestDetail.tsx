@@ -253,7 +253,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
 
             <p className="text-sm text-gray-900 dark:text-gray-100">
-              {request.client.firstName} {request.client.lastName || ""}
+              {(request.client as any)?.counterparties?.[0]?.counterparty?.name ?? "—"}
               {request.client.username && <span className="text-gray-400 dark:text-gray-100 ml-1">@{request.client.username}</span>}
             </p>
 
@@ -341,16 +341,16 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Кол-во мест</p>
               {editing ? (
                 <input
-                  value={editVolume}
-                  onChange={(e) => setEditVolume(e.target.value)}
-                  inputMode="decimal"
+                  value={editBoxCount}
+                  onChange={(e) => setEditBoxCount(e.target.value)}
+                  inputMode="numeric"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
-                <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
               )}
             </div>
             <div>
@@ -369,16 +369,16 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Кол-во мест</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
               {editing ? (
                 <input
-                  value={editBoxCount}
-                  onChange={(e) => setEditBoxCount(e.target.value)}
-                  inputMode="numeric"
+                  value={editVolume}
+                  onChange={(e) => setEditVolume(e.target.value)}
+                  inputMode="decimal"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
-                <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
               )}
             </div>
             <div>
@@ -396,7 +396,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
               )}
             </div>
-            <div className>
+            <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Статус заявки</p>
 
               <span className={cn("px-3 py-1 rounded-full text-sm font-medium", statusColors[request.status])}>

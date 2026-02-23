@@ -45,7 +45,15 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
     const request = await (prisma as any).shipmentRequest.findUnique({
       where: { id },
       include: {
-        client: true,
+        client: {
+          include: {
+            counterparties: {
+              include: {
+                counterparty: true,
+              },
+            },
+          },
+        },
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
         services: { orderBy: { id: "asc" } },
