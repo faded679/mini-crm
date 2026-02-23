@@ -110,7 +110,6 @@ export default function NewRequest() {
                   month: "long",
                   weekday: "short",
                 })}
-
               </option>
             ))}
           </select>
