@@ -254,7 +254,11 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
             <p className="text-sm text-gray-900 dark:text-gray-100">
               {(request.client as any)?.counterparties?.[0]?.counterparty?.name ?? "—"}
-              <span className="text-gray-400 dark:text-gray-100 ml-1">({request.client.firstName ?? request.client.lastName ?? request.client.username ?? "—"})</span>
+              <span className="text-gray-400 dark:text-gray-100 ml-1">({
+                [request.client.firstName, request.client.lastName].filter(Boolean).join(" ")
+                || request.client.username
+                || "—"
+              })</span>
             </p>
 
             <div className="flex items-center gap-2">
