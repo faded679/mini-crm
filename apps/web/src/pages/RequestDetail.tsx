@@ -421,7 +421,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 </button>
               ))}
               <div className="ml-auto">
-                {false && (
+
                   <button
                     onClick={() => setConfirmInvoice(true)}
                     className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
@@ -429,7 +429,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                     <FileText size={16} />
                     Выписать счёт
                   </button>
-                )}
+
               </div>
             </div>
           </div>
@@ -803,6 +803,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 </div>
                 <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
+
+
+
                   </div>
                   <div className="flex items-center gap-2">
                     <a
