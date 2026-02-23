@@ -381,7 +381,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
               )}
             </div>
-            <div className="col-span-2">
+            <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Комментарий</p>
               {editing ? (
                 <textarea
