@@ -546,7 +546,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         packagingType: body.packagingType as any,
         volume: body.volume === undefined ? undefined : body.volume,
         boxCount: body.boxCount,
-        weight: body.weight === null ? (undefined as any) : (body.weight as any),
+        weight: body.weight === undefined ? undefined : (body.weight as any),
         comment: nextComment,
       } as any,
       include: { client: true },
