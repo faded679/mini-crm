@@ -81,7 +81,7 @@ export default function NewRequest() {
             required
             className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
           >
-            <option value="">Выберите направление</option>
+            <option value="">Выбор направления</option>
             {destinations.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
@@ -102,7 +102,7 @@ export default function NewRequest() {
             disabled={!city}
             className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text disabled:opacity-50"
           >
-            <option value="">{city ? "Выберите дату" : "Сначала выберите направление"}</option>
+            <option value="">{city ? "Выберите дату" : "...выберите направление"}</option>
             {availableDates.map((s) => (
               <option key={s.id} value={s.deliveryDate}>
                 {new Date(s.deliveryDate).toLocaleDateString("ru-RU", {
@@ -110,7 +110,7 @@ export default function NewRequest() {
                   month: "long",
                   weekday: "short",
                 })}
-                {" — приём: " + s.acceptDays}
+
               </option>
             ))}
           </select>
