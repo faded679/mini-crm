@@ -864,7 +864,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
