@@ -217,34 +217,17 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     }
   };
 
-  useEffect(() => {
-    if (!embedded) return;
-
-    const onEdit = () => setEditing(true);
-    const onCancel = () => {
-      if (!request) return;
-      setEditing(false);
-      setEditCity(request.city);
-      setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
-      setEditPackagingType(request.packagingType);
-      setEditBoxCount(String(request.boxCount));
-      setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
-      setEditWeight(request.weight == null ? "" : String(request.weight));
-      setEditComment(request.comment ?? "");
-    };
-    const onSave = () => {
-      void handleSaveEdits();
-    };
-
-    window.addEventListener("requestDetail:edit", onEdit as EventListener);
-    window.addEventListener("requestDetail:cancel", onCancel as EventListener);
-    window.addEventListener("requestDetail:save", onSave as EventListener);
-    return () => {
-      window.removeEventListener("requestDetail:edit", onEdit as EventListener);
-      window.removeEventListener("requestDetail:cancel", onCancel as EventListener);
-      window.removeEventListener("requestDetail:save", onSave as EventListener);
-    };
-  }, [embedded, request]);
+  const handleCancelEdits = () => {
+    if (!request) return;
+    setEditing(false);
+    setEditCity(request.city);
+    setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
+    setEditPackagingType(request.packagingType);
+    setEditBoxCount(String(request.boxCount));
+    setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
+    setEditWeight(request.weight == null ? "" : String(request.weight));
+    setEditComment(request.comment ?? "");
+  };
 
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
@@ -268,15 +251,46 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         <div className="lg:col-span-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
-              
-              <p className="text-sm text-gray-900 dark:text-gray-100">
-                {request.client.firstName} {request.client.lastName || ""}
-                {request.client.username && <span className="text-gray-400 dark:text-gray-100 ml-1">@{request.client.username}</span>}
-              </p>
-           
-            <span className={cn("px-3 py-1 rounded-full text-sm font-medium", statusColors[request.status])}>
-              {statusLabels[request.status]}
-            </span>
+
+            <p className="text-sm text-gray-900 dark:text-gray-100">
+              {request.client.firstName} {request.client.lastName || ""}
+              {request.client.username && <span className="text-gray-400 dark:text-gray-100 ml-1">@{request.client.username}</span>}
+            </p>
+
+            <div className="flex items-center gap-2">
+              {editing ? (
+                <>
+                  <button
+                    disabled={updating}
+                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                    onClick={handleCancelEdits}
+                    type="button"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    disabled={updating}
+                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => void handleSaveEdits()}
+                    type="button"
+                  >
+                    {updating ? "Сохранение..." : "Сохранить"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => setEditing(true)}
+                  type="button"
+                >
+                  Редактировать
+                </button>
+              )}
+
+              <span className={cn("px-3 py-1 rounded-full text-sm font-medium", statusColors[request.status])}>
+                {statusLabels[request.status]}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
