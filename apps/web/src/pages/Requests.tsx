@@ -390,7 +390,7 @@ export default function Requests() {
                 onClick={() => { setSelectedRequestId(null); setModalEditing(false); }}
                 className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
               >
-                Закрыть
+                X
               </button>
             </div>
             <div className="p-4">
