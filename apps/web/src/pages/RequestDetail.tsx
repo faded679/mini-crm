@@ -254,7 +254,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
             <p className="text-sm text-gray-900 dark:text-gray-100">
               {(request.client as any)?.counterparties?.[0]?.counterparty?.name ?? "—"}
-              {request.client.username && <span className="text-gray-400 dark:text-gray-100 ml-1">@{request.client.username}</span>}
+              {request.client.username && <span className="text-gray-400 dark:text-gray-100 ml-1">({request.client.username})</span>}
             </p>
 
             <div className="flex items-center gap-2">
@@ -399,9 +399,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Статус заявки</p>
 
-              <span className={cn("px-3 py-1 rounded-full text-sm font-medium", statusColors[request.status])}>
-                {statusLabels[request.status]}
-              </span>
+              <p className="text-sm text-gray-900 dark:text-gray-100">{statusLabels[request.status]}</p>
 
             </div>              
           </div>
