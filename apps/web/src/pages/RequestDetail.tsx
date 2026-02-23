@@ -396,7 +396,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
               )}
             </div>
-            <div className="col-span-2">
+            <div className>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Статус заявки</p>
 
               <span className={cn("px-3 py-1 rounded-full text-sm font-medium", statusColors[request.status])}>
