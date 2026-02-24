@@ -294,15 +294,6 @@ export default function Counterparties() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Наименование</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setField("name", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-
-              <div className="md:col-span-2">
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Краткое наименование</label>
                 <input
                   value={form.shortName ?? ""}
@@ -348,18 +339,18 @@ export default function Counterparties() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">ФИО руководителя</label>
-                <input
-                  value={form.director ?? ""}
-                  onChange={(e) => setField("director", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Должность руководителя</label>
                 <input
                   value={form.directorPost ?? ""}
                   onChange={(e) => setField("directorPost", e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">ФИО руководителя</label>
+                <input
+                  value={form.director ?? ""}
+                  onChange={(e) => setField("director", e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>

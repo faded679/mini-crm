@@ -31,6 +31,18 @@ type CounterpartyPayload = {
 
 // --------------- DaData ---------------
 
+function dadataStatusRu(status?: string | null) {
+  const s = status ?? "";
+  const map: Record<string, string> = {
+    ACTIVE: "Действующая",
+    LIQUIDATING: "Ликвидируется",
+    LIQUIDATED: "Ликвидирована",
+    BANKRUPT: "Банкротство",
+    REORGANIZING: "Реорганизация",
+  };
+  return map[s] ?? s;
+}
+
 // POST /admin/tools/dadata/party
 router.post("/tools/dadata/party", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -81,7 +93,7 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
       name: d.name?.full_with_opf ?? s.value,
       shortName: d.name?.short_with_opf ?? null,
       orgType: d.type ?? null,
-      orgStatus: d.state?.status ?? null,
+      orgStatus: dadataStatusRu(d.state?.status) || null,
       inn: d.inn ?? null,
       kpp: d.kpp ?? null,
       ogrn: d.ogrn ?? null,
