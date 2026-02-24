@@ -1,33 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createRequest, getSchedule, type ScheduleEntry } from "../api";
+import { createRequest, getBoxTypes, getSchedule, type BoxType, type ScheduleEntry } from "../api";
 import { getTelegramUser } from "../telegram";
 
 export default function NewRequest() {
   const navigate = useNavigate();
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [city, setCity] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
-  const [volume, setVolume] = useState("");
   const [weight, setWeight] = useState("");
   const [boxCount, setBoxCount] = useState("");
   const [packagingType, setPackagingType] = useState<"pallets" | "boxes" | "">("");
+  const [boxTypeId, setBoxTypeId] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const volumeNumber = volume ? Number(volume) : NaN;
-  const boxSizeLabel =
-    packagingType !== "boxes" || !Number.isFinite(volumeNumber) || volumeNumber <= 0
-      ? ""
-      : volumeNumber <= 0.032
-        ? "Маленькая"
-        : volumeNumber <= 0.064
-          ? "Средняя"
-          : "Большая";
-
   useEffect(() => {
     getSchedule().then(setSchedule).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    getBoxTypes().then(setBoxTypes).catch(() => {});
   }, []);
 
   const destinations = [...new Set(schedule.map((s) => s.destination))].sort();
@@ -54,8 +49,8 @@ export default function NewRequest() {
         lastName: user.lastName,
         city,
         deliveryDate: new Date(deliveryDate).toISOString(),
-        ...(volume ? { volume: Number(volume) } : {}),
         packagingType: packagingType as "pallets" | "boxes",
+        ...(packagingType === "boxes" && boxTypeId ? { boxTypeId } : {}),
         ...(weight ? { weight: Number(weight) } : {}),
         boxCount: Number(boxCount),
         comment: comment || undefined,
@@ -87,6 +82,7 @@ export default function NewRequest() {
               setCity(e.target.value);
               setDeliveryDate("");
               setPackagingType("");
+              setBoxTypeId(null);
               setBoxCount("");
               setWeight("");
             }}
@@ -107,6 +103,7 @@ export default function NewRequest() {
             onChange={(e) => {
               setDeliveryDate(e.target.value);
               setPackagingType("");
+              setBoxTypeId(null);
               setBoxCount("");
               setWeight("");
             }}
@@ -135,8 +132,8 @@ export default function NewRequest() {
               disabled={!deliveryDate}
               onClick={() => {
                 setPackagingType("pallets");
+                setBoxTypeId(null);
                 setBoxCount("");
-                setVolume("");
               }}
               className={`w-full p-3 rounded-lg font-medium transition disabled:opacity-50 ${
                 packagingType === "pallets" ? "bg-tg-button text-tg-button-text" : "bg-tg-secondary-bg text-tg-text"
@@ -149,6 +146,7 @@ export default function NewRequest() {
               disabled={!deliveryDate}
               onClick={() => {
                 setPackagingType("boxes");
+                setBoxTypeId(null);
                 setBoxCount("");
               }}
               className={`w-full p-3 rounded-lg font-medium transition disabled:opacity-50 ${
@@ -162,19 +160,32 @@ export default function NewRequest() {
 
         {packagingType === "boxes" && (
           <div>
-            <label className="block text-sm font-medium mb-1 text-tg-hint">Объём (м³)</label>
-            <input
-              type="number"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
-              required
-              min="0.001"
-              step="0.001"
-              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
-              placeholder="0.032"
-            />
-            {boxSizeLabel && (
-              <div className="mt-1 text-xs text-tg-hint">Тип коробки: {boxSizeLabel}</div>
+            <label className="block text-sm font-medium mb-1 text-tg-hint">Размер коробки</label>
+            <div className="grid grid-cols-3 gap-2">
+              {boxTypes
+                .filter((t) => t.name === "Маленькая" || t.name === "Средняя" || t.name === "Большая")
+                .sort((a, b) => a.maxVolumeM3 - b.maxVolumeM3)
+                .map((t) => {
+                  const active = boxTypeId === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setBoxTypeId(t.id)}
+                      className={
+                        "p-3 rounded-lg border text-sm font-medium transition " +
+                        (active
+                          ? "bg-tg-button text-tg-button-text border-transparent"
+                          : "bg-tg-secondary-bg text-tg-text border-transparent opacity-90")
+                      }
+                    >
+                      {t.name}
+                    </button>
+                  );
+                })}
+            </div>
+            {!boxTypes.length && (
+              <div className="text-xs text-tg-hint mt-2">Загрузка типов коробок…</div>
             )}
           </div>
         )}
@@ -222,7 +233,7 @@ export default function NewRequest() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (packagingType === "boxes" && !boxTypeId)}
           className="w-full p-3 rounded-lg bg-tg-button text-tg-button-text font-medium disabled:opacity-50"
         >
           {loading ? "Создание..." : "Создать заявку"}

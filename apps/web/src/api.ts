@@ -454,32 +454,39 @@ export const getDirections = getCities;
 
 // --------------- Rates ---------------
 
-export type RateUnit = "pallet" | "kg" | "m3";
+export type RateUnit = "pallet" | "boxes";
+
+export interface BoxType {
+  id: number;
+  name: string;
+  maxVolumeM3: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface PriceRate {
   id: number;
   cityId: number;
   unit: RateUnit;
-  minWeightKg: number | null;
-  maxWeightKg: number | null;
-  minVolumeM3: number | null;
-  maxVolumeM3: number | null;
+  boxTypeId: number | null;
   price: number;
   comment: string | null;
   createdAt: string;
   updatedAt: string;
   city: City;
+  boxType?: BoxType | null;
 }
 
 export interface PriceRatePayload {
   cityId: number;
   unit: RateUnit;
-  minWeightKg?: number | null;
-  maxWeightKg?: number | null;
-  minVolumeM3?: number | null;
-  maxVolumeM3?: number | null;
+  boxTypeId?: number | null;
   price: number;
   comment?: string | null;
+}
+
+export function getBoxTypes() {
+  return request<BoxType[]>("/admin/box-types");
 }
 
 export function getRates(cityId?: number) {

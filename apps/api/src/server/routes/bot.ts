@@ -4,6 +4,18 @@ import { ApiError } from "../errors.js";
 
 const router = Router();
 
+// GET /bot/box-types — list available box types
+router.get("/box-types", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).boxType.findMany({
+      orderBy: { maxVolumeM3: "asc" },
+    });
+    res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /bot/requests — create a shipment request
 router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -14,10 +26,10 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       lastName,
       city,
       deliveryDate,
-      volume,
       size,
       weight,
       boxCount,
+      boxTypeId,
       packagingType,
       comment,
     } = req.body;
@@ -45,19 +57,15 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       throw new ApiError(400, "Invalid weight");
     }
 
-    const parsedVolume =
-      volume !== undefined && volume !== null && volume !== "" ? Number(volume) : undefined;
-    if (parsedVolume !== undefined && (!Number.isFinite(parsedVolume) || parsedVolume <= 0)) {
-      throw new ApiError(400, "Invalid volume");
-    }
+    const parsedBoxTypeId =
+      boxTypeId !== undefined && boxTypeId !== null && boxTypeId !== "" ? Number(boxTypeId) : undefined;
 
-    let boxTypeId: number | undefined;
-    if (packagingType === "boxes" && parsedVolume !== undefined) {
-      const boxType = await (prisma as any).boxType.findFirst({
-        where: { maxVolumeM3: { gte: parsedVolume } },
-        orderBy: { maxVolumeM3: "asc" },
-      });
-      boxTypeId = boxType?.id;
+    if (packagingType === "boxes") {
+      if (parsedBoxTypeId === undefined || !Number.isFinite(parsedBoxTypeId)) {
+        throw new ApiError(400, "boxTypeId is required for boxes");
+      }
+      const exists = await (prisma as any).boxType.findUnique({ where: { id: parsedBoxTypeId } });
+      if (!exists) throw new ApiError(400, "Invalid boxTypeId");
     }
 
     const request = await prisma.shipmentRequest.create({
@@ -66,10 +74,9 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         cityId: cityRecord.id,
         city,
         deliveryDate: new Date(deliveryDate),
-        volume: parsedVolume !== undefined ? parsedVolume : null,
         size: size ?? "-",
         boxCount: Number(boxCount),
-        ...(boxTypeId !== undefined ? { boxTypeId } : {}),
+        ...(parsedBoxTypeId !== undefined ? { boxTypeId: parsedBoxTypeId } : {}),
         packagingType,
         comment: comment || null,
         status: "new",

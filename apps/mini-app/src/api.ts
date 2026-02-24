@@ -8,17 +8,23 @@ interface CreateRequestPayload {
   city: string;
   deliveryDate: string;
   packagingType: "pallets" | "boxes";
-  volume?: number;
+  boxTypeId?: number;
   weight?: number;
   boxCount: number;
   comment?: string;
+}
+
+export interface BoxType {
+  id: number;
+  name: string;
+  maxVolumeM3: number;
 }
 
 export interface ShipmentRequest {
   id: number;
   city: string;
   deliveryDate: string;
-  volume?: number | null;
+  boxTypeId?: number | null;
   size?: string;
   weight?: number | null;
   boxCount: number;
@@ -26,6 +32,17 @@ export interface ShipmentRequest {
   comment: string | null;
   status: string;
   createdAt: string;
+}
+
+export async function getBoxTypes(): Promise<BoxType[]> {
+  const res = await fetch(`${API_URL}/bot/box-types`);
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+
+  return res.json();
 }
 
 export async function createRequest(data: CreateRequestPayload): Promise<ShipmentRequest> {

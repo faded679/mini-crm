@@ -22,8 +22,8 @@ async function seedBoxTypes() {
   });
   await (prisma as any).boxType.upsert({
     where: { name: "Большая" },
-    update: { maxVolumeM3: 999999 },
-    create: { name: "Большая", maxVolumeM3: 999999 },
+    update: { maxVolumeM3: 0.096 },
+    create: { name: "Большая", maxVolumeM3: 0.096 },
   });
 }
 

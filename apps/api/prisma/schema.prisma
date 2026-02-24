@@ -21,8 +21,7 @@ enum PackagingType {
 
 enum RateUnit {
   pallet
-  kg
-  m3
+  boxes
 }
 
 model Client {
@@ -148,18 +147,17 @@ model PriceRate {
   id          Int       @id @default(autoincrement())
   cityId      Int       @map("city_id")
   unit        RateUnit
-  minWeightKg Int?      @map("min_weight_kg")
-  maxWeightKg Int?      @map("max_weight_kg")
-  minVolumeM3 Float?    @map("min_volume_m3")
-  maxVolumeM3 Float?    @map("max_volume_m3")
+  boxTypeId   Int?      @map("box_type_id")
   price       Int
   comment     String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   city        City      @relation(fields: [cityId], references: [id])
+  boxType     BoxType?  @relation(fields: [boxTypeId], references: [id])
 
   @@index([cityId, unit])
+  @@index([cityId, unit, boxTypeId])
   @@map("price_rates")
 }
 

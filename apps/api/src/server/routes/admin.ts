@@ -216,30 +216,17 @@ router.get("/requests/:id/services/suggest", async (req: Request, res: Response,
     });
     if (!shipment) throw new ApiError(404, "Request not found");
 
-    const unitMap: Record<string, string> = { pallets: "pallet", boxes: "kg" };
-    const rateUnit = unitMap[shipment.packagingType] || "kg";
-    const weight = shipment.weight ?? 0;
-
-    const rates = await (prisma as any).priceRate.findMany({
-      where: { cityId: shipment.cityId, unit: rateUnit },
-      orderBy: { minWeightKg: "asc" },
-    });
-
-    let matched = rates.find((r: any) => {
-      const min = r.minWeightKg ?? 0;
-      const max = r.maxWeightKg ?? Infinity;
-      return weight >= min && weight <= max;
-    });
-
-    if (!matched && shipment.volume) {
-      const volRates = await (prisma as any).priceRate.findMany({
-        where: { cityId: shipment.cityId, unit: "m3" },
-        orderBy: { minVolumeM3: "asc" },
-      });
-      matched = volRates.find((r: any) => {
-        const min = r.minVolumeM3 ?? 0;
-        const max = r.maxVolumeM3 ?? Infinity;
-        return shipment.volume >= min && shipment.volume <= max;
+    let matched: any = null;
+    if ((shipment as any).packagingType === "boxes") {
+      const btId = (shipment as any).boxTypeId;
+      if (btId) {
+        matched = await (prisma as any).priceRate.findFirst({
+          where: { cityId: shipment.cityId, unit: "boxes", boxTypeId: btId },
+        });
+      }
+    } else {
+      matched = await (prisma as any).priceRate.findFirst({
+        where: { cityId: shipment.cityId, unit: "pallet" },
       });
     }
 
@@ -249,19 +236,21 @@ router.get("/requests/:id/services/suggest", async (req: Request, res: Response,
     }
 
     const cityName = shipment.cityRef?.fullName || shipment.city;
-    const unitLabels: Record<string, string> = { pallet: "Паллет", kg: "кг", m3: "м³" };
+    const unitLabels: Record<string, string> = { pallet: "Паллет", boxes: "boxes" };
     const unitLabel = unitLabels[matched.unit] || matched.unit;
     let rangeLabel = "";
-    if (matched.minWeightKg != null || matched.maxWeightKg != null) {
-      rangeLabel = `${matched.minWeightKg ?? 0}–${matched.maxWeightKg ?? "∞"} кг`;
-    } else if (matched.minVolumeM3 != null || matched.maxVolumeM3 != null) {
-      rangeLabel = `${matched.minVolumeM3 ?? 0}–${matched.maxVolumeM3 ?? "∞"} м³`;
-    }
 
     const description = `${cityName} - ${rangeLabel}`.trim();
-    const qty = shipment.packagingType === "pallets" ? shipment.boxCount : 1;
+    const qty = (shipment as any).packagingType === "pallets" ? (shipment as any).boxCount : 1;
 
-    res.json({ found: true, description, unit: unitLabel, quantity: qty, price: matched.price, amount: qty * matched.price });
+    res.json({
+      found: true,
+      description,
+      unit: unitLabel,
+      quantity: qty,
+      price: matched.price,
+      amount: qty * matched.price,
+    });
   } catch (err) {
     next(err);
   }
@@ -426,8 +415,8 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
         amount: it.amount,
       }))) as any,
     });
-
     const fileName = `Счет_${invoice.number}.pdf`;
+
     await sendClientDocument(
       clientTelegramId,
       pdf,
@@ -978,58 +967,19 @@ router.get("/directions", async (_req: Request, res: Response, next: NextFunctio
 
 // --------------- Rates ---------------
 
-const VALID_UNITS = ["pallet", "kg", "m3"];
+const VALID_UNITS = ["pallet", "boxes"];
 
-function toIntOrNull(v: any) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  if (!Number.isFinite(n)) return NaN;
-  return Math.trunc(n);
-}
-
-function toFloatOrNull(v: any) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  if (!Number.isFinite(n)) return NaN;
-  return n;
-}
-
-function validateTier(unit: string, payload: any) {
-  const minWeightKg = toIntOrNull(payload.minWeightKg);
-  const maxWeightKg = toIntOrNull(payload.maxWeightKg);
-  const minVolumeM3 = toFloatOrNull(payload.minVolumeM3);
-  const maxVolumeM3 = toFloatOrNull(payload.maxVolumeM3);
-
-  if (Number.isNaN(minWeightKg) || Number.isNaN(maxWeightKg) || Number.isNaN(minVolumeM3) || Number.isNaN(maxVolumeM3)) {
-    throw new ApiError(400, "Invalid tier bounds");
+// GET /admin/box-types — list available box types
+router.get("/box-types", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).boxType.findMany({
+      orderBy: { maxVolumeM3: "asc" },
+    });
+    res.json(types);
+  } catch (err) {
+    next(err);
   }
-
-  if (unit === "pallet") {
-    if (minVolumeM3 !== null || maxVolumeM3 !== null) throw new ApiError(400, "Volume bounds not allowed for pallet");
-    if (minWeightKg !== null && minWeightKg < 0) throw new ApiError(400, "minWeightKg must be >= 0");
-    if (maxWeightKg !== null && maxWeightKg < 0) throw new ApiError(400, "maxWeightKg must be >= 0");
-    if (minWeightKg !== null && maxWeightKg !== null && minWeightKg > maxWeightKg) {
-      throw new ApiError(400, "minWeightKg must be <= maxWeightKg");
-    }
-    return { minWeightKg, maxWeightKg, minVolumeM3: null, maxVolumeM3: null };
-  }
-
-  if (unit === "m3") {
-    if (minWeightKg !== null || maxWeightKg !== null) throw new ApiError(400, "Weight bounds not allowed for m3");
-    if (minVolumeM3 !== null && minVolumeM3 < 0) throw new ApiError(400, "minVolumeM3 must be >= 0");
-    if (maxVolumeM3 !== null && maxVolumeM3 < 0) throw new ApiError(400, "maxVolumeM3 must be >= 0");
-    if (minVolumeM3 !== null && maxVolumeM3 !== null && minVolumeM3 > maxVolumeM3) {
-      throw new ApiError(400, "minVolumeM3 must be <= maxVolumeM3");
-    }
-    return { minWeightKg: null, maxWeightKg: null, minVolumeM3, maxVolumeM3 };
-  }
-
-  // kg
-  if (minWeightKg !== null || maxWeightKg !== null || minVolumeM3 !== null || maxVolumeM3 !== null) {
-    throw new ApiError(400, "No bounds allowed for kg unit");
-  }
-  return { minWeightKg: null, maxWeightKg: null, minVolumeM3: null, maxVolumeM3: null };
-}
+});
 
 // GET /admin/rates
 router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
@@ -1042,7 +992,7 @@ router.get("/rates", async (req: Request, res: Response, next: NextFunction) => 
     }
     const rates = await (prisma as any).priceRate.findMany({
       where,
-      include: { city: true },
+      include: { city: true, boxType: true },
       orderBy: [{ cityId: "asc" }, { unit: "asc" }],
     });
     res.json(rates);
@@ -1054,34 +1004,39 @@ router.get("/rates", async (req: Request, res: Response, next: NextFunction) => 
 // POST /admin/rates
 router.post("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { cityId, directionId, unit, price, comment } = req.body as {
+    const { cityId, directionId, unit, price, comment, boxTypeId } = req.body as {
       cityId?: number;
       directionId?: number;
       unit?: string;
       price?: number;
       comment?: string | null;
-      minWeightKg?: number | null;
-      maxWeightKg?: number | null;
-      minVolumeM3?: number | null;
-      maxVolumeM3?: number | null;
+      boxTypeId?: number | null;
     };
 
     const resolvedCityId = cityId ?? directionId;
     if (!Number.isFinite(resolvedCityId)) throw new ApiError(400, "Invalid cityId");
-    if (!unit || !VALID_UNITS.includes(unit)) throw new ApiError(400, "Invalid unit (pallet|kg|m3)");
+    if (!unit || !VALID_UNITS.includes(unit)) throw new ApiError(400, "Invalid unit (pallet|boxes)");
     if (!Number.isFinite(price) || price! <= 0) throw new ApiError(400, "Invalid price");
 
-    const tier = validateTier(unit, req.body);
+    const parsedBoxTypeId =
+      boxTypeId !== undefined && boxTypeId !== null ? Number(boxTypeId) : null;
+    if (unit === "boxes") {
+      if (!Number.isFinite(parsedBoxTypeId) || parsedBoxTypeId! <= 0) {
+        throw new ApiError(400, "boxTypeId is required for boxes");
+      }
+      const exists = await (prisma as any).boxType.findUnique({ where: { id: parsedBoxTypeId } });
+      if (!exists) throw new ApiError(400, "Invalid boxTypeId");
+    }
 
     const created = await (prisma as any).priceRate.create({
       data: {
         cityId: resolvedCityId,
         unit,
-        ...tier,
+        boxTypeId: unit === "boxes" ? parsedBoxTypeId : null,
         price,
         comment: comment?.trim() || null,
       },
-      include: { city: true },
+      include: { city: true, boxType: true },
     });
     res.status(201).json(created);
   } catch (err) {
@@ -1095,20 +1050,17 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const { cityId, directionId, unit, price, comment } = req.body as {
+    const { cityId, directionId, unit, price, comment, boxTypeId } = req.body as {
       cityId?: number;
       directionId?: number;
       unit?: string;
       price?: number;
       comment?: string | null;
-      minWeightKg?: number | null;
-      maxWeightKg?: number | null;
-      minVolumeM3?: number | null;
-      maxVolumeM3?: number | null;
+      boxTypeId?: number | null;
     };
 
     if (unit !== undefined && !VALID_UNITS.includes(unit)) {
-      throw new ApiError(400, "Invalid unit (pallet|kg|m3)");
+      throw new ApiError(400, "Invalid unit (pallet|boxes)");
     }
     if (price !== undefined && (!Number.isFinite(price) || price <= 0)) {
       throw new ApiError(400, "Invalid price");
@@ -1120,34 +1072,31 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     if (unit !== undefined) data.unit = unit;
     if (price !== undefined) data.price = price;
     if (comment !== undefined) data.comment = comment?.trim() || null;
+    if (boxTypeId !== undefined) {
+      data.boxTypeId = boxTypeId === null ? null : Number(boxTypeId);
+    }
 
     const existing = await (prisma as any).priceRate.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Not found");
-    const finalUnit = unit ?? existing.unit;
-    const hasTierFields =
-      req.body.minWeightKg !== undefined ||
-      req.body.maxWeightKg !== undefined ||
-      req.body.minVolumeM3 !== undefined ||
-      req.body.maxVolumeM3 !== undefined ||
-      unit !== undefined;
 
-    if (hasTierFields) {
-      const tier = validateTier(finalUnit, {
-        minWeightKg: req.body.minWeightKg ?? existing.minWeightKg,
-        maxWeightKg: req.body.maxWeightKg ?? existing.maxWeightKg,
-        minVolumeM3: req.body.minVolumeM3 ?? existing.minVolumeM3,
-        maxVolumeM3: req.body.maxVolumeM3 ?? existing.maxVolumeM3,
-      });
-      data.minWeightKg = tier.minWeightKg;
-      data.maxWeightKg = tier.maxWeightKg;
-      data.minVolumeM3 = tier.minVolumeM3;
-      data.maxVolumeM3 = tier.maxVolumeM3;
+    const finalUnit = unit ?? existing.unit;
+    const finalBoxTypeId =
+      boxTypeId !== undefined ? (boxTypeId === null ? null : Number(boxTypeId)) : existing.boxTypeId;
+    if (finalUnit === "boxes") {
+      if (!Number.isFinite(finalBoxTypeId) || finalBoxTypeId <= 0) {
+        throw new ApiError(400, "boxTypeId is required for boxes");
+      }
+      const exists = await (prisma as any).boxType.findUnique({ where: { id: finalBoxTypeId } });
+      if (!exists) throw new ApiError(400, "Invalid boxTypeId");
+      data.boxTypeId = finalBoxTypeId;
+    } else {
+      data.boxTypeId = null;
     }
 
     const updated = await (prisma as any).priceRate.update({
       where: { id },
       data,
-      include: { city: true },
+      include: { city: true, boxType: true },
     });
     res.json(updated);
   } catch (err) {
