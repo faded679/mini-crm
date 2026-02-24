@@ -272,7 +272,7 @@ export default function Counterparties() {
               </button>
             </div>
 
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto text-sm">
               <div className="md:col-span-2">
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">ИНН</label>
                 <div className="flex gap-2">
@@ -280,13 +280,13 @@ export default function Counterparties() {
                     value={form.inn ?? ""}
                     onChange={(e) => setField("inn", e.target.value)}
                     placeholder="Введите ИНН и нажмите Заполнить"
-                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-500"
+                    className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-500"
                   />
                   <button
                     type="button"
                     onClick={fillFromDadata}
                     disabled={dadataLoading || !(form.inn ?? "").trim()}
-                    className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 whitespace-nowrap"
+                    className="px-4 py-1.5 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 whitespace-nowrap"
                   >
                     {dadataLoading ? "Поиск...." : "Заполнить"}
                   </button>
@@ -298,7 +298,7 @@ export default function Counterparties() {
                 <input
                   value={form.shortName ?? ""}
                   onChange={(e) => setField("shortName", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -307,8 +307,7 @@ export default function Counterparties() {
                 <input
                   value={form.orgType ?? ""}
                   onChange={(e) => setField("orgType", e.target.value)}
-
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
@@ -316,7 +315,7 @@ export default function Counterparties() {
                 <input
                   value={form.orgStatus ?? ""}
                   onChange={(e) => setField("orgStatus", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -325,7 +324,7 @@ export default function Counterparties() {
                 <input
                   value={form.kpp ?? ""}
                   onChange={(e) => setField("kpp", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
@@ -333,7 +332,7 @@ export default function Counterparties() {
                 <input
                   value={form.ogrn ?? ""}
                   onChange={(e) => setField("ogrn", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -342,7 +341,7 @@ export default function Counterparties() {
                 <input
                   value={form.directorPost ?? ""}
                   onChange={(e) => setField("directorPost", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
@@ -350,7 +349,7 @@ export default function Counterparties() {
                 <input
                   value={form.director ?? ""}
                   onChange={(e) => setField("director", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -359,40 +358,7 @@ export default function Counterparties() {
                 <input
                   value={form.address ?? ""}
                   onChange={(e) => setField("address", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Р/счёт</label>
-                <input
-                  value={form.account ?? ""}
-                  onChange={(e) => setField("account", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">БИК</label>
-                <input
-                  value={form.bik ?? ""}
-                  onChange={(e) => setField("bik", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Корсчёт</label>
-                <input
-                  value={form.correspondentAccount ?? ""}
-                  onChange={(e) => setField("correspondentAccount", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Банк</label>
-                <input
-                  value={form.bank ?? ""}
-                  onChange={(e) => setField("bank", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -401,7 +367,40 @@ export default function Counterparties() {
                 <input
                   value={form.contract ?? ""}
                   onChange={(e) => setField("contract", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Р/счёт</label>
+                <input
+                  value={form.account ?? ""}
+                  onChange={(e) => setField("account", e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">БИК</label>
+                <input
+                  value={form.bik ?? ""}
+                  onChange={(e) => setField("bik", e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Корсчёт</label>
+                <input
+                  value={form.correspondentAccount ?? ""}
+                  onChange={(e) => setField("correspondentAccount", e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Банк</label>
+                <input
+                  value={form.bank ?? ""}
+                  onChange={(e) => setField("bank", e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
