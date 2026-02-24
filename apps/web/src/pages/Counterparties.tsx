@@ -280,7 +280,7 @@ export default function Counterparties() {
                     value={form.inn ?? ""}
                     onChange={(e) => setField("inn", e.target.value)}
                     placeholder="Введите ИНН и нажмите Заполнить"
-                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-500"
                   />
                   <button
                     type="button"
@@ -307,7 +307,7 @@ export default function Counterparties() {
                 <input
                   value={form.orgType ?? ""}
                   onChange={(e) => setField("orgType", e.target.value)}
-                  placeholder="LEGAL / INDIVIDUAL"
+
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
@@ -316,7 +316,6 @@ export default function Counterparties() {
                 <input
                   value={form.orgStatus ?? ""}
                   onChange={(e) => setField("orgStatus", e.target.value)}
-                  placeholder="ACTIVE / LIQUIDATED"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
