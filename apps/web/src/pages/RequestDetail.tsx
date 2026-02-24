@@ -253,7 +253,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
 
             <p className="text-sm text-gray-900 dark:text-gray-100">
-              {(request.client as any)?.counterparties?.[0]?.counterparty?.name ?? "—"}
+              {(request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
+                (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
+                "—"}
               <span className="text-gray-400 dark:text-gray-100 ml-1">({
                 [request.client.firstName, request.client.lastName].filter(Boolean).join(" ")
                 || request.client.username

@@ -877,6 +877,13 @@ router.delete("/counterparties/:id", async (req: Request, res: Response, next: N
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
+    const invoicesCount = await (prisma as any).invoice.count({ where: { counterpartyId: id } });
+    if (invoicesCount > 0) {
+      throw new ApiError(400, "Нельзя удалить организацию: есть счета");
+    }
+
+    await prisma.counterpartyContact.deleteMany({ where: { counterpartyId: id } });
+
     await prisma.counterparty.delete({
       where: { id },
     });
