@@ -236,12 +236,13 @@ router.get("/requests/:id/services/suggest", async (req: Request, res: Response,
     }
 
     const cityName = shipment.cityRef?.fullName || shipment.city;
-    const unitLabels: Record<string, string> = { pallet: "Паллет", boxes: "boxes" };
+    const unitLabels: Record<string, string> = { pallet: "паллет", boxes: "коробка" };
     const unitLabel = unitLabels[matched.unit] || matched.unit;
-    let rangeLabel = "";
-
-    const description = `${cityName} - ${rangeLabel}`.trim();
-    const qty = (shipment as any).packagingType === "pallets" ? (shipment as any).boxCount : 1;
+    const boxTypeName = (shipment as any).boxTypeId
+      ? (await (prisma as any).boxType.findUnique({ where: { id: (shipment as any).boxTypeId } }))?.name
+      : null;
+    const description = `${cityName}${matched.unit === "boxes" && boxTypeName ? ` - ${boxTypeName}` : ""}`.trim();
+    const qty = (shipment as any).boxCount || 1;
 
     res.json({
       found: true,
