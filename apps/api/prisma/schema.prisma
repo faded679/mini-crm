@@ -125,6 +125,7 @@ model BoxType {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   requests    ShipmentRequest[]
+  rates       PriceRate[]
 
   @@map("box_types")
 }
