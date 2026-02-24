@@ -43,6 +43,9 @@ model Client {
 model Counterparty {
   id                    Int                   @id @default(autoincrement())
   name                  String
+  shortName             String?               @map("short_name")
+  orgType               String?               @map("org_type")
+  orgStatus             String?               @map("org_status")
   inn                   String?
   kpp                   String?
   ogrn                  String?
@@ -52,6 +55,7 @@ model Counterparty {
   correspondentAccount  String?               @map("correspondent_account")
   bank                  String?
   director              String?
+  directorPost          String?               @map("director_post")
   contract              String?
   createdAt             DateTime              @default(now()) @map("created_at")
   updatedAt             DateTime              @updatedAt @map("updated_at")

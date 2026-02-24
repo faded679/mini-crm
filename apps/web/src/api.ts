@@ -54,6 +54,9 @@ export interface CounterpartyContact {
 export interface Counterparty {
   id: number;
   name: string;
+  shortName: string | null;
+  orgType: string | null;
+  orgStatus: string | null;
   inn: string | null;
   kpp: string | null;
   ogrn: string | null;
@@ -63,6 +66,7 @@ export interface Counterparty {
   correspondentAccount: string | null;
   bank: string | null;
   director: string | null;
+  directorPost: string | null;
   contract: string | null;
   contacts: CounterpartyContact[];
   createdAt: string;
@@ -71,6 +75,9 @@ export interface Counterparty {
 
 export interface CounterpartyPayload {
   name: string;
+  shortName?: string | null;
+  orgType?: string | null;
+  orgStatus?: string | null;
   inn?: string | null;
   kpp?: string | null;
   ogrn?: string | null;
@@ -80,6 +87,7 @@ export interface CounterpartyPayload {
   correspondentAccount?: string | null;
   bank?: string | null;
   director?: string | null;
+  directorPost?: string | null;
   contract?: string | null;
   contactClientIds?: number[];
 }
@@ -379,6 +387,30 @@ export function updateCounterparty(id: number, payload: CounterpartyPayload) {
 export function deleteCounterparty(id: number) {
   return request<void>(`/admin/counterparties/${id}`, {
     method: "DELETE",
+  });
+}
+
+// --------------- DaData ---------------
+
+export interface DadataPartyResult {
+  found: boolean;
+  message?: string;
+  name?: string;
+  shortName?: string | null;
+  orgType?: string | null;
+  orgStatus?: string | null;
+  inn?: string | null;
+  kpp?: string | null;
+  ogrn?: string | null;
+  address?: string | null;
+  director?: string | null;
+  directorPost?: string | null;
+}
+
+export function dadataFindParty(query: string) {
+  return request<DadataPartyResult>("/admin/tools/dadata/party", {
+    method: "POST",
+    body: JSON.stringify({ query, branchType: "MAIN" }),
   });
 }
 

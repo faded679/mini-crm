@@ -12,6 +12,9 @@ router.use(requireAuth);
 
 type CounterpartyPayload = {
   name: string;
+  shortName?: string | null;
+  orgType?: string | null;
+  orgStatus?: string | null;
   inn?: string | null;
   kpp?: string | null;
   ogrn?: string | null;
@@ -21,9 +24,75 @@ type CounterpartyPayload = {
   correspondentAccount?: string | null;
   bank?: string | null;
   director?: string | null;
+  directorPost?: string | null;
   contract?: string | null;
   contactClientIds?: number[];
 };
+
+// --------------- DaData ---------------
+
+// POST /admin/tools/dadata/party
+router.post("/tools/dadata/party", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = process.env.DADATA_TOKEN;
+    if (!token) throw new ApiError(500, "DADATA_TOKEN not configured");
+
+    const { query, branchType, kpp, type: orgType } = req.body as {
+      query?: string;
+      branchType?: string;
+      kpp?: string;
+      type?: string;
+    };
+    if (!query?.trim()) throw new ApiError(400, "query (INN or OGRN) is required");
+
+    const body: Record<string, unknown> = { query: query.trim() };
+    if (branchType) body.branch_type = branchType;
+    if (kpp) body.kpp = kpp;
+    if (orgType) body.type = orgType;
+
+    const dadataRes = await fetch(
+      "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (!dadataRes.ok) {
+      const text = await dadataRes.text();
+      throw new ApiError(dadataRes.status, `DaData error: ${text}`);
+    }
+
+    const json = (await dadataRes.json()) as { suggestions: any[] };
+    const s = json.suggestions?.[0];
+    if (!s) {
+      res.json({ found: false, message: "Организация не найдена" });
+      return;
+    }
+
+    const d = s.data;
+    res.json({
+      found: true,
+      name: d.name?.full_with_opf ?? s.value,
+      shortName: d.name?.short_with_opf ?? null,
+      orgType: d.type ?? null,
+      orgStatus: d.state?.status ?? null,
+      inn: d.inn ?? null,
+      kpp: d.kpp ?? null,
+      ogrn: d.ogrn ?? null,
+      address: d.address?.value ?? null,
+      director: d.management?.name ?? null,
+      directorPost: d.management?.post ?? null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /admin/requests
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
@@ -701,9 +770,12 @@ router.post("/counterparties", async (req: Request, res: Response, next: NextFun
 
     const contactClientIds = Array.isArray(body.contactClientIds) ? body.contactClientIds : [];
 
-    const created = await prisma.counterparty.create({
+    const created = await (prisma as any).counterparty.create({
       data: {
         name: body.name.trim(),
+        shortName: body.shortName ?? null,
+        orgType: body.orgType ?? null,
+        orgStatus: body.orgStatus ?? null,
         inn: body.inn ?? null,
         kpp: body.kpp ?? null,
         ogrn: body.ogrn ?? null,
@@ -713,6 +785,7 @@ router.post("/counterparties", async (req: Request, res: Response, next: NextFun
         correspondentAccount: body.correspondentAccount ?? null,
         bank: body.bank ?? null,
         director: body.director ?? null,
+        directorPost: body.directorPost ?? null,
         contract: body.contract ?? null,
         contacts: {
           create: contactClientIds.map((clientId) => ({ clientId })),
@@ -741,10 +814,13 @@ router.patch("/counterparties/:id", async (req: Request, res: Response, next: Ne
     const existing = await prisma.counterparty.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Counterparty not found");
 
-    const updated = await prisma.counterparty.update({
+    const updated = await (prisma as any).counterparty.update({
       where: { id },
       data: {
         name: body.name !== undefined ? body.name.trim() : undefined,
+        shortName: body.shortName !== undefined ? body.shortName : undefined,
+        orgType: body.orgType !== undefined ? body.orgType : undefined,
+        orgStatus: body.orgStatus !== undefined ? body.orgStatus : undefined,
         inn: body.inn !== undefined ? body.inn : undefined,
         kpp: body.kpp !== undefined ? body.kpp : undefined,
         ogrn: body.ogrn !== undefined ? body.ogrn : undefined,
@@ -755,6 +831,7 @@ router.patch("/counterparties/:id", async (req: Request, res: Response, next: Ne
           body.correspondentAccount !== undefined ? body.correspondentAccount : undefined,
         bank: body.bank !== undefined ? body.bank : undefined,
         director: body.director !== undefined ? body.director : undefined,
+        directorPost: body.directorPost !== undefined ? body.directorPost : undefined,
         contract: body.contract !== undefined ? body.contract : undefined,
         contacts:
           contactClientIds !== undefined

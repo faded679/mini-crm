@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   createCounterparty,
+  dadataFindParty,
   deleteCounterparty,
   getClients,
   getCounterparties,
@@ -17,6 +18,9 @@ function toFormState(c?: Counterparty): FormState {
   return {
     id: c.id,
     name: c.name,
+    shortName: c.shortName,
+    orgType: c.orgType,
+    orgStatus: c.orgStatus,
     inn: c.inn,
     kpp: c.kpp,
     ogrn: c.ogrn,
@@ -26,6 +30,7 @@ function toFormState(c?: Counterparty): FormState {
     correspondentAccount: c.correspondentAccount,
     bank: c.bank,
     director: c.director,
+    directorPost: c.directorPost,
     contract: c.contract,
     contactClientIds: c.contacts.map((x) => x.client.id),
   };
@@ -40,6 +45,7 @@ export default function Counterparties() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>({ name: "", contactClientIds: [] });
+  const [dadataLoading, setDadataLoading] = useState(false);
 
   const clientById = useMemo(() => {
     const m = new Map<number, Client>();
@@ -79,6 +85,40 @@ export default function Counterparties() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function fillFromDadata() {
+    const inn = (form.inn ?? "").trim();
+    if (!inn) {
+      setError("Введите ИНН для заполнения");
+      return;
+    }
+    setDadataLoading(true);
+    setError("");
+    try {
+      const result = await dadataFindParty(inn);
+      if (!result.found) {
+        setError(result.message || "Организация не найдена");
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        name: result.name || prev.name,
+        shortName: result.shortName ?? prev.shortName,
+        orgType: result.orgType ?? prev.orgType,
+        orgStatus: result.orgStatus ?? prev.orgStatus,
+        inn: result.inn ?? prev.inn,
+        kpp: result.kpp ?? prev.kpp,
+        ogrn: result.ogrn ?? prev.ogrn,
+        address: result.address ?? prev.address,
+        director: result.director ?? prev.director,
+        directorPost: result.directorPost ?? prev.directorPost,
+      }));
+    } catch (e: any) {
+      setError(e?.message || "Ошибка запроса DaData");
+    } finally {
+      setDadataLoading(false);
+    }
+  }
+
   function toggleContact(id: number) {
     setForm((prev) => {
       const current = prev.contactClientIds ?? [];
@@ -96,6 +136,9 @@ export default function Counterparties() {
     try {
       const payload: CounterpartyPayload = {
         name: form.name,
+        shortName: form.shortName ?? null,
+        orgType: form.orgType ?? null,
+        orgStatus: form.orgStatus ?? null,
         inn: form.inn ?? null,
         kpp: form.kpp ?? null,
         ogrn: form.ogrn ?? null,
@@ -105,6 +148,7 @@ export default function Counterparties() {
         correspondentAccount: form.correspondentAccount ?? null,
         bank: form.bank ?? null,
         director: form.director ?? null,
+        directorPost: form.directorPost ?? null,
         contract: form.contract ?? null,
         contactClientIds: form.contactClientIds ?? [],
       };
@@ -228,7 +272,27 @@ export default function Counterparties() {
               </button>
             </div>
 
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+              <div className="md:col-span-2">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">ИНН</label>
+                <div className="flex gap-2">
+                  <input
+                    value={form.inn ?? ""}
+                    onChange={(e) => setField("inn", e.target.value)}
+                    placeholder="Введите ИНН и нажмите Заполнить"
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={fillFromDadata}
+                    disabled={dadataLoading || !(form.inn ?? "").trim()}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {dadataLoading ? "Поиск..." : "Заполнить"}
+                  </button>
+                </div>
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Наименование</label>
                 <input
@@ -238,14 +302,34 @@ export default function Counterparties() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">ИНН</label>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Краткое наименование</label>
                 <input
-                  value={form.inn ?? ""}
-                  onChange={(e) => setField("inn", e.target.value)}
+                  value={form.shortName ?? ""}
+                  onChange={(e) => setField("shortName", e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Тип организации</label>
+                <input
+                  value={form.orgType ?? ""}
+                  onChange={(e) => setField("orgType", e.target.value)}
+                  placeholder="LEGAL / INDIVIDUAL"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Статус организации</label>
+                <input
+                  value={form.orgStatus ?? ""}
+                  onChange={(e) => setField("orgStatus", e.target.value)}
+                  placeholder="ACTIVE / LIQUIDATED"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">КПП</label>
                 <input
@@ -262,11 +346,20 @@ export default function Counterparties() {
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
+
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Директор</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">ФИО руководителя</label>
                 <input
                   value={form.director ?? ""}
                   onChange={(e) => setField("director", e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Должность руководителя</label>
+                <input
+                  value={form.directorPost ?? ""}
+                  onChange={(e) => setField("directorPost", e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
