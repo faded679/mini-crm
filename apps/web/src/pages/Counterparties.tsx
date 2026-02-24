@@ -288,7 +288,7 @@ export default function Counterparties() {
                     disabled={dadataLoading || !(form.inn ?? "").trim()}
                     className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 whitespace-nowrap"
                   >
-                    {dadataLoading ? "Поиск..." : "Заполнить"}
+                    {dadataLoading ? "Поиск...." : "Заполнить"}
                   </button>
                 </div>
               </div>
