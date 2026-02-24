@@ -16,7 +16,9 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd ~/mini-crm
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd
             cd infra
             docker compose up --build -d
             docker compose restart nginx
