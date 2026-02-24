@@ -30,6 +30,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://test.ved31.ru}
       PORT: "3000"
+      DADATA_TOKEN: ${DADATA_TOKEN}
 
   bot:
     build:
