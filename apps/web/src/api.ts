@@ -100,6 +100,7 @@ export type UpdateShipmentRequestPayload = {
   city?: string;
   deliveryDate?: string;
   packagingType?: PackagingType;
+  boxTypeId?: number | null;
   volume?: number | null;
   boxCount?: number;
   weight?: number | null;
@@ -110,6 +111,7 @@ export interface ShipmentRequest {
   id: number;
   city: string;
   deliveryDate: string;
+  boxTypeId?: number | null;
   volume?: number | null;
   size: string;
   weight?: number | null;

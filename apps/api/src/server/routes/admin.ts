@@ -574,6 +574,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       city?: string;
       deliveryDate?: string;
       packagingType?: "pallets" | "boxes";
+      boxTypeId?: number | null;
       volume?: number | null;
       boxCount?: number;
       weight?: number | null;
@@ -597,6 +598,14 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
 
     if (body.packagingType !== undefined && body.packagingType !== "pallets" && body.packagingType !== "boxes") {
       throw new ApiError(400, "Invalid packagingType");
+    }
+
+    if (body.boxTypeId !== undefined && body.boxTypeId !== null) {
+      if (!Number.isFinite(body.boxTypeId) || body.boxTypeId <= 0) {
+        throw new ApiError(400, "Invalid boxTypeId");
+      }
+      const exists = await (prisma as any).boxType.findUnique({ where: { id: Number(body.boxTypeId) } });
+      if (!exists) throw new ApiError(400, "Invalid boxTypeId");
     }
 
     if (body.volume !== undefined && body.volume !== null) {
@@ -630,6 +639,14 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         city: nextCity,
         deliveryDate: nextDeliveryDate,
         packagingType: body.packagingType as any,
+        boxTypeId:
+          (body.packagingType ?? existing.packagingType) === "boxes"
+            ? body.boxTypeId === undefined
+              ? undefined
+              : body.boxTypeId === null
+                ? null
+                : Number(body.boxTypeId)
+            : null,
         volume: body.volume === undefined ? undefined : body.volume,
         boxCount: body.boxCount,
         weight: body.weight === undefined ? undefined : (body.weight as any),

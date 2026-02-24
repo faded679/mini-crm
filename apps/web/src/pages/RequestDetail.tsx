@@ -5,6 +5,7 @@ import {
   getCounterparties,
   getInvoicePdfUrlById,
   getCities,
+  getBoxTypes,
   getRequestById,
   createInvoice,
   sendInvoicePdf,
@@ -20,6 +21,7 @@ import {
   type ShipmentRequestDetail,
   type RequestStatus,
   type RequestService,
+  type BoxType,
   type InvoiceItemPayload,
   type Invoice,
 } from "../api";
@@ -48,9 +50,11 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [updating, setUpdating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [cities, setCities] = useState<City[]>([]);
+  const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [editCity, setEditCity] = useState("");
   const [editDeliveryDate, setEditDeliveryDate] = useState("");
   const [editPackagingType, setEditPackagingType] = useState<PackagingType>("boxes");
+  const [editBoxTypeId, setEditBoxTypeId] = useState<string>("");
   const [editBoxCount, setEditBoxCount] = useState<string>("");
   const [editVolume, setEditVolume] = useState<string>("");
   const [editWeight, setEditWeight] = useState<string>("");
@@ -77,6 +81,10 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   }, []);
 
   useEffect(() => {
+    getBoxTypes().then(setBoxTypes).catch(() => setBoxTypes([]));
+  }, []);
+
+  useEffect(() => {
     if (!resolvedRequestId) {
       setRequest(null);
       setLoading(false);
@@ -91,6 +99,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         setEditCity(r.city);
         setEditDeliveryDate(new Date(r.deliveryDate).toISOString().slice(0, 10));
         setEditPackagingType(r.packagingType);
+        setEditBoxTypeId(r.boxTypeId == null ? "" : String(r.boxTypeId));
         setEditBoxCount(String(r.boxCount));
         setEditVolume((r as any).volume == null ? "" : String((r as any).volume));
         setEditWeight(r.weight == null ? "" : String(r.weight));
@@ -198,12 +207,17 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     const weight = editWeight.trim() === "" ? null : Number(editWeight);
     if (weight !== null && (!Number.isFinite(weight) || weight <= 0)) throw new Error("Некорректный вес");
 
+    const boxTypeId = editPackagingType === "boxes" ? (editBoxTypeId === "" ? null : Number(editBoxTypeId)) : null;
+    if (editPackagingType === "boxes" && boxTypeId === null) throw new Error("Выберите тип коробки");
+    if (boxTypeId !== null && (!Number.isFinite(boxTypeId) || boxTypeId <= 0)) throw new Error("Некорректный тип коробки");
+
     setUpdating(true);
     try {
       await updateRequest(request.id, {
         city,
         deliveryDate,
         packagingType: editPackagingType,
+        boxTypeId,
         boxCount,
         volume,
         weight,
@@ -223,6 +237,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     setEditCity(request.city);
     setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
     setEditPackagingType(request.packagingType);
+    setEditBoxTypeId(request.boxTypeId == null ? "" : String(request.boxTypeId));
     setEditBoxCount(String(request.boxCount));
     setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
     setEditWeight(request.weight == null ? "" : String(request.weight));
@@ -350,16 +365,25 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Кол-во мест</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Тип коробки</p>
               {editing ? (
-                <input
-                  value={editBoxCount}
-                  onChange={(e) => setEditBoxCount(e.target.value)}
-                  inputMode="numeric"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
+                <select
+                  value={editBoxTypeId}
+                  onChange={(e) => setEditBoxTypeId(e.target.value)}
+                  disabled={editPackagingType !== "boxes"}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                >
+                  <option value="">Выберите...</option>
+                  {boxTypes.map((bt) => (
+                    <option key={bt.id} value={String(bt.id)}>
+                      {bt.name}
+                    </option>
+                  ))}
+                </select>
               ) : (
-                <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {request.packagingType === "boxes" ? ((request as any)?.boxType?.name ?? "—") : "—"}
+                </p>
               )}
             </div>
             <div>
@@ -378,16 +402,16 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Кол-во мест</p>
               {editing ? (
                 <input
-                  value={editVolume}
-                  onChange={(e) => setEditVolume(e.target.value)}
-                  inputMode="decimal"
+                  value={editBoxCount}
+                  onChange={(e) => setEditBoxCount(e.target.value)}
+                  inputMode="numeric"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
-                <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{request.boxCount}</p>
               )}
             </div>
             <div>
@@ -406,16 +430,28 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Статус заявки</p>
-
-              <p className="text-sm text-gray-900 dark:text-gray-100">{statusLabels[request.status]}</p>
-
-            </div>              
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
+              {editing ? (
+                <input
+                  value={editVolume}
+                  onChange={(e) => setEditVolume(e.target.value)}
+                  inputMode="decimal"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
+              )}
+            </div>
           </div>
 
           {/* Status change */}
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Изменить статус:</p>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={cn("text-xs px-2 py-1 rounded-full font-medium", statusColors[request.status])}>
+                {statusLabels[request.status]}
+              </span>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Изменить статус:</p>
+            </div>
             <div className="flex items-center gap-2">
               {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
                 <button
