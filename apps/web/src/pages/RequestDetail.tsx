@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   getToken,
-  getCounterparties,
   getInvoicePdfUrlById,
   getCities,
   getBoxTypes,
@@ -16,7 +15,6 @@ import {
   deleteRequestService,
   suggestRequestService,
   type City,
-  type Counterparty,
   type PackagingType,
   type ShipmentRequestDetail,
   type RequestStatus,
@@ -61,7 +59,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [editComment, setEditComment] = useState<string>("");
   const [confirmStatus, setConfirmStatus] = useState<RequestStatus | null>(null);
   const [confirmInvoice, setConfirmInvoice] = useState(false);
-  const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [invoiceCounterpartyId, setInvoiceCounterpartyId] = useState<number | "">("");
   const [invoiceSending, setInvoiceSending] = useState(false);
   const [invoiceDownloading, setInvoiceDownloading] = useState(false);
@@ -128,7 +125,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const addItem = () => setInvoiceItems((prev) => [...prev, emptyItem()]);
   const removeItem = (idx: number) => setInvoiceItems((prev) => prev.filter((_, i) => i !== idx));
   const invoiceTotal = invoiceItems.reduce((s, it) => s + it.amount, 0);
-  const canCreateInvoice = invoiceCounterpartyId !== "" && invoiceItems.length > 0 && invoiceItems.every((it) => it.description && it.amount > 0);
+  const canCreateInvoice = invoiceCounterpartyId !== "" && invoiceItems.length > 0 && invoiceItems.some((it) => it.description && it.amount > 0);
 
   const formatDateTime = (value: unknown) => {
     const d = new Date(String(value));
@@ -471,7 +468,22 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               <div className="ml-auto">
 
                   <button
-                    onClick={() => setConfirmInvoice(true)}
+                    onClick={() => {
+                      const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
+                      setInvoiceCounterpartyId(cp?.id ?? "");
+                      if (services.length > 0) {
+                        setInvoiceItems(services.map((s) => ({
+                          description: s.description,
+                          quantity: s.quantity,
+                          unit: s.unit,
+                          price: s.price,
+                          amount: s.amount,
+                        })));
+                      } else {
+                        setInvoiceItems([emptyItem()]);
+                      }
+                      setConfirmInvoice(true);
+                    }}
                     className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
                   >
                     <FileText size={16} />
@@ -719,25 +731,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <div className="p-5 space-y-4">
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент (заказчик)</label>
-                    <select
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                      value={invoiceCounterpartyId}
-                      onChange={(e) => setInvoiceCounterpartyId(e.target.value ? Number(e.target.value) : "")}
-                      onFocus={async () => {
-                        if (counterparties.length) return;
-                        try {
-                          const cp = await getCounterparties();
-                          setCounterparties(cp);
-                        } catch {
-                          setCounterparties([]);
-                        }
-                      }}
-                    >
-                      <option value="">Выберите...</option>
-                      {counterparties.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                    <p className="text-sm text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                      {(request.client as any)?.counterparties?.[0]?.counterparty?.name || "Не привязан"}
+                    </p>
                   </div>
 
                   <div>

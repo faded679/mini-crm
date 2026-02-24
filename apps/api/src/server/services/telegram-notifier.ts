@@ -6,6 +6,8 @@ export async function notifyClient(
   telegramId: string,
   htmlMessage: string,
 ): Promise<void> {
+  const enabled = env.TELEGRAM_NOTIFICATIONS_ENABLED !== "0" && env.TELEGRAM_NOTIFICATIONS_ENABLED !== "false";
+  if (!enabled) return;
   if (!env.TELEGRAM_BOT_TOKEN) return;
 
   try {
@@ -29,6 +31,8 @@ export async function sendClientDocument(
   fileName: string,
   caption?: string,
 ): Promise<void> {
+  const enabled = env.TELEGRAM_NOTIFICATIONS_ENABLED !== "0" && env.TELEGRAM_NOTIFICATIONS_ENABLED !== "false";
+  if (!enabled) return;
   if (!env.TELEGRAM_BOT_TOKEN) return;
 
   try {

@@ -6,6 +6,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("1d"),
   TELEGRAM_BOT_TOKEN: z.string().default(""),
+  TELEGRAM_NOTIFICATIONS_ENABLED: z.string().default("1"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   PORT: z.coerce.number().default(3000),
 });
