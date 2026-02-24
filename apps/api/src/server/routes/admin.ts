@@ -43,6 +43,13 @@ function dadataStatusRu(status?: string | null) {
   return map[s] ?? s;
 }
 
+function dadataTypeRu(type?: string | null) {
+  const t = type ?? "";
+  if (t === "LEGAL") return "Юридическое лицо";
+  if (t === "INDIVIDUAL") return "Индивидуальный предприниматель";
+  return t;
+}
+
 // POST /admin/tools/dadata/party
 router.post("/tools/dadata/party", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -92,7 +99,7 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
       found: true,
       name: d.name?.full_with_opf ?? s.value,
       shortName: d.name?.short_with_opf ?? null,
-      orgType: d.type ?? null,
+      orgType: dadataTypeRu(d.type) || null,
       orgStatus: dadataStatusRu(d.state?.status) || null,
       inn: d.inn ?? null,
       kpp: d.kpp ?? null,
