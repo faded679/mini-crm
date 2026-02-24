@@ -116,8 +116,8 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
 // GET /admin/requests
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const requests = await prisma.shipmentRequest.findMany({
-      include: { client: true },
+    const requests = await (prisma as any).shipmentRequest.findMany({
+      include: { client: true, boxType: true },
       orderBy: { createdAt: "desc" },
     });
     res.json(requests);
@@ -142,6 +142,7 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
             },
           },
         },
+        boxType: true,
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
         services: { orderBy: { id: "asc" } },

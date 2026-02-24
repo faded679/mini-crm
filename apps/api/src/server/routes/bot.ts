@@ -45,15 +45,31 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       throw new ApiError(400, "Invalid weight");
     }
 
+    const parsedVolume =
+      volume !== undefined && volume !== null && volume !== "" ? Number(volume) : undefined;
+    if (parsedVolume !== undefined && (!Number.isFinite(parsedVolume) || parsedVolume <= 0)) {
+      throw new ApiError(400, "Invalid volume");
+    }
+
+    let boxTypeId: number | undefined;
+    if (packagingType === "boxes" && parsedVolume !== undefined) {
+      const boxType = await (prisma as any).boxType.findFirst({
+        where: { maxVolumeM3: { gte: parsedVolume } },
+        orderBy: { maxVolumeM3: "asc" },
+      });
+      boxTypeId = boxType?.id;
+    }
+
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
         cityId: cityRecord.id,
         city,
         deliveryDate: new Date(deliveryDate),
-        volume: volume !== undefined ? Number(volume) : null,
+        volume: parsedVolume !== undefined ? parsedVolume : null,
         size: size ?? "-",
         boxCount: Number(boxCount),
+        ...(boxTypeId !== undefined ? { boxTypeId } : {}),
         packagingType,
         comment: comment || null,
         status: "new",

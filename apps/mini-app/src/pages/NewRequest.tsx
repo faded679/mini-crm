@@ -8,12 +8,23 @@ export default function NewRequest() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [city, setCity] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
+  const [volume, setVolume] = useState("");
   const [weight, setWeight] = useState("");
   const [boxCount, setBoxCount] = useState("");
   const [packagingType, setPackagingType] = useState<"pallets" | "boxes" | "">("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const volumeNumber = volume ? Number(volume) : NaN;
+  const boxSizeLabel =
+    packagingType !== "boxes" || !Number.isFinite(volumeNumber) || volumeNumber <= 0
+      ? ""
+      : volumeNumber <= 0.032
+        ? "Маленькая"
+        : volumeNumber <= 0.064
+          ? "Средняя"
+          : "Большая";
 
   useEffect(() => {
     getSchedule().then(setSchedule).catch(() => {});
@@ -43,6 +54,7 @@ export default function NewRequest() {
         lastName: user.lastName,
         city,
         deliveryDate: new Date(deliveryDate).toISOString(),
+        ...(volume ? { volume: Number(volume) } : {}),
         packagingType: packagingType as "pallets" | "boxes",
         ...(weight ? { weight: Number(weight) } : {}),
         boxCount: Number(boxCount),
@@ -124,6 +136,7 @@ export default function NewRequest() {
               onClick={() => {
                 setPackagingType("pallets");
                 setBoxCount("");
+                setVolume("");
               }}
               className={`w-full p-3 rounded-lg font-medium transition disabled:opacity-50 ${
                 packagingType === "pallets" ? "bg-tg-button text-tg-button-text" : "bg-tg-secondary-bg text-tg-text"
@@ -146,6 +159,25 @@ export default function NewRequest() {
             </button>
           </div>
         </div>
+
+        {packagingType === "boxes" && (
+          <div>
+            <label className="block text-sm font-medium mb-1 text-tg-hint">Объём (м³)</label>
+            <input
+              type="number"
+              value={volume}
+              onChange={(e) => setVolume(e.target.value)}
+              required
+              min="0.001"
+              step="0.001"
+              className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+              placeholder="0.032"
+            />
+            {boxSizeLabel && (
+              <div className="mt-1 text-xs text-tg-hint">Тип коробки: {boxSizeLabel}</div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>

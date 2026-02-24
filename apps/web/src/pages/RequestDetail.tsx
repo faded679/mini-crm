@@ -343,6 +343,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               ) : (
                 <p className="text-sm text-gray-900 dark:text-gray-100">
                   {request.packagingType === "pallets" ? "Палеты" : "Коробки"}
+                  {request.packagingType === "boxes" && (request as any)?.boxType?.name
+                    ? ` (${(request as any).boxType.name})`
+                    : ""}
                 </p>
               )}
             </div>

@@ -101,6 +101,7 @@ model ShipmentRequest {
   size        String
   weight      Float?
   boxCount    Int                    @map("box_count")
+  boxTypeId   Int?                   @map("box_type_id")
   packagingType PackagingType        @default(boxes) @map("packaging_type")
   comment     String?
   status      RequestStatus          @default(new)
@@ -109,11 +110,24 @@ model ShipmentRequest {
 
   client       Client                 @relation(fields: [clientId], references: [id])
   cityRef      City                   @relation(fields: [cityId], references: [id])
+  boxType      BoxType?               @relation(fields: [boxTypeId], references: [id])
   history      RequestStatusHistory[]
   fieldHistory RequestFieldHistory[]
   services     RequestService[]
 
   @@map("shipment_requests")
+}
+
+model BoxType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  maxVolumeM3 Float    @map("max_volume_m3")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  requests    ShipmentRequest[]
+
+  @@map("box_types")
 }
 
 model City {
