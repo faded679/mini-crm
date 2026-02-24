@@ -31,4 +31,4 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/assets ./assets
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/main.js"]

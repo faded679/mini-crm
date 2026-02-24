@@ -86,7 +86,6 @@ export default function MyRequests() {
                   <span>📅 {new Date(r.deliveryDate).toLocaleDateString("ru-RU")}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span>📦 {r.volume ?? r.size ?? "—"} м³</span>
                   <span>⚖️ {r.weight} кг</span>
                   <span>📦 {r.boxCount} мест</span>
                 </div>

@@ -898,7 +898,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                         }
                       }}
                     >
-                      {invoiceSending ? "Отправка..." : "Отправить клиенту"}
+                      {invoiceSending ? "Отправка...." : "Отправить клиенту"}
                     </button>
                   </div>
                 </div>
