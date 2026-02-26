@@ -54,11 +54,13 @@ export default function Prices() {
 
   // box type management
   const [newBoxName, setNewBoxName] = useState("");
-  const [newBoxVolume, setNewBoxVolume] = useState("");
+  const [newBoxMinVol, setNewBoxMinVol] = useState("");
+  const [newBoxMaxVol, setNewBoxMaxVol] = useState("");
   const [addingBox, setAddingBox] = useState(false);
   const [boxEditId, setBoxEditId] = useState<number | null>(null);
   const [boxEditName, setBoxEditName] = useState("");
-  const [boxEditVolume, setBoxEditVolume] = useState("");
+  const [boxEditMinVol, setBoxEditMinVol] = useState("");
+  const [boxEditMaxVol, setBoxEditMaxVol] = useState("");
   const [savingBox, setSavingBox] = useState(false);
 
   // pallet type management
@@ -195,20 +197,21 @@ export default function Prices() {
 
   // box type handlers
   const handleAddBoxType = async () => {
-    if (addingBox || !newBoxName.trim() || !newBoxVolume) return;
+    if (addingBox || !newBoxName.trim() || !newBoxMaxVol) return;
     setAddingBox(true);
     try {
-      await createBoxType({ name: newBoxName.trim(), maxVolumeM3: Number(newBoxVolume) });
+      await createBoxType({ name: newBoxName.trim(), minVolumeM3: newBoxMinVol ? Number(newBoxMinVol) : 0, maxVolumeM3: Number(newBoxMaxVol) });
       setNewBoxName("");
-      setNewBoxVolume("");
+      setNewBoxMinVol("");
+      setNewBoxMaxVol("");
       await reload();
     } catch (e) { alert((e as Error).message); } finally { setAddingBox(false); }
   };
   const handleSaveBoxEdit = async () => {
-    if (savingBox || boxEditId === null || !boxEditName.trim() || !boxEditVolume) return;
+    if (savingBox || boxEditId === null || !boxEditName.trim() || !boxEditMaxVol) return;
     setSavingBox(true);
     try {
-      await updateBoxType(boxEditId, { name: boxEditName.trim(), maxVolumeM3: Number(boxEditVolume) });
+      await updateBoxType(boxEditId, { name: boxEditName.trim(), minVolumeM3: Number(boxEditMinVol) || 0, maxVolumeM3: Number(boxEditMaxVol) });
       setBoxEditId(null);
       await reload();
     } catch (e) { alert((e as Error).message); } finally { setSavingBox(false); }
@@ -506,8 +509,9 @@ export default function Prices() {
         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Коробки</p>
         <div className="flex flex-wrap items-end gap-2 mb-3">
           <input value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} placeholder="Название" className="w-40 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
-          <input value={newBoxVolume} onChange={(e) => setNewBoxVolume(e.target.value)} placeholder="Макс. объём (м³)" inputMode="decimal" className="w-36 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
-          <button onClick={handleAddBoxType} disabled={addingBox || !newBoxName.trim() || !newBoxVolume} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
+          <input value={newBoxMinVol} onChange={(e) => setNewBoxMinVol(e.target.value)} placeholder="От (м³)" inputMode="decimal" className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newBoxMaxVol} onChange={(e) => setNewBoxMaxVol(e.target.value)} placeholder="До (м³)" inputMode="decimal" className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <button onClick={handleAddBoxType} disabled={addingBox || !newBoxName.trim() || !newBoxMaxVol} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
             <Plus size={14} /> Добавить
           </button>
         </div>
@@ -517,7 +521,8 @@ export default function Prices() {
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Макс. объём (м³)</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">От (м³)</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">До (м³)</th>
                   <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
                 </tr>
               </thead>
@@ -531,7 +536,12 @@ export default function Prices() {
                     </td>
                     <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
                       {boxEditId === bt.id ? (
-                        <input value={boxEditVolume} onChange={(e) => setBoxEditVolume(e.target.value)} inputMode="decimal" className="w-24 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                        <input value={boxEditMinVol} onChange={(e) => setBoxEditMinVol(e.target.value)} inputMode="decimal" className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : bt.minVolumeM3}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {boxEditId === bt.id ? (
+                        <input value={boxEditMaxVol} onChange={(e) => setBoxEditMaxVol(e.target.value)} inputMode="decimal" className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
                       ) : bt.maxVolumeM3}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -542,7 +552,7 @@ export default function Prices() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => { setBoxEditId(bt.id); setBoxEditName(bt.name); setBoxEditVolume(String(bt.maxVolumeM3)); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => { setBoxEditId(bt.id); setBoxEditName(bt.name); setBoxEditMinVol(String(bt.minVolumeM3)); setBoxEditMaxVol(String(bt.maxVolumeM3)); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
                           <button onClick={() => handleDeleteBoxType(bt.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
                         </div>
                       )}

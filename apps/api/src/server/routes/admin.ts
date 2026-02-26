@@ -1084,8 +1084,9 @@ router.get("/box-types", async (_req: Request, res: Response, next: NextFunction
 
 router.post("/box-types", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, maxVolumeM3 } = req.body as {
+    const { name, minVolumeM3, maxVolumeM3 } = req.body as {
       name?: string;
+      minVolumeM3?: number;
       maxVolumeM3?: number;
     };
     if (!name?.trim()) throw new ApiError(400, "name is required");
@@ -1094,7 +1095,11 @@ router.post("/box-types", async (req: Request, res: Response, next: NextFunction
     }
 
     const created = await (prisma as any).boxType.create({
-      data: { name: name.trim(), maxVolumeM3 },
+      data: {
+        name: name.trim(),
+        minVolumeM3: minVolumeM3 !== undefined && Number.isFinite(minVolumeM3) ? minVolumeM3 : 0,
+        maxVolumeM3,
+      },
     });
     res.status(201).json(created);
   } catch (err) {
@@ -1107,13 +1112,18 @@ router.patch("/box-types/:id", async (req: Request, res: Response, next: NextFun
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const { name, maxVolumeM3 } = req.body as {
+    const { name, minVolumeM3, maxVolumeM3 } = req.body as {
       name?: string;
+      minVolumeM3?: number;
       maxVolumeM3?: number;
     };
 
     const data: any = {};
     if (name !== undefined) data.name = name.trim();
+    if (minVolumeM3 !== undefined) {
+      if (!Number.isFinite(minVolumeM3) || minVolumeM3! < 0) throw new ApiError(400, "Invalid minVolumeM3");
+      data.minVolumeM3 = minVolumeM3;
+    }
     if (maxVolumeM3 !== undefined) {
       if (!Number.isFinite(maxVolumeM3) || maxVolumeM3! <= 0) throw new ApiError(400, "Invalid maxVolumeM3");
       data.maxVolumeM3 = maxVolumeM3;

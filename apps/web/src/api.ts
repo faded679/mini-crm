@@ -463,6 +463,7 @@ export type RateUnit = "pallet" | "boxes";
 export interface BoxType {
   id: number;
   name: string;
+  minVolumeM3: number;
   maxVolumeM3: number;
   createdAt?: string;
   updatedAt?: string;
@@ -506,14 +507,14 @@ export function getBoxTypes() {
   return request<BoxType[]>("/admin/box-types");
 }
 
-export function createBoxType(data: { name: string; maxVolumeM3: number }) {
+export function createBoxType(data: { name: string; minVolumeM3?: number; maxVolumeM3: number }) {
   return request<BoxType>("/admin/box-types", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export function updateBoxType(id: number, data: { name?: string; maxVolumeM3?: number }) {
+export function updateBoxType(id: number, data: { name?: string; minVolumeM3?: number; maxVolumeM3?: number }) {
   return request<BoxType>(`/admin/box-types/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),

@@ -121,6 +121,7 @@ model ShipmentRequest {
 model BoxType {
   id          Int      @id @default(autoincrement())
   name        String   @unique
+  minVolumeM3 Float    @default(0) @map("min_volume_m3")
   maxVolumeM3 Float    @map("max_volume_m3")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
