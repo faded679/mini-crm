@@ -149,6 +149,10 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
       },
     });
     if (!request) throw new ApiError(404, "Request not found");
+    if (!request.isRead) {
+      await (prisma as any).shipmentRequest.update({ where: { id }, data: { isRead: true } });
+      request.isRead = true;
+    }
     res.json(request);
   } catch (err) {
     next(err);

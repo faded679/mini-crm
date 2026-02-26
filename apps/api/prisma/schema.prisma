@@ -104,6 +104,7 @@ model ShipmentRequest {
   packagingType PackagingType        @default(boxes) @map("packaging_type")
   comment     String?
   status      RequestStatus          @default(new)
+  isRead      Boolean                @default(false) @map("is_read")
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
 

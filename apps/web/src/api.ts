@@ -119,6 +119,7 @@ export interface ShipmentRequest {
   packagingType: PackagingType;
   comment: string | null;
   status: RequestStatus;
+  isRead: boolean;
   createdAt: string;
   client: Client;
 }

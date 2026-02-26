@@ -84,7 +84,7 @@ export default function Requests() {
     if (selectedRequestId === null) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSelectedRequestId(null);
+      if (e.key === "Escape") { setSelectedRequestId(null); getRequests().then(setRequests); }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -352,7 +352,10 @@ export default function Requests() {
                 <tr
                   key={r.id}
                   onClick={() => setSelectedRequestId(r.id)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                  className={cn(
+                    "hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer",
+                    !r.isRead && "font-bold bg-blue-50/50 dark:bg-blue-900/10"
+                  )}
                 >
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.city}</td>
@@ -381,13 +384,13 @@ export default function Requests() {
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) { setSelectedRequestId(null); setModalEditing(false); }
+            if (e.target === e.currentTarget) { setSelectedRequestId(null); setModalEditing(false); getRequests().then(setRequests); }
           }}
         >
           <div className="w-full max-w-7xl mt-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-end p-3 border-b border-gray-200 dark:border-gray-700">
               <button
-                onClick={() => { setSelectedRequestId(null); setModalEditing(false); }}
+                onClick={() => { setSelectedRequestId(null); setModalEditing(false); getRequests().then(setRequests); }}
                 className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
               >
                 X
