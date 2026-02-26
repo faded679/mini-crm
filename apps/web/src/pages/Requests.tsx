@@ -321,42 +321,42 @@ export default function Requests() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("id")} className="hover:text-gray-900 dark:hover:text-white">
                     # {sortIndicator("id")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("city")} className="hover:text-gray-900 dark:hover:text-white">
                     Город {sortIndicator("city")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("deliveryDate")} className="hover:text-gray-900 dark:hover:text-white">
                     Дата доставки {sortIndicator("deliveryDate")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("volume")} className="hover:text-gray-900 dark:hover:text-white">
                     Объём {sortIndicator("volume")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("weight")} className="hover:text-gray-900 dark:hover:text-white">
                     Вес {sortIndicator("weight")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("boxCount")} className="hover:text-gray-900 dark:hover:text-white">
                     Мест {sortIndicator("boxCount")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("client")} className="hover:text-gray-900 dark:hover:text-white">
                     Клиент {sortIndicator("client")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("status")} className="hover:text-gray-900 dark:hover:text-white">
                     Статус {sortIndicator("status")}
                   </button>
@@ -384,8 +384,8 @@ export default function Requests() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.client.firstName} {r.client.lastName || ""}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[r.status])}>
+                  <td className="px-4 py-3 text-center">
+                    <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-medium", statusColors[r.status])}>
                       {statusLabels[r.status]}
                     </span>
                   </td>
