@@ -51,7 +51,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
-              <span className="text-lg font-bold text-gray-900 dark:text-white">Mini CRM</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">CRM</span>
               <nav className="flex items-center gap-1">
                 <NavLink to="/" end className={linkClass}>
                   <Package size={18} />

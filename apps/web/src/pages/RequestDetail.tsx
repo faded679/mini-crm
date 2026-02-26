@@ -732,7 +732,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент (заказчик)</label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                      {(request.client as any)?.counterparties?.[0]?.counterparty?.name || "Не привязан"}
+                      {(request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
+                        (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
+                        "Не привязан"}
                     </p>
                   </div>
 
