@@ -145,21 +145,38 @@ model City {
   @@map("cities")
 }
 
-model PriceRate {
-  id          Int       @id @default(autoincrement())
-  cityId      Int       @map("city_id")
-  unit        RateUnit
-  boxTypeId   Int?      @map("box_type_id")
-  price       Int
-  comment     String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+model PalletType {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  minValue  Int       @map("min_value")
+  maxValue  Int?      @map("max_value")
+  comment   String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
-  city        City      @relation(fields: [cityId], references: [id])
-  boxType     BoxType?  @relation(fields: [boxTypeId], references: [id])
+  rates     PriceRate[]
+
+  @@map("pallet_types")
+}
+
+model PriceRate {
+  id            Int          @id @default(autoincrement())
+  cityId        Int          @map("city_id")
+  unit          RateUnit
+  boxTypeId     Int?         @map("box_type_id")
+  palletTypeId  Int?         @map("pallet_type_id")
+  price         Int
+  comment       String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  city          City         @relation(fields: [cityId], references: [id])
+  boxType       BoxType?     @relation(fields: [boxTypeId], references: [id])
+  palletType    PalletType?  @relation(fields: [palletTypeId], references: [id])
 
   @@index([cityId, unit])
   @@index([cityId, unit, boxTypeId])
+  @@index([cityId, unit, palletTypeId])
   @@map("price_rates")
 }
 

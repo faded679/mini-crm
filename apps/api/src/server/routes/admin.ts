@@ -991,6 +991,18 @@ router.get("/directions", async (_req: Request, res: Response, next: NextFunctio
 
 const VALID_UNITS = ["pallet", "boxes"];
 
+// GET /admin/pallet-types — list available pallet types
+router.get("/pallet-types", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).palletType.findMany({
+      orderBy: { minValue: "asc" },
+    });
+    res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/box-types — list available box types
 router.get("/box-types", async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -1014,7 +1026,7 @@ router.get("/rates", async (req: Request, res: Response, next: NextFunction) => 
     }
     const rates = await (prisma as any).priceRate.findMany({
       where,
-      include: { city: true, boxType: true },
+      include: { city: true, boxType: true, palletType: true },
       orderBy: [{ cityId: "asc" }, { unit: "asc" }],
     });
     res.json(rates);
@@ -1026,13 +1038,14 @@ router.get("/rates", async (req: Request, res: Response, next: NextFunction) => 
 // POST /admin/rates
 router.post("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { cityId, directionId, unit, price, comment, boxTypeId } = req.body as {
+    const { cityId, directionId, unit, price, comment, boxTypeId, palletTypeId } = req.body as {
       cityId?: number;
       directionId?: number;
       unit?: string;
       price?: number;
       comment?: string | null;
       boxTypeId?: number | null;
+      palletTypeId?: number | null;
     };
 
     const resolvedCityId = cityId ?? directionId;
@@ -1050,15 +1063,23 @@ router.post("/rates", async (req: Request, res: Response, next: NextFunction) =>
       if (!exists) throw new ApiError(400, "Invalid boxTypeId");
     }
 
+    const parsedPalletTypeId =
+      palletTypeId !== undefined && palletTypeId !== null ? Number(palletTypeId) : null;
+    if (unit === "pallet" && parsedPalletTypeId !== null) {
+      const exists = await (prisma as any).palletType.findUnique({ where: { id: parsedPalletTypeId } });
+      if (!exists) throw new ApiError(400, "Invalid palletTypeId");
+    }
+
     const created = await (prisma as any).priceRate.create({
       data: {
         cityId: resolvedCityId,
         unit,
         boxTypeId: unit === "boxes" ? parsedBoxTypeId : null,
+        palletTypeId: unit === "pallet" ? parsedPalletTypeId : null,
         price,
         comment: comment?.trim() || null,
       },
-      include: { city: true, boxType: true },
+      include: { city: true, boxType: true, palletType: true },
     });
     res.status(201).json(created);
   } catch (err) {
@@ -1072,13 +1093,14 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const { cityId, directionId, unit, price, comment, boxTypeId } = req.body as {
+    const { cityId, directionId, unit, price, comment, boxTypeId, palletTypeId } = req.body as {
       cityId?: number;
       directionId?: number;
       unit?: string;
       price?: number;
       comment?: string | null;
       boxTypeId?: number | null;
+      palletTypeId?: number | null;
     };
 
     if (unit !== undefined && !VALID_UNITS.includes(unit)) {
@@ -1097,6 +1119,9 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
     if (boxTypeId !== undefined) {
       data.boxTypeId = boxTypeId === null ? null : Number(boxTypeId);
     }
+    if (palletTypeId !== undefined) {
+      data.palletTypeId = palletTypeId === null ? null : Number(palletTypeId);
+    }
 
     const existing = await (prisma as any).priceRate.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Not found");
@@ -1111,14 +1136,22 @@ router.patch("/rates/:id", async (req: Request, res: Response, next: NextFunctio
       const exists = await (prisma as any).boxType.findUnique({ where: { id: finalBoxTypeId } });
       if (!exists) throw new ApiError(400, "Invalid boxTypeId");
       data.boxTypeId = finalBoxTypeId;
+      data.palletTypeId = null;
     } else {
       data.boxTypeId = null;
+      const finalPalletTypeId =
+        palletTypeId !== undefined ? (palletTypeId === null ? null : Number(palletTypeId)) : existing.palletTypeId;
+      if (finalPalletTypeId !== null) {
+        const exists = await (prisma as any).palletType.findUnique({ where: { id: finalPalletTypeId } });
+        if (!exists) throw new ApiError(400, "Invalid palletTypeId");
+      }
+      data.palletTypeId = finalPalletTypeId;
     }
 
     const updated = await (prisma as any).priceRate.update({
       where: { id },
       data,
-      include: { city: true, boxType: true },
+      include: { city: true, boxType: true, palletType: true },
     });
     res.json(updated);
   } catch (err) {

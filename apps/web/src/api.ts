@@ -468,29 +468,46 @@ export interface BoxType {
   updatedAt?: string;
 }
 
+export interface PalletType {
+  id: number;
+  name: string;
+  minValue: number;
+  maxValue: number | null;
+  comment: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface PriceRate {
   id: number;
   cityId: number;
   unit: RateUnit;
   boxTypeId: number | null;
+  palletTypeId: number | null;
   price: number;
   comment: string | null;
   createdAt: string;
   updatedAt: string;
   city: City;
   boxType?: BoxType | null;
+  palletType?: PalletType | null;
 }
 
 export interface PriceRatePayload {
   cityId: number;
   unit: RateUnit;
   boxTypeId?: number | null;
+  palletTypeId?: number | null;
   price: number;
   comment?: string | null;
 }
 
 export function getBoxTypes() {
   return request<BoxType[]>("/admin/box-types");
+}
+
+export function getPalletTypes() {
+  return request<PalletType[]>("/admin/pallet-types");
 }
 
 export function getRates(cityId?: number) {

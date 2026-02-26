@@ -5,12 +5,14 @@ import {
   updateCity,
   deleteCity,
   getBoxTypes,
+  getPalletTypes,
   getRates,
   createRate,
   updateRate,
   deleteRate,
   type City,
   type BoxType,
+  type PalletType,
   type PriceRate,
   type RateUnit,
 } from "../api";
@@ -26,6 +28,7 @@ export default function Prices() {
   const [cities, setCities] = useState<City[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
+  const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCity, setFilterCity] = useState<number | "all">("all");
 
@@ -33,6 +36,7 @@ export default function Prices() {
   const [addCityId, setAddCityId] = useState<number | "">("");
   const [addUnit, setAddUnit] = useState<RateUnit>("pallet");
   const [addBoxTypeId, setAddBoxTypeId] = useState<number | "">("");
+  const [addPalletTypeId, setAddPalletTypeId] = useState<number | "">("");
   const [addPrice, setAddPrice] = useState("");
   const [addComment, setAddComment] = useState("");
   const [adding, setAdding] = useState(false);
@@ -51,15 +55,17 @@ export default function Prices() {
   // inline edit
   const [editId, setEditId] = useState<number | null>(null);
   const [editBoxTypeId, setEditBoxTypeId] = useState<number | "">("");
+  const [editPalletTypeId, setEditPalletTypeId] = useState<number | "">("");
   const [editPrice, setEditPrice] = useState("");
   const [editComment, setEditComment] = useState("");
   const [saving, setSaving] = useState(false);
 
   const reload = async () => {
-    const [c, r, bt] = await Promise.all([getCities(), getRates(), getBoxTypes()]);
+    const [c, r, bt, pt] = await Promise.all([getCities(), getRates(), getBoxTypes(), getPalletTypes()]);
     setCities(c);
     setRates(r);
     setBoxTypes(bt);
+    setPalletTypes(pt);
   };
 
   useEffect(() => {
@@ -80,10 +86,12 @@ export default function Prices() {
         cityId: addCityId as number,
         unit: addUnit,
         ...(addUnit === "boxes" ? { boxTypeId: addBoxTypeId as number } : { boxTypeId: null }),
+        ...(addUnit === "pallet" && addPalletTypeId !== "" ? { palletTypeId: addPalletTypeId as number } : { palletTypeId: null }),
         price: Number(addPrice),
         comment: addComment.trim() || null,
       });
       setAddBoxTypeId("");
+      setAddPalletTypeId("");
       setAddPrice("");
       setAddComment("");
       await reload();
@@ -140,6 +148,7 @@ export default function Prices() {
       if (r?.unit === "boxes" && editBoxTypeId === "") return;
       await updateRate(editId, {
         ...(r?.unit === "boxes" ? { boxTypeId: editBoxTypeId as number } : { boxTypeId: null }),
+        ...(r?.unit === "pallet" && editPalletTypeId !== "" ? { palletTypeId: editPalletTypeId as number } : { palletTypeId: null }),
         price: Number(editPrice),
         comment: editComment.trim() || null,
       });
@@ -214,6 +223,24 @@ export default function Prices() {
             </div>
           )}
 
+          {addUnit === "pallet" && palletTypes.length > 0 && (
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Тип паллеты</label>
+              <select
+                value={addPalletTypeId}
+                onChange={(e) => setAddPalletTypeId(e.target.value ? Number(e.target.value) : "")}
+                className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              >
+                <option value="">Все</option>
+                {palletTypes.map((pt) => (
+                  <option key={pt.id} value={pt.id}>
+                    {pt.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Цена (руб.)</label>
             <input
@@ -255,6 +282,7 @@ export default function Prices() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Направление</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Единица</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Тип коробки</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Тип паллеты</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Цена (руб.)</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Комментарий</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24"></th>
@@ -285,6 +313,30 @@ export default function Prices() {
                       )
                     ) : r.unit === "boxes" ? (
                       <span>{r.boxType?.name || "—"}</span>
+                    ) : (
+                      <span>—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {editId === r.id ? (
+                      r.unit === "pallet" ? (
+                        <select
+                          value={editPalletTypeId}
+                          onChange={(e) => setEditPalletTypeId(e.target.value ? Number(e.target.value) : "")}
+                          className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        >
+                          <option value="">Все</option>
+                          {palletTypes.map((pt) => (
+                            <option key={pt.id} value={pt.id}>
+                              {pt.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )
+                    ) : r.unit === "pallet" && r.palletType ? (
+                      <span>{r.palletType.name}</span>
                     ) : (
                       <span>—</span>
                     )}
@@ -337,6 +389,7 @@ export default function Prices() {
                             setEditPrice(String(r.price));
                             setEditComment(r.comment ?? "");
                             setEditBoxTypeId(r.unit === "boxes" ? (r.boxTypeId ?? "") : "");
+                            setEditPalletTypeId(r.unit === "pallet" ? (r.palletTypeId ?? "") : "");
                           }}
                           className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                         >
