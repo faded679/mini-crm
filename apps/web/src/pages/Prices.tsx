@@ -67,13 +67,11 @@ export default function Prices() {
   const [newPtName, setNewPtName] = useState("");
   const [newPtMin, setNewPtMin] = useState("");
   const [newPtMax, setNewPtMax] = useState("");
-  const [newPtComment, setNewPtComment] = useState("");
   const [addingPt, setAddingPt] = useState(false);
   const [ptEditId, setPtEditId] = useState<number | null>(null);
   const [ptEditName, setPtEditName] = useState("");
   const [ptEditMin, setPtEditMin] = useState("");
   const [ptEditMax, setPtEditMax] = useState("");
-  const [ptEditComment, setPtEditComment] = useState("");
   const [savingPt, setSavingPt] = useState(false);
 
   // city edit
@@ -230,9 +228,8 @@ export default function Prices() {
         name: newPtName.trim(),
         minValue: Number(newPtMin),
         maxValue: newPtMax ? Number(newPtMax) : null,
-        comment: newPtComment.trim() || null,
       });
-      setNewPtName(""); setNewPtMin(""); setNewPtMax(""); setNewPtComment("");
+      setNewPtName(""); setNewPtMin(""); setNewPtMax("");
       await reload();
     } catch (e) { alert((e as Error).message); } finally { setAddingPt(false); }
   };
@@ -244,7 +241,6 @@ export default function Prices() {
         name: ptEditName.trim(),
         minValue: Number(ptEditMin),
         maxValue: ptEditMax ? Number(ptEditMax) : null,
-        comment: ptEditComment.trim() || null,
       });
       setPtEditId(null);
       await reload();
@@ -570,7 +566,6 @@ export default function Prices() {
           <input value={newPtName} onChange={(e) => setNewPtName(e.target.value)} placeholder="Название (0–300)" className="w-36 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
           <input value={newPtMin} onChange={(e) => setNewPtMin(e.target.value)} placeholder="От" inputMode="numeric" className="w-20 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
           <input value={newPtMax} onChange={(e) => setNewPtMax(e.target.value)} placeholder="До" inputMode="numeric" className="w-20 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
-          <input value={newPtComment} onChange={(e) => setNewPtComment(e.target.value)} placeholder="Комментарий" className="w-40 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
           <button onClick={handleAddPalletType} disabled={addingPt || !newPtName.trim() || !newPtMin} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
             <Plus size={14} /> Добавить
           </button>
@@ -583,7 +578,6 @@ export default function Prices() {
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">От</th>
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">До</th>
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Комментарий</th>
                   <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
                 </tr>
               </thead>
@@ -605,11 +599,6 @@ export default function Prices() {
                         <input value={ptEditMax} onChange={(e) => setPtEditMax(e.target.value)} inputMode="numeric" className="w-16 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
                       ) : pt.maxValue ?? "—"}
                     </td>
-                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                      {ptEditId === pt.id ? (
-                        <input value={ptEditComment} onChange={(e) => setPtEditComment(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
-                      ) : pt.comment || "—"}
-                    </td>
                     <td className="px-3 py-2 text-right">
                       {ptEditId === pt.id ? (
                         <div className="flex items-center justify-end gap-1">
@@ -618,7 +607,7 @@ export default function Prices() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => { setPtEditId(pt.id); setPtEditName(pt.name); setPtEditMin(String(pt.minValue)); setPtEditMax(pt.maxValue != null ? String(pt.maxValue) : ""); setPtEditComment(pt.comment ?? ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => { setPtEditId(pt.id); setPtEditName(pt.name); setPtEditMin(String(pt.minValue)); setPtEditMax(pt.maxValue != null ? String(pt.maxValue) : ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
                           <button onClick={() => handleDeletePalletType(pt.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
                         </div>
                       )}
