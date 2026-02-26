@@ -29,6 +29,7 @@ const SORT_KEYS: SortKey[] = [
   "weight",
   "boxCount",
   "client",
+  "total",
   "status",
 ];
 
