@@ -75,9 +75,25 @@ export default function Requests() {
   const setFilterDate = (v: string) => setParam("date", v);
 
   useEffect(() => {
-    getRequests()
-      .then(setRequests)
-      .finally(() => setLoading(false));
+    let alive = true;
+
+    const load = async () => {
+      try {
+        const data = await getRequests();
+        if (!alive) return;
+        setRequests(data);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    };
+
+    load();
+    const id = window.setInterval(load, 30_000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
