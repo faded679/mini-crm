@@ -1,12 +1,37 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth";
 import { useTheme } from "../theme";
 import { Package, Users, LogOut, Calendar, Moon, Sun, Building2, DollarSign } from "lucide-react";
+import { getRequests } from "../api";
 
 export default function Layout() {
   const { manager, logout } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+
+    const load = async () => {
+      try {
+        const requests = await getRequests();
+        if (!alive) return;
+        setUnreadCount(requests.filter((r) => !r.isRead).length);
+      } catch {
+        if (!alive) return;
+        setUnreadCount(0);
+      }
+    };
+
+    load();
+    const id = window.setInterval(load, 30_000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -30,7 +55,14 @@ export default function Layout() {
               <nav className="flex items-center gap-1">
                 <NavLink to="/" end className={linkClass}>
                   <Package size={18} />
-                  Заявки
+                  <span className="inline-flex items-center gap-1">
+                    <span>Заявки</span>
+                    {unreadCount > 0 && (
+                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
+                        +{unreadCount}
+                      </span>
+                    )}
+                  </span>
                 </NavLink>
                 <NavLink to="/clients" className={linkClass}>
                   <Users size={18} />
