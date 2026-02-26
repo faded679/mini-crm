@@ -299,7 +299,7 @@ export default function Prices() {
                 onChange={(e) => setAddBoxTypeId(e.target.value ? Number(e.target.value) : "")}
                 className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               >
-                <option value="">Выберите...</option>
+                <option value="">Выберите</option>
                 {boxTypes.map((bt) => (
                   <option key={bt.id} value={bt.id}>
                     {bt.name}
@@ -317,7 +317,7 @@ export default function Prices() {
                 onChange={(e) => setAddPalletTypeId(e.target.value ? Number(e.target.value) : "")}
                 className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               >
-                <option value="">Все</option>
+                <option value="">Выберите</option>
                 {palletTypes.map((pt) => (
                   <option key={pt.id} value={pt.id}>
                     {pt.name}
@@ -387,7 +387,7 @@ export default function Prices() {
                           onChange={(e) => setEditBoxTypeId(e.target.value ? Number(e.target.value) : "")}
                           className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                         >
-                          <option value="">Выберите...</option>
+                          <option value="">Выберите</option>
                           {boxTypes.map((bt) => (
                             <option key={bt.id} value={bt.id}>
                               {bt.name}
@@ -411,7 +411,7 @@ export default function Prices() {
                           onChange={(e) => setEditPalletTypeId(e.target.value ? Number(e.target.value) : "")}
                           className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                         >
-                          <option value="">Все</option>
+                          <option value="">Выберите</option>
                           {palletTypes.map((pt) => (
                             <option key={pt.id} value={pt.id}>
                               {pt.name}
