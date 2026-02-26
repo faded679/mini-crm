@@ -5,7 +5,13 @@ import {
   updateCity,
   deleteCity,
   getBoxTypes,
+  createBoxType,
+  updateBoxType,
+  deleteBoxType,
   getPalletTypes,
+  createPalletType,
+  updatePalletType,
+  deletePalletType,
   getRates,
   createRate,
   updateRate,
@@ -45,6 +51,28 @@ export default function Prices() {
   const [newCityName, setNewCityName] = useState("");
   const [creatingCity, setCreatingCity] = useState(false);
   const [newCityFullName, setNewCityFullName] = useState("");
+
+  // box type management
+  const [newBoxName, setNewBoxName] = useState("");
+  const [newBoxVolume, setNewBoxVolume] = useState("");
+  const [addingBox, setAddingBox] = useState(false);
+  const [boxEditId, setBoxEditId] = useState<number | null>(null);
+  const [boxEditName, setBoxEditName] = useState("");
+  const [boxEditVolume, setBoxEditVolume] = useState("");
+  const [savingBox, setSavingBox] = useState(false);
+
+  // pallet type management
+  const [newPtName, setNewPtName] = useState("");
+  const [newPtMin, setNewPtMin] = useState("");
+  const [newPtMax, setNewPtMax] = useState("");
+  const [newPtComment, setNewPtComment] = useState("");
+  const [addingPt, setAddingPt] = useState(false);
+  const [ptEditId, setPtEditId] = useState<number | null>(null);
+  const [ptEditName, setPtEditName] = useState("");
+  const [ptEditMin, setPtEditMin] = useState("");
+  const [ptEditMax, setPtEditMax] = useState("");
+  const [ptEditComment, setPtEditComment] = useState("");
+  const [savingPt, setSavingPt] = useState(false);
 
   // city edit
   const [cityEditId, setCityEditId] = useState<number | null>(null);
@@ -163,6 +191,65 @@ export default function Prices() {
     if (!confirm("Удалить тариф?")) return;
     await deleteRate(id);
     await reload();
+  };
+
+  // box type handlers
+  const handleAddBoxType = async () => {
+    if (addingBox || !newBoxName.trim() || !newBoxVolume) return;
+    setAddingBox(true);
+    try {
+      await createBoxType({ name: newBoxName.trim(), maxVolumeM3: Number(newBoxVolume) });
+      setNewBoxName("");
+      setNewBoxVolume("");
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setAddingBox(false); }
+  };
+  const handleSaveBoxEdit = async () => {
+    if (savingBox || boxEditId === null || !boxEditName.trim() || !boxEditVolume) return;
+    setSavingBox(true);
+    try {
+      await updateBoxType(boxEditId, { name: boxEditName.trim(), maxVolumeM3: Number(boxEditVolume) });
+      setBoxEditId(null);
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setSavingBox(false); }
+  };
+  const handleDeleteBoxType = async (id: number) => {
+    if (!confirm("Удалить тип коробки?")) return;
+    try { await deleteBoxType(id); await reload(); } catch (e) { alert((e as Error).message); }
+  };
+
+  // pallet type handlers
+  const handleAddPalletType = async () => {
+    if (addingPt || !newPtName.trim() || !newPtMin) return;
+    setAddingPt(true);
+    try {
+      await createPalletType({
+        name: newPtName.trim(),
+        minValue: Number(newPtMin),
+        maxValue: newPtMax ? Number(newPtMax) : null,
+        comment: newPtComment.trim() || null,
+      });
+      setNewPtName(""); setNewPtMin(""); setNewPtMax(""); setNewPtComment("");
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setAddingPt(false); }
+  };
+  const handleSavePtEdit = async () => {
+    if (savingPt || ptEditId === null || !ptEditName.trim() || !ptEditMin) return;
+    setSavingPt(true);
+    try {
+      await updatePalletType(ptEditId, {
+        name: ptEditName.trim(),
+        minValue: Number(ptEditMin),
+        maxValue: ptEditMax ? Number(ptEditMax) : null,
+        comment: ptEditComment.trim() || null,
+      });
+      setPtEditId(null);
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setSavingPt(false); }
+  };
+  const handleDeletePalletType = async (id: number) => {
+    if (!confirm("Удалить тип паллеты?")) return;
+    try { await deletePalletType(id); await reload(); } catch (e) { alert((e as Error).message); }
   };
 
   if (loading) {
@@ -410,6 +497,129 @@ export default function Prices() {
           </table>
         </div>
       )}
+
+      {/* Packaging types management */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Тип упаковки</p>
+
+        {/* Box types */}
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Коробки</p>
+        <div className="flex flex-wrap items-end gap-2 mb-3">
+          <input value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} placeholder="Название" className="w-40 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newBoxVolume} onChange={(e) => setNewBoxVolume(e.target.value)} placeholder="Макс. объём (м³)" inputMode="decimal" className="w-36 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <button onClick={handleAddBoxType} disabled={addingBox || !newBoxName.trim() || !newBoxVolume} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
+            <Plus size={14} /> Добавить
+          </button>
+        </div>
+        {boxTypes.length > 0 && (
+          <div className="mb-5 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Макс. объём (м³)</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {boxTypes.map((bt) => (
+                  <tr key={bt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {boxEditId === bt.id ? (
+                        <input value={boxEditName} onChange={(e) => setBoxEditName(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : bt.name}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {boxEditId === bt.id ? (
+                        <input value={boxEditVolume} onChange={(e) => setBoxEditVolume(e.target.value)} inputMode="decimal" className="w-24 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : bt.maxVolumeM3}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {boxEditId === bt.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={handleSaveBoxEdit} disabled={savingBox} className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"><Check size={16} /></button>
+                          <button onClick={() => setBoxEditId(null)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setBoxEditId(bt.id); setBoxEditName(bt.name); setBoxEditVolume(String(bt.maxVolumeM3)); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => handleDeleteBoxType(bt.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pallet types */}
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Паллеты</p>
+        <div className="flex flex-wrap items-end gap-2 mb-3">
+          <input value={newPtName} onChange={(e) => setNewPtName(e.target.value)} placeholder="Название (0–300)" className="w-36 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newPtMin} onChange={(e) => setNewPtMin(e.target.value)} placeholder="От" inputMode="numeric" className="w-20 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newPtMax} onChange={(e) => setNewPtMax(e.target.value)} placeholder="До" inputMode="numeric" className="w-20 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newPtComment} onChange={(e) => setNewPtComment(e.target.value)} placeholder="Комментарий" className="w-40 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <button onClick={handleAddPalletType} disabled={addingPt || !newPtName.trim() || !newPtMin} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
+            <Plus size={14} /> Добавить
+          </button>
+        </div>
+        {palletTypes.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">От</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">До</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Комментарий</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {palletTypes.map((pt) => (
+                  <tr key={pt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {ptEditId === pt.id ? (
+                        <input value={ptEditName} onChange={(e) => setPtEditName(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : pt.name}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {ptEditId === pt.id ? (
+                        <input value={ptEditMin} onChange={(e) => setPtEditMin(e.target.value)} inputMode="numeric" className="w-16 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : pt.minValue}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {ptEditId === pt.id ? (
+                        <input value={ptEditMax} onChange={(e) => setPtEditMax(e.target.value)} inputMode="numeric" className="w-16 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : pt.maxValue ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {ptEditId === pt.id ? (
+                        <input value={ptEditComment} onChange={(e) => setPtEditComment(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : pt.comment || "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {ptEditId === pt.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={handleSavePtEdit} disabled={savingPt} className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"><Check size={16} /></button>
+                          <button onClick={() => setPtEditId(null)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setPtEditId(pt.id); setPtEditName(pt.name); setPtEditMin(String(pt.minValue)); setPtEditMax(pt.maxValue != null ? String(pt.maxValue) : ""); setPtEditComment(pt.comment ?? ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => handleDeletePalletType(pt.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Cities management */}
       <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">

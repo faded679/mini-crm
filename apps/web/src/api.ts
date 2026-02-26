@@ -506,8 +506,48 @@ export function getBoxTypes() {
   return request<BoxType[]>("/admin/box-types");
 }
 
+export function createBoxType(data: { name: string; maxVolumeM3: number }) {
+  return request<BoxType>("/admin/box-types", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateBoxType(id: number, data: { name?: string; maxVolumeM3?: number }) {
+  return request<BoxType>(`/admin/box-types/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteBoxType(id: number) {
+  return request<void>(`/admin/box-types/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export function getPalletTypes() {
   return request<PalletType[]>("/admin/pallet-types");
+}
+
+export function createPalletType(data: { name: string; minValue: number; maxValue?: number | null; comment?: string | null }) {
+  return request<PalletType>("/admin/pallet-types", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updatePalletType(id: number, data: { name?: string; minValue?: number; maxValue?: number | null; comment?: string | null }) {
+  return request<PalletType>(`/admin/pallet-types/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deletePalletType(id: number) {
+  return request<void>(`/admin/pallet-types/${id}`, {
+    method: "DELETE",
+  });
 }
 
 export function getRates(cityId?: number) {

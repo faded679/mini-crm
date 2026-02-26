@@ -991,7 +991,8 @@ router.get("/directions", async (_req: Request, res: Response, next: NextFunctio
 
 const VALID_UNITS = ["pallet", "boxes"];
 
-// GET /admin/pallet-types — list available pallet types
+// --------------- Pallet Types ---------------
+
 router.get("/pallet-types", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const types = await (prisma as any).palletType.findMany({
@@ -1003,13 +1004,138 @@ router.get("/pallet-types", async (_req: Request, res: Response, next: NextFunct
   }
 });
 
-// GET /admin/box-types — list available box types
+router.post("/pallet-types", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, minValue, maxValue, comment } = req.body as {
+      name?: string;
+      minValue?: number;
+      maxValue?: number | null;
+      comment?: string | null;
+    };
+    if (!name?.trim()) throw new ApiError(400, "name is required");
+    if (minValue === undefined || !Number.isFinite(minValue)) throw new ApiError(400, "Invalid minValue");
+
+    const created = await (prisma as any).palletType.create({
+      data: {
+        name: name.trim(),
+        minValue,
+        maxValue: maxValue !== undefined && maxValue !== null ? maxValue : null,
+        comment: comment?.trim() || null,
+      },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/pallet-types/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { name, minValue, maxValue, comment } = req.body as {
+      name?: string;
+      minValue?: number;
+      maxValue?: number | null;
+      comment?: string | null;
+    };
+
+    const data: any = {};
+    if (name !== undefined) data.name = name.trim();
+    if (minValue !== undefined) data.minValue = minValue;
+    if (maxValue !== undefined) data.maxValue = maxValue;
+    if (comment !== undefined) data.comment = comment?.trim() || null;
+
+    const updated = await (prisma as any).palletType.update({ where: { id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/pallet-types/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const ratesCount = await (prisma as any).priceRate.count({ where: { palletTypeId: id } });
+    if (ratesCount > 0) throw new ApiError(400, "Cannot delete pallet type with existing rates");
+
+    await (prisma as any).palletType.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --------------- Box Types ---------------
+
 router.get("/box-types", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const types = await (prisma as any).boxType.findMany({
       orderBy: { maxVolumeM3: "asc" },
     });
     res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/box-types", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, maxVolumeM3 } = req.body as {
+      name?: string;
+      maxVolumeM3?: number;
+    };
+    if (!name?.trim()) throw new ApiError(400, "name is required");
+    if (maxVolumeM3 === undefined || !Number.isFinite(maxVolumeM3) || maxVolumeM3! <= 0) {
+      throw new ApiError(400, "Invalid maxVolumeM3");
+    }
+
+    const created = await (prisma as any).boxType.create({
+      data: { name: name.trim(), maxVolumeM3 },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/box-types/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { name, maxVolumeM3 } = req.body as {
+      name?: string;
+      maxVolumeM3?: number;
+    };
+
+    const data: any = {};
+    if (name !== undefined) data.name = name.trim();
+    if (maxVolumeM3 !== undefined) {
+      if (!Number.isFinite(maxVolumeM3) || maxVolumeM3! <= 0) throw new ApiError(400, "Invalid maxVolumeM3");
+      data.maxVolumeM3 = maxVolumeM3;
+    }
+
+    const updated = await (prisma as any).boxType.update({ where: { id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/box-types/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const ratesCount = await (prisma as any).priceRate.count({ where: { boxTypeId: id } });
+    if (ratesCount > 0) throw new ApiError(400, "Cannot delete box type with existing rates");
+
+    await (prisma as any).boxType.delete({ where: { id } });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }
