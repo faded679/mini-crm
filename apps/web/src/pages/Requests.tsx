@@ -18,7 +18,7 @@ const statusColors: Record<RequestStatus, string> = {
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 };
 
-type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "status";
+type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "total" | "status";
 type SortDir = "asc" | "desc";
 
 const SORT_KEYS: SortKey[] = [
@@ -188,6 +188,12 @@ export default function Requests() {
       case "client":
         res = compareStr(getClientName(a), getClientName(b));
         break;
+      case "total": {
+        const ta = getRequestTotal(a) ?? -1;
+        const tb = getRequestTotal(b) ?? -1;
+        res = compareNum(ta, tb);
+        break;
+      }
       case "status":
         res = compareStr(statusLabels[a.status], statusLabels[b.status]);
         break;
@@ -363,8 +369,10 @@ export default function Requests() {
                     Клиент {sortIndicator("client")}
                   </button>
                 </th>
-                <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  Сумма
+                <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400">
+                  <button onClick={() => toggleSort("total")} className="hover:text-gray-900 dark:hover:text-white">
+                    Сумма {sortIndicator("total")}
+                  </button>
                 </th>
                 <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("status")} className="hover:text-gray-900 dark:hover:text-white">
