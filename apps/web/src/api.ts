@@ -575,3 +575,39 @@ export function deleteRate(id: number) {
     method: "DELETE",
   });
 }
+
+// --------------- Service Prices ---------------
+
+export interface ServicePrice {
+  id: number;
+  name: string;
+  price: number;
+  unit: string;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function getServicePrices() {
+  return request<ServicePrice[]>("/admin/service-prices");
+}
+
+export function createServicePrice(data: { name: string; price: number; unit?: string; comment?: string | null }) {
+  return request<ServicePrice>("/admin/service-prices", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateServicePrice(id: number, data: { name?: string; price?: number; unit?: string; comment?: string | null }) {
+  return request<ServicePrice>(`/admin/service-prices/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteServicePrice(id: number) {
+  return request<void>(`/admin/service-prices/${id}`, {
+    method: "DELETE",
+  });
+}

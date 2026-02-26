@@ -1151,6 +1151,81 @@ router.delete("/box-types/:id", async (req: Request, res: Response, next: NextFu
   }
 });
 
+// --------------- Service Prices ---------------
+
+router.get("/service-prices", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const items = await (prisma as any).servicePrice.findMany({ orderBy: { id: "asc" } });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/service-prices", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, price, unit, comment } = req.body as {
+      name?: string;
+      price?: number;
+      unit?: string;
+      comment?: string | null;
+    };
+    if (!name?.trim()) throw new ApiError(400, "name is required");
+    if (price === undefined || !Number.isFinite(price) || price < 0) throw new ApiError(400, "Invalid price");
+
+    const created = await (prisma as any).servicePrice.create({
+      data: {
+        name: name.trim(),
+        price,
+        unit: unit?.trim() || "услуга",
+        comment: comment?.trim() || null,
+      },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/service-prices/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { name, price, unit, comment } = req.body as {
+      name?: string;
+      price?: number;
+      unit?: string;
+      comment?: string | null;
+    };
+
+    const data: any = {};
+    if (name !== undefined) data.name = name.trim();
+    if (price !== undefined) {
+      if (!Number.isFinite(price) || price! < 0) throw new ApiError(400, "Invalid price");
+      data.price = price;
+    }
+    if (unit !== undefined) data.unit = unit.trim();
+    if (comment !== undefined) data.comment = comment?.trim() || null;
+
+    const updated = await (prisma as any).servicePrice.update({ where: { id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/service-prices/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+    await (prisma as any).servicePrice.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/rates
 router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {

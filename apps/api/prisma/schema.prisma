@@ -264,3 +264,15 @@ model RequestFieldHistory {
 
   @@map("request_field_history")
 }
+
+model ServicePrice {
+  id        Int      @id @default(autoincrement())
+  name      String
+  price     Float
+  unit      String   @default("услуга")
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("service_prices")
+}

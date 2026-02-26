@@ -16,11 +16,16 @@ import {
   createRate,
   updateRate,
   deleteRate,
+  getServicePrices,
+  createServicePrice,
+  updateServicePrice,
+  deleteServicePrice,
   type City,
   type BoxType,
   type PalletType,
   type PriceRate,
   type RateUnit,
+  type ServicePrice,
 } from "../api";
 import { cn } from "../lib/utils";
 import { Plus, Trash2, Pencil, X, Check } from "lucide-react";
@@ -35,6 +40,7 @@ export default function Prices() {
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
+  const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCity, setFilterCity] = useState<number | "all">("all");
 
@@ -63,6 +69,19 @@ export default function Prices() {
   const [boxEditMaxVol, setBoxEditMaxVol] = useState("");
   const [savingBox, setSavingBox] = useState(false);
 
+  // service price management
+  const [newSpName, setNewSpName] = useState("");
+  const [newSpPrice, setNewSpPrice] = useState("");
+  const [newSpUnit, setNewSpUnit] = useState("");
+  const [newSpComment, setNewSpComment] = useState("");
+  const [addingSp, setAddingSp] = useState(false);
+  const [spEditId, setSpEditId] = useState<number | null>(null);
+  const [spEditName, setSpEditName] = useState("");
+  const [spEditPrice, setSpEditPrice] = useState("");
+  const [spEditUnit, setSpEditUnit] = useState("");
+  const [spEditComment, setSpEditComment] = useState("");
+  const [savingSp, setSavingSp] = useState(false);
+
   // pallet type management
   const [newPtName, setNewPtName] = useState("");
   const [newPtMin, setNewPtMin] = useState("");
@@ -89,11 +108,12 @@ export default function Prices() {
   const [saving, setSaving] = useState(false);
 
   const reload = async () => {
-    const [c, r, bt, pt] = await Promise.all([getCities(), getRates(), getBoxTypes(), getPalletTypes()]);
+    const [c, r, bt, pt, sp] = await Promise.all([getCities(), getRates(), getBoxTypes(), getPalletTypes(), getServicePrices()]);
     setCities(c);
     setRates(r);
     setBoxTypes(bt);
     setPalletTypes(pt);
+    setServicePrices(sp);
   };
 
   useEffect(() => {
@@ -249,6 +269,40 @@ export default function Prices() {
   const handleDeletePalletType = async (id: number) => {
     if (!confirm("Удалить тип паллеты?")) return;
     try { await deletePalletType(id); await reload(); } catch (e) { alert((e as Error).message); }
+  };
+
+  // service price handlers
+  const handleAddSp = async () => {
+    if (addingSp || !newSpName.trim() || !newSpPrice) return;
+    setAddingSp(true);
+    try {
+      await createServicePrice({
+        name: newSpName.trim(),
+        price: Number(newSpPrice),
+        unit: newSpUnit.trim() || "услуга",
+        comment: newSpComment.trim() || null,
+      });
+      setNewSpName(""); setNewSpPrice(""); setNewSpUnit(""); setNewSpComment("");
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setAddingSp(false); }
+  };
+  const handleSaveSpEdit = async () => {
+    if (savingSp || spEditId === null || !spEditName.trim() || !spEditPrice) return;
+    setSavingSp(true);
+    try {
+      await updateServicePrice(spEditId, {
+        name: spEditName.trim(),
+        price: Number(spEditPrice),
+        unit: spEditUnit.trim() || "услуга",
+        comment: spEditComment.trim() || null,
+      });
+      setSpEditId(null);
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setSavingSp(false); }
+  };
+  const handleDeleteSp = async (id: number) => {
+    if (!confirm("Удалить услугу?")) return;
+    try { await deleteServicePrice(id); await reload(); } catch (e) { alert((e as Error).message); }
   };
 
   if (loading) {
@@ -609,6 +663,76 @@ export default function Prices() {
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => { setPtEditId(pt.id); setPtEditName(pt.name); setPtEditMin(String(pt.minValue)); setPtEditMax(pt.maxValue != null ? String(pt.maxValue) : ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
                           <button onClick={() => handleDeletePalletType(pt.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Service prices */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Дополнительные услуги</p>
+
+        <div className="flex flex-wrap items-end gap-2 mb-3">
+          <input value={newSpName} onChange={(e) => setNewSpName(e.target.value)} placeholder="Название" className="w-56 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newSpPrice} onChange={(e) => setNewSpPrice(e.target.value)} placeholder="Цена" inputMode="decimal" className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newSpUnit} onChange={(e) => setNewSpUnit(e.target.value)} placeholder="Ед. изм." className="w-28 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newSpComment} onChange={(e) => setNewSpComment(e.target.value)} placeholder="Комментарий" className="w-52 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <button onClick={handleAddSp} disabled={addingSp || !newSpName.trim() || !newSpPrice} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
+            <Plus size={14} /> Добавить
+          </button>
+        </div>
+
+        {servicePrices.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Цена</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ед. изм.</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Комментарий</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {servicePrices.map((sp) => (
+                  <tr key={sp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {spEditId === sp.id ? (
+                        <input value={spEditName} onChange={(e) => setSpEditName(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : sp.name}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {spEditId === sp.id ? (
+                        <input value={spEditPrice} onChange={(e) => setSpEditPrice(e.target.value)} inputMode="decimal" className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : sp.price}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {spEditId === sp.id ? (
+                        <input value={spEditUnit} onChange={(e) => setSpEditUnit(e.target.value)} className="w-24 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : sp.unit}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {spEditId === sp.id ? (
+                        <input value={spEditComment} onChange={(e) => setSpEditComment(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : sp.comment || "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {spEditId === sp.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={handleSaveSpEdit} disabled={savingSp} className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"><Check size={16} /></button>
+                          <button onClick={() => setSpEditId(null)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setSpEditId(sp.id); setSpEditName(sp.name); setSpEditPrice(String(sp.price)); setSpEditUnit(sp.unit); setSpEditComment(sp.comment ?? ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => handleDeleteSp(sp.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
                         </div>
                       )}
                     </td>
