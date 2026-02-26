@@ -122,6 +122,7 @@ export interface ShipmentRequest {
   isRead: boolean;
   createdAt: string;
   client: Client;
+  services?: RequestService[];
 }
 
 export interface StatusHistoryEntry {

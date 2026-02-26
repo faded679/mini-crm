@@ -117,7 +117,7 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const requests = await (prisma as any).shipmentRequest.findMany({
-      include: { client: true, boxType: true },
+      include: { client: true, boxType: true, services: true },
       orderBy: { createdAt: "desc" },
     });
     res.json(requests);

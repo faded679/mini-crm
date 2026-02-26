@@ -44,6 +44,13 @@ function formatDateRu(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU");
 }
 
+function getRequestTotal(r: ShipmentRequest) {
+  const services = (r as any).services as { amount?: number }[] | undefined;
+  if (!services || services.length === 0) return null;
+  const total = services.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+  return total > 0 ? total : null;
+}
+
 export default function Requests() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -356,6 +363,9 @@ export default function Requests() {
                     Клиент {sortIndicator("client")}
                   </button>
                 </th>
+                <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  Сумма
+                </th>
                 <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("status")} className="hover:text-gray-900 dark:hover:text-white">
                     Статус {sortIndicator("status")}
@@ -383,6 +393,12 @@ export default function Requests() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.boxCount}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.client.firstName} {r.client.lastName || ""}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
+                    {(() => {
+                      const total = getRequestTotal(r);
+                      return total == null ? "-" : `${total.toLocaleString("ru-RU")} ₽`;
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-medium", statusColors[r.status])}>
