@@ -75,6 +75,21 @@ export async function acceptConsent(data: {
   return res.json() as Promise<{ consentGiven: boolean }>;
 }
 
+export async function savePhone(telegramId: string, phone: string): Promise<{ phone: string }> {
+  const res = await fetch(`${env.API_URL}/bot/phone`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId, phone }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+
+  return res.json() as Promise<{ phone: string }>;
+}
+
 export async function getRequests(telegramId: string): Promise<ShipmentRequest[]> {
   const res = await fetch(`${env.API_URL}/bot/requests/${telegramId}`);
 

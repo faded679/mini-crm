@@ -164,4 +164,23 @@ router.post("/consent", async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// POST /bot/phone — save client phone number
+router.post("/phone", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { telegramId, phone } = req.body;
+
+    if (!telegramId) throw new ApiError(400, "Missing telegramId");
+    if (!phone) throw new ApiError(400, "Missing phone");
+
+    const client = await (prisma as any).client.update({
+      where: { telegramId: String(telegramId) },
+      data: { phone: String(phone) },
+    });
+
+    res.json({ phone: client.phone });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
