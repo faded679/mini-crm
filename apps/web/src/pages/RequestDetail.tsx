@@ -461,26 +461,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).volume ?? "—"}</p>
               )}
             </div>
-          </div>
-
-          {/* Status change */}
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setConfirmStatus(s)}
-                  disabled={updating || request.status === s}
-                  className={cn(
-                    "px-3 py-1.5 text-xs rounded-lg font-medium transition",
-                    request.status === s
-                      ? cn("cursor-not-allowed", statusColors[s])
-                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                  )}
-                >
-                  {statusLabels[s]}
-                </button>
-              ))}
 
               <div className="flex items-center gap-3">
                 <button
@@ -508,6 +488,28 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   <FileText size={14} /> Подставить
                 </button>
               </div>
+
+          </div>
+
+          {/* Status change */}
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setConfirmStatus(s)}
+                  disabled={updating || request.status === s}
+                  className={cn(
+                    "px-3 py-1.5 text-xs rounded-lg font-medium transition",
+                    request.status === s
+                      ? cn("cursor-not-allowed", statusColors[s])
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  )}
+                >
+                  {statusLabels[s]}
+                </button>
+              ))}
+
 
             </div>
 
