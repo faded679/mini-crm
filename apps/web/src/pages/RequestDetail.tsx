@@ -465,11 +465,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
           {/* Status change */}
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={cn("text-xs px-2 py-1 rounded-full font-medium", statusColors[request.status])}>
-                {statusLabels[request.status]}
-              </span>
-            </div>
+
             <div className="flex items-center gap-2">
               {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
                 <button
