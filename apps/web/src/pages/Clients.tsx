@@ -31,6 +31,8 @@ export default function Clients() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Имя</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Username</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Telegram ID</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Телефон</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Организация</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Заявок</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Дата</th>
               </tr>
@@ -49,6 +51,10 @@ export default function Clients() {
                     {c.username ? `@${c.username}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500 font-mono">{c.telegramId}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{c.phone || "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                    {c.counterparties?.[0]?.counterparty?.shortName || c.counterparties?.[0]?.counterparty?.name || "—"}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{c._count?.requests ?? 0}</td>
                   <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
                     {new Date(c.createdAt).toLocaleDateString("ru-RU")}

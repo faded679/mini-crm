@@ -41,6 +41,7 @@ export interface Client {
   firstName: string | null;
   lastName: string | null;
   username: string | null;
+  phone?: string | null;
   createdAt: string;
   _count?: { requests: number };
   counterparties?: Array<{ id: number; counterparty: Counterparty }>;

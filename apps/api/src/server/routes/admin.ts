@@ -741,7 +741,15 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
 router.get("/clients", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const clients = await prisma.client.findMany({
-      include: { _count: { select: { requests: true } } },
+      include: {
+        _count: { select: { requests: true } },
+        counterparties: {
+          include: {
+            counterparty: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
     res.json(clients);
