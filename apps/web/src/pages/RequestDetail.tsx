@@ -465,11 +465,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
           {/* Status change */}
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={cn("text-xs px-2 py-1 rounded-full font-medium", statusColors[request.status])}>
-                {statusLabels[request.status]}
-              </span>
-            </div>
             <div className="flex items-center gap-2">
               {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
                 <button
@@ -486,33 +481,120 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   {statusLabels[s]}
                 </button>
               ))}
-              <div className="ml-auto">
-
-                  <button
-                    onClick={() => {
-                      const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
-                      setInvoiceCounterpartyId(cp?.id ?? "");
-                      if (services.length > 0) {
-                        setInvoiceItems(services.map((s) => ({
-                          description: s.description,
-                          quantity: s.quantity,
-                          unit: s.unit,
-                          price: s.price,
-                          amount: s.amount,
-                        })));
-                      } else {
-                        setInvoiceItems([emptyItem()]);
-                      }
-                      setConfirmInvoice(true);
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                  >
-                    <FileText size={16} />
-                    Выписать счёт
-                  </button>
-
-              </div>
             </div>
+
+            {/* Add from price list (moved under statuses) */}
+            {(() => {
+              const requestCity = request ? cities.find((c) => c.shortName === request.city) : null;
+              const typeOptions = addPkgType === "boxes"
+                ? boxTypes.map((bt) => ({ id: bt.id, name: bt.name }))
+                : palletTypes.map((pt) => ({ id: pt.id, name: pt.name }));
+              const matchedRate = requestCity && addTypeId
+                ? rates.find((r) =>
+                    r.cityId === requestCity.id &&
+                    r.unit === (addPkgType === "pallets" ? "pallet" : "boxes") &&
+                    (addPkgType === "boxes"
+                      ? r.boxTypeId === Number(addTypeId)
+                      : r.palletTypeId === Number(addTypeId))
+                  )
+                : null;
+              const unitPrice = matchedRate?.price ?? 0;
+              const qty = Number(addQty) || 0;
+              const lineTotal = unitPrice * qty;
+              const selectedTypeName = typeOptions.find((t) => String(t.id) === addTypeId)?.name ?? "";
+
+              return (
+                <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-300 dark:border-gray-600">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Добавить позицию из прайса</p>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="min-w-[120px]">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Упаковка</label>
+                      <select
+                        value={addPkgType}
+                        onChange={(e) => { setAddPkgType(e.target.value as "boxes" | "pallets"); setAddTypeId(""); }}
+                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      >
+                        <option value="boxes">Коробки</option>
+                        <option value="pallets">Палеты</option>
+                      </select>
+                    </div>
+                    <div className="min-w-[160px] flex-1">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">
+                        {addPkgType === "boxes" ? "Тип коробки" : "Тип палеты"}
+                      </label>
+                      <select
+                        value={addTypeId}
+                        onChange={(e) => setAddTypeId(e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      >
+                        <option value="">Выберите...</option>
+                        {typeOptions.map((t) => (
+                          <option key={t.id} value={String(t.id)}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-20">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Кол-во</label>
+                      <input
+                        value={addQty}
+                        onChange={(e) => setAddQty(e.target.value)}
+                        inputMode="numeric"
+                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
+                      />
+                    </div>
+                    <div className="w-24 text-center">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Цена</label>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 py-1.5">
+                        {unitPrice ? unitPrice.toLocaleString("ru-RU") : "—"}
+                      </p>
+                    </div>
+                    <div className="w-28 text-center">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Сумма</label>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 py-1.5">
+                        {lineTotal ? lineTotal.toLocaleString("ru-RU") : "—"}
+                      </p>
+                    </div>
+                    <button
+                      disabled={!addTypeId || !qty || !unitPrice || addingService || !request}
+                      onClick={async () => {
+                        if (!request || !addTypeId || !qty || !unitPrice) return;
+                        setAddingService(true);
+                        try {
+                          const selectedTypeName2 = typeOptions.find((t) => String(t.id) === addTypeId)?.name ?? "";
+                          const desc = `${addPkgType === "boxes" ? "Коробки" : "Палеты"} — ${selectedTypeName2}, ${request.city}`;
+                          const svc = await createRequestService(request.id, {
+                            description: desc,
+                            unit: "шт",
+                            quantity: qty,
+                            price: unitPrice,
+                          });
+                          setServices((prev) => [...prev, svc]);
+                          setAddTypeId("");
+                          setAddQty("1");
+                        } catch {
+                          alert("Ошибка при добавлении позиции");
+                        } finally {
+                          setAddingService(false);
+                        }
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 text-xs rounded-lg font-medium transition",
+                        addTypeId && qty && unitPrice
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                      )}
+                    >
+                      {addingService ? "..." : "Добавить"}
+                    </button>
+                  </div>
+                  {addTypeId && !unitPrice && requestCity && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Тариф не найден для {requestCity.shortName} + {selectedTypeName}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Services */}
@@ -637,124 +719,37 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                     </tbody>
                   </table>
                 </div>
-                <div className="mt-3 text-right text-sm font-semibold text-gray-900 dark:text-white">
-                  Итого: {services.reduce((sum, s) => sum + s.amount, 0).toLocaleString("ru-RU")} руб.
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <button
+                    onClick={() => {
+                      const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
+                      setInvoiceCounterpartyId(cp?.id ?? "");
+                      if (services.length > 0) {
+                        setInvoiceItems(services.map((s) => ({
+                          description: s.description,
+                          quantity: s.quantity,
+                          unit: s.unit,
+                          price: s.price,
+                          amount: s.amount,
+                        })));
+                      } else {
+                        setInvoiceItems([emptyItem()]);
+                      }
+                      setConfirmInvoice(true);
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                    type="button"
+                  >
+                    <FileText size={16} />
+                    Выписать счёт
+                  </button>
+
+                  <div className="text-right text-sm font-semibold text-gray-900 dark:text-white">
+                    Итого: {services.reduce((sum, s) => sum + s.amount, 0).toLocaleString("ru-RU")} руб.
+                  </div>
                 </div>
               </>
             )}
-
-            {/* Inline add from price list */}
-            {(() => {
-              const requestCity = request ? cities.find((c) => c.shortName === request.city) : null;
-              const typeOptions = addPkgType === "boxes"
-                ? boxTypes.map((bt) => ({ id: bt.id, name: bt.name }))
-                : palletTypes.map((pt) => ({ id: pt.id, name: pt.name }));
-              const matchedRate = requestCity && addTypeId
-                ? rates.find((r) =>
-                    r.cityId === requestCity.id &&
-                    r.unit === (addPkgType === "pallets" ? "pallet" : "boxes") &&
-                    (addPkgType === "boxes"
-                      ? r.boxTypeId === Number(addTypeId)
-                      : r.palletTypeId === Number(addTypeId))
-                  )
-                : null;
-              const unitPrice = matchedRate?.price ?? 0;
-              const qty = Number(addQty) || 0;
-              const lineTotal = unitPrice * qty;
-              const selectedTypeName = typeOptions.find((t) => String(t.id) === addTypeId)?.name ?? "";
-
-              return (
-                <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-300 dark:border-gray-600">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Добавить позицию из прайса</p>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <div className="min-w-[120px]">
-                      <label className="block text-[11px] text-gray-400 mb-0.5">Упаковка</label>
-                      <select
-                        value={addPkgType}
-                        onChange={(e) => { setAddPkgType(e.target.value as "boxes" | "pallets"); setAddTypeId(""); }}
-                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                      >
-                        <option value="boxes">Коробки</option>
-                        <option value="pallets">Палеты</option>
-                      </select>
-                    </div>
-                    <div className="min-w-[160px] flex-1">
-                      <label className="block text-[11px] text-gray-400 mb-0.5">
-                        {addPkgType === "boxes" ? "Тип коробки" : "Тип палеты"}
-                      </label>
-                      <select
-                        value={addTypeId}
-                        onChange={(e) => setAddTypeId(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                      >
-                        <option value="">Выберите...</option>
-                        {typeOptions.map((t) => (
-                          <option key={t.id} value={String(t.id)}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="w-20">
-                      <label className="block text-[11px] text-gray-400 mb-0.5">Кол-во</label>
-                      <input
-                        value={addQty}
-                        onChange={(e) => setAddQty(e.target.value)}
-                        inputMode="numeric"
-                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
-                      />
-                    </div>
-                    <div className="w-24 text-center">
-                      <label className="block text-[11px] text-gray-400 mb-0.5">Цена</label>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 py-1.5">
-                        {unitPrice ? unitPrice.toLocaleString("ru-RU") : "—"}
-                      </p>
-                    </div>
-                    <div className="w-28 text-center">
-                      <label className="block text-[11px] text-gray-400 mb-0.5">Сумма</label>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 py-1.5">
-                        {lineTotal ? lineTotal.toLocaleString("ru-RU") : "—"}
-                      </p>
-                    </div>
-                    <button
-                      disabled={!addTypeId || !qty || !unitPrice || addingService || !request}
-                      onClick={async () => {
-                        if (!request || !addTypeId || !qty || !unitPrice) return;
-                        setAddingService(true);
-                        try {
-                          const selectedTypeName2 = typeOptions.find((t) => String(t.id) === addTypeId)?.name ?? "";
-                          const desc = `${addPkgType === "boxes" ? "Коробки" : "Палеты"} — ${selectedTypeName2}, ${request.city}`;
-                          const svc = await createRequestService(request.id, {
-                            description: desc,
-                            unit: "шт",
-                            quantity: qty,
-                            price: unitPrice,
-                          });
-                          setServices((prev) => [...prev, svc]);
-                          setAddTypeId("");
-                          setAddQty("1");
-                        } catch {
-                          alert("Ошибка при добавлении позиции");
-                        } finally {
-                          setAddingService(false);
-                        }
-                      }}
-                      className={cn(
-                        "px-3 py-1.5 text-xs rounded-lg font-medium transition",
-                        addTypeId && qty && unitPrice
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                          : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
-                      )}
-                    >
-                      {addingService ? "..." : "Добавить"}
-                    </button>
-                  </div>
-                  {addTypeId && !unitPrice && requestCity && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                      Тариф не найден для {requestCity.shortName} + {selectedTypeName}
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
           </div>
         </div>
 
