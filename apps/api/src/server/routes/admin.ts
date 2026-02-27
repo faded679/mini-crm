@@ -767,6 +767,12 @@ router.get("/clients/:id", async (req: Request, res: Response, next: NextFunctio
     const client = await prisma.client.findUnique({
       where: { id },
       include: {
+        counterparties: {
+          include: {
+            counterparty: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
         requests: {
           orderBy: { createdAt: "desc" },
         },

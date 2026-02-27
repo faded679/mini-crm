@@ -61,10 +61,31 @@ export default function ClientDetail() {
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{fullName}</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="text-gray-600 dark:text-gray-400">
-            <span className="text-gray-400 dark:text-gray-500">Username:</span> {client.username ? `@${client.username}` : "—"}
+            <span className="text-gray-400 dark:text-gray-500">Username:</span>{" "}
+            {client.username ? (
+              <a
+                href={`https://t.me/${client.username}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                @{client.username}
+              </a>
+            ) : (
+              "—"
+            )}
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Telegram ID:</span> <span className="font-mono">{client.telegramId}</span>
+          </div>
+          <div className="text-gray-600 dark:text-gray-400">
+            <span className="text-gray-400 dark:text-gray-500">Телефон:</span>{" "}
+            <span className="font-mono">{client.phone || "—"}</span>
+          </div>
+          <div className="text-gray-600 dark:text-gray-400">
+            <span className="text-gray-400 dark:text-gray-500">Организация:</span>{" "}
+            {client.counterparties?.[0]?.counterparty?.shortName || client.counterparties?.[0]?.counterparty?.name || "—"}
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Дата регистрации:</span> {new Date(client.createdAt).toLocaleString("ru-RU")}
