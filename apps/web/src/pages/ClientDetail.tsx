@@ -46,6 +46,9 @@ export default function ClientDetail() {
   }
 
   const fullName = `${client.firstName ?? ""} ${client.lastName ?? ""}`.trim() || "—";
+  const primaryCounterparty = client.counterparties?.[0]?.counterparty;
+  const primaryCounterpartyName = primaryCounterparty?.shortName || primaryCounterparty?.name;
+  const primaryCounterpartyInn = primaryCounterparty?.inn;
 
   return (
     <div className="max-w-5xl">
@@ -85,7 +88,17 @@ export default function ClientDetail() {
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Организация:</span>{" "}
-            {client.counterparties?.[0]?.counterparty?.shortName || client.counterparties?.[0]?.counterparty?.name || "—"}
+            {primaryCounterparty ? (
+              <Link
+                to={`/counterparties${primaryCounterpartyInn ? `?inn=${encodeURIComponent(primaryCounterpartyInn)}` : ""}`}
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {primaryCounterpartyName || "—"}
+              </Link>
+            ) : (
+              "—"
+            )}
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Дата регистрации:</span> {new Date(client.createdAt).toLocaleString("ru-RU")}
