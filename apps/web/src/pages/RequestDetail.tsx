@@ -469,7 +469,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               <span className={cn("text-xs px-2 py-1 rounded-full font-medium", statusColors[request.status])}>
                 {statusLabels[request.status]}
               </span>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Изменить статус:</p>
             </div>
             <div className="flex items-center gap-2">
               {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
@@ -480,7 +479,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   className={cn(
                     "px-3 py-1.5 text-xs rounded-lg font-medium transition",
                     request.status === s
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                      ? cn("cursor-not-allowed", statusColors[s])
                       : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                   )}
                 >
