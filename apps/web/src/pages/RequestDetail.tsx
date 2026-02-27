@@ -625,16 +625,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 >
                   <FileText size={14} /> Подставить
                 </button>
-                <button
-                  onClick={async () => {
-                    if (!request) return;
-                    const svc = await createRequestService(request.id, { description: "", unit: "шт", quantity: 1, price: 0 });
-                    setServices((prev) => [...prev, svc]);
-                  }}
-                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                >
-                  <Plus size={14} /> Добавить строку
-                </button>
               </div>
             </div>
 
@@ -867,9 +857,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Услуги</label>
-                      <button onClick={addItem} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400">
-                        <Plus size={14} /> Добавить строку
-                      </button>
+
                     </div>
 
                     <div className="space-y-2">
