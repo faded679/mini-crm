@@ -3,9 +3,12 @@ import { env } from "./env.js";
 import { handleStart } from "./handlers/start.js";
 import { handleNewRequest, handleNewRequestStep, getSession, clearSession } from "./handlers/new-request.js";
 import { handleMyRequests } from "./handlers/my-requests.js";
-import { acceptConsent, checkConsent, savePhone } from "./api.js";
+import { acceptConsent, checkConsent, savePhone, linkInn } from "./api.js";
 
 const bot = new Bot(env.BOT_TOKEN);
+
+// Track users waiting for INN input
+const waitingForInn = new Set<number>();
 
 bot.command("start", handleStart);
 bot.command("new", async (ctx) => {
@@ -106,29 +109,13 @@ bot.on("message:contact", async (ctx) => {
   try {
     await savePhone(String(user.id), contact.phone_number);
 
-    // Remove the keyboard button first
-    await ctx.reply("✅ Спасибо! Номер телефона сохранён.", {
+    await ctx.reply("✅ Номер телефона сохранён.", {
       reply_markup: { remove_keyboard: true },
     });
 
-    await ctx.reply(
-      "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
-      "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команды:\n" +
-      "/new — Создать новую заявку\n" +
-      "/my — Мои заявки",
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "📦 Открыть приложение",
-                web_app: { url: env.MINI_APP_URL },
-              },
-            ],
-          ],
-        },
-      }
-    );
+    // Ask for INN
+    waitingForInn.add(user.id);
+    await ctx.reply("🏢 Введите ИНН вашей организации (10 или 12 цифр):");
   } catch {
     await ctx.reply("Ошибка при сохранении номера. Попробуйте позже.");
   }
@@ -136,7 +123,48 @@ bot.on("message:contact", async (ctx) => {
 
 bot.on("message:text", async (ctx) => {
   const userId = ctx.from?.id;
-  if (userId && getSession(userId)) {
+  if (!userId) return;
+
+  // Handle INN input
+  if (waitingForInn.has(userId)) {
+    const text = ctx.message.text.trim();
+
+    if (!/^\d{10}$|^\d{12}$/.test(text)) {
+      await ctx.reply("❌ ИНН должен содержать 10 или 12 цифр. Попробуйте ещё раз:");
+      return;
+    }
+
+    try {
+      const result = await linkInn(String(userId), text);
+      waitingForInn.delete(userId);
+
+      await ctx.reply(
+        `✅ Организация привязана: ${result.name} (ИНН: ${result.inn})\n\n` +
+        "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
+        "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команды:\n" +
+        "/new — Создать новую заявку\n" +
+        "/my — Мои заявки",
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "📦 Открыть приложение",
+                  web_app: { url: env.MINI_APP_URL },
+                },
+              ],
+            ],
+          },
+        }
+      );
+    } catch {
+      await ctx.reply("Ошибка при привязке организации. Попробуйте ещё раз:");
+    }
+    return;
+  }
+
+  // Handle /new flow
+  if (getSession(userId)) {
     await handleNewRequestStep(ctx);
   }
 });

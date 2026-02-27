@@ -46,7 +46,7 @@ model Counterparty {
   shortName             String?               @map("short_name")
   orgType               String?               @map("org_type")
   orgStatus             String?               @map("org_status")
-  inn                   String?
+  inn                   String?               @unique
   kpp                   String?
   ogrn                  String?
   address               String?

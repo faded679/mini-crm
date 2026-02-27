@@ -90,6 +90,21 @@ export async function savePhone(telegramId: string, phone: string): Promise<{ ph
   return res.json() as Promise<{ phone: string }>;
 }
 
+export async function linkInn(telegramId: string, inn: string): Promise<{ counterpartyId: number; name: string; inn: string }> {
+  const res = await fetch(`${env.API_URL}/bot/link-inn`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId, inn }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+
+  return res.json() as Promise<{ counterpartyId: number; name: string; inn: string }>;
+}
+
 export async function getRequests(telegramId: string): Promise<ShipmentRequest[]> {
   const res = await fetch(`${env.API_URL}/bot/requests/${telegramId}`);
 

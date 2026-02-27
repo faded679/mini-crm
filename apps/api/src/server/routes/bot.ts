@@ -183,4 +183,62 @@ router.post("/phone", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
+// POST /bot/link-inn — link client to counterparty by INN (create counterparty if not exists)
+router.post("/link-inn", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { telegramId, inn } = req.body;
+
+    if (!telegramId) throw new ApiError(400, "Missing telegramId");
+    if (!inn || !/^\d{10}$|^\d{12}$/.test(String(inn))) {
+      throw new ApiError(400, "Invalid INN (must be 10 or 12 digits)");
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { telegramId: String(telegramId) },
+    });
+    if (!client) throw new ApiError(404, "Client not found");
+
+    // Upsert counterparty by INN
+    let counterparty = await (prisma as any).counterparty.findUnique({
+      where: { inn: String(inn) },
+    });
+
+    if (!counterparty) {
+      counterparty = await (prisma as any).counterparty.create({
+        data: {
+          name: `Организация ${inn}`,
+          inn: String(inn),
+        },
+      });
+    }
+
+    // Create link if not exists
+    const existingLink = await (prisma as any).counterpartyContact.findUnique({
+      where: {
+        counterpartyId_clientId: {
+          counterpartyId: counterparty.id,
+          clientId: client.id,
+        },
+      },
+    });
+
+    if (!existingLink) {
+      await (prisma as any).counterpartyContact.create({
+        data: {
+          counterpartyId: counterparty.id,
+          clientId: client.id,
+        },
+      });
+    }
+
+    res.json({
+      counterpartyId: counterparty.id,
+      name: counterparty.name,
+      inn: counterparty.inn,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
