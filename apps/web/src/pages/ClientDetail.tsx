@@ -22,6 +22,22 @@ const statusColors: Record<RequestStatus, string> = {
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 };
 
+function formatRuPhone(input?: string | null): string {
+  if (!input) return "—";
+  const digits = String(input).replace(/\D/g, "");
+
+  // +7XXXXXXXXXX or 8XXXXXXXXXX
+  const norm = digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8")) ? `7${digits.slice(1)}` : digits;
+
+  if (norm.length !== 11 || !norm.startsWith("7")) return input;
+
+  const c = norm.slice(1, 4);
+  const p1 = norm.slice(4, 7);
+  const p2 = norm.slice(7, 9);
+  const p3 = norm.slice(9, 11);
+  return `+7 (${c}) ${p1}-${p2}-${p3}`;
+}
+
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -84,7 +100,7 @@ export default function ClientDetail() {
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Телефон:</span>{" "}
-            <span className="font-mono">{client.phone || "—"}</span>
+            <span className="font-mono">{formatRuPhone(client.phone)}</span>
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Организация:</span>{" "}
