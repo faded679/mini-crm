@@ -505,7 +505,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
               return (
                 <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-300 dark:border-gray-600">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Добавить позицию из прайса</p>
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="min-w-[120px]">
                       <label className="block text-[11px] text-gray-400 mb-0.5">Упаковка</label>
