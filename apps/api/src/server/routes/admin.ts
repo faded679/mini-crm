@@ -567,6 +567,54 @@ router.patch("/requests/:id/status", async (req: Request, res: Response, next: N
   }
 });
 
+// POST /admin/requests/bulk-status
+router.post("/requests/bulk-status", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { ids, status } = req.body as { ids: number[]; status: RequestStatus };
+
+    if (!Array.isArray(ids) || ids.length === 0) throw new ApiError(400, "ids must be a non-empty array");
+    if (!Object.values(RequestStatus).includes(status)) throw new ApiError(400, "Invalid status");
+
+    const requests = await prisma.shipmentRequest.findMany({
+      where: { id: { in: ids } },
+      include: { client: true },
+    });
+
+    const statusLabels: Record<RequestStatus, string> = {
+      new: "Новый",
+      warehouse: "Склад",
+      shipped: "Отгружен",
+      done: "Выполнена",
+    };
+
+    await prisma.$transaction(async (tx) => {
+      for (const r of requests) {
+        if (r.status === status) continue;
+
+        await tx.shipmentRequest.update({ where: { id: r.id }, data: { status } });
+        await tx.requestStatusHistory.create({
+          data: { requestId: r.id, oldStatus: r.status, newStatus: status },
+        });
+      }
+    });
+
+    // Notify clients outside transaction
+    for (const r of requests) {
+      if (r.status === status) continue;
+      try {
+        await notifyClient(
+          r.client.telegramId,
+          `Статус вашей заявки #${r.id} изменён: <b>${statusLabels[status]}</b>`,
+        );
+      } catch { /* ignore notification errors */ }
+    }
+
+    res.json({ updated: requests.filter((r) => r.status !== status).length });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /admin/requests/:id
 router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {

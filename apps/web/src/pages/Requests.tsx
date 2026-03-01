@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getRequests, type ShipmentRequest, type RequestStatus, type PackagingType } from "../api";
+import { getRequests, bulkUpdateRequestStatus, type ShipmentRequest, type RequestStatus, type PackagingType } from "../api";
 import { cn } from "../lib/utils";
 import RequestDetail from "./RequestDetail";
 
@@ -58,6 +58,11 @@ export default function Requests() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
   const [modalEditing, setModalEditing] = useState(false);
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<RequestStatus>("warehouse");
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
@@ -131,6 +136,44 @@ export default function Requests() {
     if (filterDate !== "all" && !r.deliveryDate.startsWith(filterDate)) return false;
     return true;
   });
+
+  // Reset selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [filterStatus, filterCity, filterDate]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const filteredIds = sorted.map((r) => r.id);
+    const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredIds));
+    }
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    if (selectedIds.size === 0 || bulkUpdating) return;
+    setBulkUpdating(true);
+    try {
+      await bulkUpdateRequestStatus([...selectedIds], bulkStatus);
+      const data = await getRequests();
+      setRequests(data);
+      setSelectedIds(new Set());
+    } catch {
+      alert("Ошибка при массовом обновлении статуса");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
 
   const summary = useMemo(() => {
     const s = {
@@ -292,6 +335,36 @@ export default function Requests() {
         </span>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2.5">
+          <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+            Выбрано: {selectedIds.size} из {sorted.length}
+          </span>
+          <select
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value as RequestStatus)}
+            className="px-3 py-1.5 text-sm rounded-lg border border-blue-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-blue-700 dark:text-gray-300"
+          >
+            {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
+              <option key={s} value={s}>{statusLabels[s]}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleBulkStatusUpdate}
+            disabled={bulkUpdating}
+            className="px-4 py-1.5 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            {bulkUpdating ? "Обновление..." : "Применить"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="px-3 py-1.5 text-sm rounded-lg text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Снять выделение
+          </button>
+        </div>
+      )}
+
       <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <div className="text-gray-600 dark:text-gray-300">
@@ -335,6 +408,14 @@ export default function Requests() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <th className="px-3 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={sorted.length > 0 && sorted.every((r) => selectedIds.has(r.id))}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("id")} className="hover:text-gray-900 dark:hover:text-white">
                     # {sortIndicator("id")}
@@ -386,12 +467,24 @@ export default function Requests() {
               {sorted.map((r) => (
                 <tr
                   key={r.id}
-                  onClick={() => setSelectedRequestId(r.id)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('input[type="checkbox"]')) return;
+                    setSelectedRequestId(r.id);
+                  }}
                   className={cn(
                     "hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer",
-                    !r.isRead && "font-bold bg-blue-50/50 dark:bg-blue-900/10"
+                    !r.isRead && "font-bold bg-blue-50/50 dark:bg-blue-900/10",
+                    selectedIds.has(r.id) && "bg-blue-50 dark:bg-blue-900/20"
                   )}
                 >
+                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(r.id)}
+                      onChange={() => toggleSelect(r.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">

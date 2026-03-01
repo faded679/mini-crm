@@ -193,6 +193,13 @@ export function updateRequestStatus(id: number, status: RequestStatus) {
   });
 }
 
+export function bulkUpdateRequestStatus(ids: number[], status: RequestStatus) {
+  return request<{ updated: number }>("/admin/requests/bulk-status", {
+    method: "POST",
+    body: JSON.stringify({ ids, status }),
+  });
+}
+
 export function updateRequest(id: number, payload: UpdateShipmentRequestPayload) {
   return request<ShipmentRequest>(`/admin/requests/${id}`, {
     method: "PATCH",
