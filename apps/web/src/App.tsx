@@ -8,6 +8,7 @@ import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import Schedule from "./pages/Schedule";
 import Counterparties from "./pages/Counterparties";
+import Invoices from "./pages/Invoices";
 import Prices from "./pages/Prices";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/clients/:id" element={<ClientDetail />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/counterparties" element={<Counterparties />} />
+            <Route path="/invoices" element={<Invoices />} />
             <Route path="/prices" element={<Prices />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

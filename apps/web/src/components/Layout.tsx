@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth";
 import { useTheme } from "../theme";
-import { Package, Users, LogOut, Calendar, Moon, Sun, Building2, DollarSign } from "lucide-react";
+import { Package, Users, LogOut, Calendar, Moon, Sun, Building2, DollarSign, FileText } from "lucide-react";
 import { getRequests } from "../api";
 
 export default function Layout() {
@@ -75,6 +75,10 @@ export default function Layout() {
                 <NavLink to="/counterparties" className={linkClass}>
                   <Building2 size={18} />
                   Организации
+                </NavLink>
+                <NavLink to="/invoices" className={linkClass}>
+                  <FileText size={18} />
+                  Счета
                 </NavLink>
                 <NavLink to="/prices" className={linkClass}>
                   <DollarSign size={18} />
