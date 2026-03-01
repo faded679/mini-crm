@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { deleteInvoice, getInvoicePdfUrlById, getInvoices, type Invoice } from "../api";
+import { deleteInvoice, getInvoices, type Invoice } from "../api";
 import { cn } from "../lib/utils";
 
 function formatDateRu(iso: string) {
@@ -19,6 +19,7 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
@@ -126,6 +127,41 @@ export default function Invoices() {
     }
   };
 
+  const handleDownloadPdf = async (inv: Invoice) => {
+    if (downloadingId !== null) return;
+    setDownloadingId(inv.id);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Нет токена авторизации. Перезайдите в админку.");
+        return;
+      }
+
+      const apiUrl = (import.meta as any).env?.VITE_API_URL || "https://test.ved31.ru/api";
+      const res = await fetch(`${apiUrl}/admin/invoices/${inv.id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Счет_${inv.number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Ошибка при скачивании PDF");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
@@ -215,14 +251,14 @@ export default function Invoices() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-2">
-                        <a
-                          href={getInvoicePdfUrlById(inv.id)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 transition"
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPdf(inv)}
+                          disabled={downloadingId === inv.id}
+                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 disabled:opacity-50 transition"
                         >
-                          PDF
-                        </a>
+                          {downloadingId === inv.id ? "PDF..." : "PDF"}
+                        </button>
                         <button
                           onClick={() => handleDelete(inv.id)}
                           disabled={deletingId === inv.id}
