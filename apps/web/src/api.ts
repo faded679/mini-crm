@@ -281,8 +281,10 @@ export interface Invoice {
   id: number;
   number: string;
   date: string;
+  isPaid: boolean;
+  paidAt: string | null;
   counterpartyId: number;
-  requestId: number | null;
+  requestId?: number | null;
   createdAt: string;
   updatedAt: string;
   counterparty: Counterparty;
@@ -313,6 +315,13 @@ export function getInvoiceById(id: number) {
 
 export function deleteInvoice(id: number) {
   return request<void>(`/admin/invoices/${id}`, { method: "DELETE" });
+}
+
+export function setInvoicePaymentStatus(id: number, isPaid: boolean) {
+  return request<Invoice>(`/admin/invoices/${id}/payment`, {
+    method: "PATCH",
+    body: JSON.stringify({ isPaid }),
+  });
 }
 
 export function getInvoicePdfUrlById(id: number): string {

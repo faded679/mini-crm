@@ -188,6 +188,8 @@ model Invoice {
   date            DateTime      @default(now())
   counterpartyId  Int           @map("counterparty_id")
   requestId       Int?          @map("request_id")
+  isPaid          Boolean       @default(false) @map("is_paid")
+  paidAt          DateTime?     @map("paid_at")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 

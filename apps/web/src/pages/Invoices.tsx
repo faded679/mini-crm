@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { deleteInvoice, getInvoices, type Invoice } from "../api";
+import { deleteInvoice, getInvoices, setInvoicePaymentStatus, type Invoice } from "../api";
 import { cn } from "../lib/utils";
 
 function formatDateRu(iso: string) {
@@ -20,6 +20,7 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [payUpdatingId, setPayUpdatingId] = useState<number | null>(null);
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
@@ -124,6 +125,19 @@ export default function Invoices() {
       alert("Ошибка при удалении счёта");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleTogglePaid = async (inv: Invoice) => {
+    if (payUpdatingId !== null) return;
+    setPayUpdatingId(inv.id);
+    try {
+      await setInvoicePaymentStatus(inv.id, !inv.isPaid);
+      await reload();
+    } catch {
+      alert("Ошибка при изменении статуса оплаты");
+    } finally {
+      setPayUpdatingId(null);
     }
   };
 
@@ -242,12 +256,36 @@ export default function Invoices() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={cn(
-                        "inline-flex px-2 py-1 rounded-full text-xs font-medium",
-                        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                      )}>
-                        Не оплачен
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span
+                          className={cn(
+                            "inline-flex px-2 py-1 rounded-full text-xs font-medium",
+                            inv.isPaid
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+                          )}
+                        >
+                          {inv.isPaid ? "Оплачен" : "Не оплачен"}
+                        </span>
+                        {inv.isPaid && inv.paidAt && (
+                          <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                            {formatDateRu(inv.paidAt)}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePaid(inv)}
+                          disabled={payUpdatingId === inv.id}
+                          className={cn(
+                            "text-xs font-medium underline underline-offset-2",
+                            payUpdatingId === inv.id
+                              ? "text-gray-400 dark:text-gray-500"
+                              : "text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300",
+                          )}
+                        >
+                          {payUpdatingId === inv.id ? "..." : inv.isPaid ? "Снять" : "Поставить"}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-2">

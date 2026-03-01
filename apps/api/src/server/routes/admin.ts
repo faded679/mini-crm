@@ -344,6 +344,30 @@ router.get("/invoices/:id", async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// PATCH /admin/invoices/:id/payment
+router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { isPaid } = req.body as { isPaid: boolean };
+    if (typeof isPaid !== "boolean") throw new ApiError(400, "isPaid must be boolean");
+
+    const updated = await (prisma as any).invoice.update({
+      where: { id },
+      data: {
+        isPaid,
+        paidAt: isPaid ? new Date() : null,
+      },
+      include: { items: true, counterparty: true },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /admin/invoices/:id
 router.delete("/invoices/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
