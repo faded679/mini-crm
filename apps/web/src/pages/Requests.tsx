@@ -335,36 +335,6 @@ export default function Requests() {
         </span>
       </div>
 
-      {selectedIds.size > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2.5">
-          <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
-            Выбрано: {selectedIds.size} из {sorted.length}
-          </span>
-          <select
-            value={bulkStatus}
-            onChange={(e) => setBulkStatus(e.target.value as RequestStatus)}
-            className="px-3 py-1.5 text-sm rounded-lg border border-blue-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-blue-700 dark:text-gray-300"
-          >
-            {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
-              <option key={s} value={s}>{statusLabels[s]}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleBulkStatusUpdate}
-            disabled={bulkUpdating}
-            className="px-4 py-1.5 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
-          >
-            {bulkUpdating ? "Обновление..." : "Применить"}
-          </button>
-          <button
-            onClick={() => setSelectedIds(new Set())}
-            className="px-3 py-1.5 text-sm rounded-lg text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Снять выделение
-          </button>
-        </div>
-      )}
-
       <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <div className="text-gray-600 dark:text-gray-300">
@@ -400,6 +370,36 @@ export default function Requests() {
           </div>
         </div>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2.5">
+          <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+            Выбрано: {selectedIds.size} из {sorted.length}
+          </span>
+          <select
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value as RequestStatus)}
+            className="px-3 py-1.5 text-sm rounded-lg border border-blue-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-blue-700 dark:text-gray-300"
+          >
+            {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
+              <option key={s} value={s}>{statusLabels[s]}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleBulkStatusUpdate}
+            disabled={bulkUpdating}
+            className="px-4 py-1.5 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            {bulkUpdating ? "Обновление..." : "Применить"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="px-3 py-1.5 text-sm rounded-lg text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Снять выделение
+          </button>
+        </div>
+      )}
 
       {sorted.length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Заявок нет</div>
