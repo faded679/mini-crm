@@ -935,6 +935,16 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                         ? "bg-blue-600 hover:bg-blue-700 text-white"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
                     )}
+                  >
+                    {invoiceCreating ? "Создание..." : "QR код"}
+                  </button>
+                  <button
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-medium",
+                      canCreateInvoice
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
+                    )}
                     disabled={!canCreateInvoice || invoiceCreating}
                     onClick={async () => {
                       if (!canCreateInvoice || invoiceCreating) return;
@@ -952,16 +962,6 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                     }}
                   >
                     {invoiceCreating ? "Создание..." : "Создать счёт"}
-                  </button>
-                  <button
-                    className={cn(
-                      "px-4 py-2 rounded-lg text-sm font-medium",
-                      canCreateInvoice
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
-                    )}
-                  >
-                    {invoiceCreating ? "Создание..." : "Создать Акт"}
                   </button>
                 </div>
               </>
