@@ -961,7 +961,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                       }
                     }}
                   >
-                    {invoiceCreating ? "Создание..." : "Создать счёт"}
+                    {invoiceCreating ? "Создание..." : "Счёт/Акт"}
                   </button>
                 </div>
               </>
