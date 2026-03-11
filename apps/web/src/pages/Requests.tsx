@@ -342,7 +342,7 @@ export default function Requests() {
         </span>
       </div>
 
-      <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <button
             onClick={() => {
@@ -353,7 +353,7 @@ export default function Requests() {
             }}
             className="px-3 py-1 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition"
           >
-            + Новая
+            Новая
           </button>
           <div className="text-gray-600 dark:text-gray-300">
             <span className="text-gray-400 dark:text-gray-500">Заявок:</span>{" "}
