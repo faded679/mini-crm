@@ -150,7 +150,7 @@ export default function NewRequest() {
 
       {/* Direction */}
       <div className="mb-3">
-        <label className="block text-sm font-medium mb-1 text-tg-hint">Направление</label>
+
         <select
           value={cityId ?? ""}
           onChange={(e) => {
@@ -236,7 +236,7 @@ export default function NewRequest() {
           <select
             value={typeId ?? ""}
             onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+            className="w-full h-12 px-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
           >
             <option value="">Выберите тип</option>
             {typeOptions.map((t) => (
