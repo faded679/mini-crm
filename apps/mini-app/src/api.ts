@@ -78,6 +78,7 @@ interface CreateRequestPayload {
   weight?: number;
   boxCount: number;
   comment?: string;
+  items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];
 }
 
 // ---------- API calls ----------

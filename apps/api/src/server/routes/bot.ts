@@ -84,7 +84,27 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       } as any,
     });
 
-    res.status(201).json(request);
+    // Create service lines from items
+    const items = req.body.items as { description: string; unit: string; quantity: number; price: number; amount: number }[] | undefined;
+    if (Array.isArray(items) && items.length > 0) {
+      await (prisma as any).requestService.createMany({
+        data: items.map((it: any) => ({
+          requestId: request.id,
+          description: String(it.description ?? ""),
+          unit: String(it.unit ?? "шт"),
+          quantity: Number(it.quantity) || 0,
+          price: Number(it.price) || 0,
+          amount: Number(it.amount) || 0,
+        })),
+      });
+    }
+
+    const full = await (prisma as any).shipmentRequest.findUnique({
+      where: { id: request.id },
+      include: { services: true },
+    });
+
+    res.status(201).json(full);
   } catch (err) {
     next(err);
   }

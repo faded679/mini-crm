@@ -131,6 +131,13 @@ export default function NewRequest() {
         comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
           .join("; ") + ` | Итого: ${total}₽`,
+        items: items.map((it) => ({
+          description: `${it.packaging === "pallets" ? "Палета" : "Коробка"} — ${it.typeName}`,
+          unit: it.packaging === "pallets" ? "пал" : "кор",
+          quantity: it.qty,
+          price: it.price,
+          amount: it.amount,
+        })),
       });
       navigate("/history");
     } catch (err) {
