@@ -203,7 +203,6 @@ export default function NewRequest() {
 
       {/* Packaging type */}
       <div className="mb-3">
-
         <div className="grid grid-cols-2 gap-3">
           {(["pallets", "boxes"] as const).map((p) => (
             <button
