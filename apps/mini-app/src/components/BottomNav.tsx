@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 const tabs = [
   { path: "/new", label: "Заявка", icon: PlusIcon },
   { path: "/history", label: "История", icon: HistoryIcon },
-  { path: "/info", label: "Информация", icon: InfoIcon },
+  { path: "/info", label: "Инфо", icon: InfoIcon },
 ];
 
 function PlusIcon({ active }: { active: boolean }) {
