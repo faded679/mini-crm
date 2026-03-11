@@ -132,7 +132,7 @@ export default function NewRequest() {
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
           .join("; ") + ` | Итого: ${total}₽`,
         items: items.map((it) => ({
-          description: `Транспортные услуги по маршруту г. Белгород - ${selectedCity.fullName} ${it.packaging === "pallets" ? "Палета" : "Коробка"} — ${it.typeName}`,
+          description: `${selectedCity.fullName} ${it.packaging === "pallets" ? "Палета" : "Коробка"} — ${it.typeName}`,
           unit: it.packaging === "pallets" ? "пал" : "кор",
           quantity: it.qty,
           price: it.price,
