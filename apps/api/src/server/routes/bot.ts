@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
+import { notifyClient } from "../services/telegram-notifier.js";
 
 const router = Router();
 
@@ -103,6 +104,41 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       where: { id: request.id },
       include: { services: true },
     });
+
+    // Send Telegram notification to client
+    try {
+      const schedule = await (prisma as any).deliverySchedule.findFirst({
+        where: {
+          cityId: cityRecord.id,
+          deliveryDate: new Date(deliveryDate),
+        },
+      });
+
+      const dateStr = new Date(deliveryDate).toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+
+      const pkgLabel = packagingType === "pallets" ? "палет" : "коробок";
+      const itemLines = Array.isArray(items) && items.length > 0
+        ? items.map((it: any) => `${it.description ?? ""} x${it.quantity}`).join("\n")
+        : `${Number(boxCount)} ${pkgLabel}`;
+
+      let msg = `<b>Заявка №${request.id} добавлена</b>\n\n`;
+      msg += `<b>Доставка:</b> Белгород — ${cityRecord.fullName ?? city}\n`;
+      msg += `${itemLines}\n`;
+      msg += `<b>Дата доставки на склад:</b> ${dateStr}\n`;
+
+      if (schedule?.acceptDays) {
+        msg += `\nОбратите внимание, чтобы ваш товар успел попасть на отгрузку, важно сдать товар на наш склад в:\n\n`;
+        msg += `<b>${schedule.acceptDays}</b>`;
+      }
+
+      await notifyClient(String(telegramId), msg);
+    } catch (notifErr) {
+      console.error("Failed to send request notification:", notifErr);
+    }
 
     res.status(201).json(full);
   } catch (err) {
