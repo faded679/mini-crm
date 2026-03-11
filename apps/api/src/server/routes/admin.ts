@@ -113,6 +113,56 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
   }
 });
 
+// POST /admin/requests — create request from admin panel
+router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, weight, comment } = req.body as {
+      clientId: number;
+      cityId: number;
+      deliveryDate: string;
+      packagingType: "pallets" | "boxes";
+      boxTypeId?: number;
+      boxCount: number;
+      weight?: number;
+      comment?: string;
+    };
+
+    if (!clientId) throw new ApiError(400, "clientId is required");
+    if (!cityId) throw new ApiError(400, "cityId is required");
+    if (!deliveryDate) throw new ApiError(400, "deliveryDate is required");
+    if (!packagingType) throw new ApiError(400, "packagingType is required");
+    if (!boxCount || boxCount < 1) throw new ApiError(400, "boxCount is required");
+
+    const client = await (prisma as any).client.findUnique({ where: { id: clientId } });
+    if (!client) throw new ApiError(404, "Client not found");
+
+    const city = await (prisma as any).city.findUnique({ where: { id: cityId } });
+    if (!city) throw new ApiError(404, "City not found");
+
+    const created = await (prisma as any).shipmentRequest.create({
+      data: {
+        clientId,
+        cityId,
+        city: city.shortName,
+        deliveryDate: new Date(deliveryDate),
+        packagingType,
+        boxCount,
+        size: "-",
+        ...(boxTypeId ? { boxTypeId } : {}),
+        ...(weight != null ? { weight } : {}),
+        ...(comment ? { comment } : {}),
+        status: "new",
+        isRead: true,
+      },
+      include: { client: true, boxType: true, services: true },
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/requests
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
   try {

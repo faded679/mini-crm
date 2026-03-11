@@ -178,6 +178,24 @@ export function login(email: string, password: string) {
   });
 }
 
+export interface CreateAdminRequestPayload {
+  clientId: number;
+  cityId: number;
+  deliveryDate: string;
+  packagingType: PackagingType;
+  boxTypeId?: number;
+  boxCount: number;
+  weight?: number;
+  comment?: string;
+}
+
+export function createAdminRequest(payload: CreateAdminRequestPayload) {
+  return request<ShipmentRequest>("/admin/requests", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getRequests() {
   return request<ShipmentRequest[]>("/admin/requests");
 }
