@@ -14,7 +14,7 @@ export default function Home() {
           <div className="flex items-start gap-3">
             <span className="text-2xl flex-shrink-0">📦</span>
             <p className="text-base text-tg-text leading-snug">
-              Приём товара на складе<br />в Белгороде.
+              Приём товара на складе в Белгороде.
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export default function Home() {
           <div className="flex items-start gap-3">
             <span className="text-2xl flex-shrink-0">🚚</span>
             <p className="text-base text-tg-text leading-snug">
-              Регулярные рейсы<br />без переносов
+              Регулярные рейсы без переносов
             </p>
           </div>
         </div>
