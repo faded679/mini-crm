@@ -241,4 +241,41 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
   }
 });
 
+// GET /bot/cities — list available cities/directions
+router.get("/cities", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cities = await (prisma as any).city.findMany({ orderBy: { shortName: "asc" } });
+    res.json(cities);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bot/pallet-types — list available pallet types
+router.get("/pallet-types", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).palletType.findMany({ orderBy: { minValue: "asc" } });
+    res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bot/rates?cityId=N — price rates for a city
+router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cityId = Number(req.query.cityId);
+    if (!Number.isFinite(cityId)) throw new ApiError(400, "cityId is required");
+
+    const rates = await (prisma as any).priceRate.findMany({
+      where: { cityId },
+      include: { boxType: true, palletType: true },
+      orderBy: [{ unit: "asc" }],
+    });
+    res.json(rates);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

@@ -1,5 +1,63 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
+async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, options);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+  return res.json();
+}
+
+// ---------- Types ----------
+
+export interface City {
+  id: number;
+  shortName: string;
+  fullName: string;
+}
+
+export interface BoxType {
+  id: number;
+  name: string;
+  maxVolumeM3: number;
+}
+
+export interface PalletType {
+  id: number;
+  name: string;
+  minValue: number;
+  maxValue: number | null;
+  comment: string | null;
+}
+
+export interface PriceRate {
+  id: number;
+  cityId: number;
+  unit: "pallet" | "boxes";
+  boxTypeId: number | null;
+  palletTypeId: number | null;
+  price: number;
+  comment: string | null;
+  boxType: BoxType | null;
+  palletType: PalletType | null;
+}
+
+export interface ShipmentRequest {
+  id: number;
+  city: string;
+  cityId: number;
+  deliveryDate: string;
+  boxTypeId?: number | null;
+  size?: string;
+  weight?: number | null;
+  boxCount: number;
+  packagingType: "pallets" | "boxes";
+  comment: string | null;
+  status: string;
+  createdAt: string;
+}
+
 interface CreateRequestPayload {
   telegramId: string;
   username?: string;
@@ -14,119 +72,49 @@ interface CreateRequestPayload {
   comment?: string;
 }
 
-export interface BoxType {
-  id: number;
-  name: string;
-  maxVolumeM3: number;
+// ---------- API calls ----------
+
+export function getCities() {
+  return api<City[]>("/bot/cities");
 }
 
-export interface ShipmentRequest {
-  id: number;
-  city: string;
-  deliveryDate: string;
-  boxTypeId?: number | null;
-  size?: string;
-  weight?: number | null;
-  boxCount: number;
-  packagingType: "pallets" | "boxes";
-  comment: string | null;
-  status: string;
-  createdAt: string;
+export function getBoxTypes() {
+  return api<BoxType[]>("/bot/box-types");
 }
 
-export async function getBoxTypes(): Promise<BoxType[]> {
-  const res = await fetch(`${API_URL}/bot/box-types`);
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
+export function getPalletTypes() {
+  return api<PalletType[]>("/bot/pallet-types");
 }
 
-export async function createRequest(data: CreateRequestPayload): Promise<ShipmentRequest> {
-  const res = await fetch(`${API_URL}/bot/requests`, {
+export function getRates(cityId: number) {
+  return api<PriceRate[]>(`/bot/rates?cityId=${cityId}`);
+}
+
+export function getRequests(telegramId: string) {
+  return api<ShipmentRequest[]>(`/bot/requests/${telegramId}`);
+}
+
+export function createRequest(data: CreateRequestPayload) {
+  return api<ShipmentRequest>("/bot/requests", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
 }
 
-export interface ScheduleEntry {
-  id: number;
-  destination: string;
-  deliveryDate: string;
-  acceptDays: string;
+export function checkConsent(telegramId: string) {
+  return api<{ consentGiven: boolean }>(`/bot/consent/${telegramId}`);
 }
 
-export async function getSchedule(): Promise<ScheduleEntry[]> {
-  const res = await fetch(`${API_URL}/schedule`);
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
-}
-
-export async function getDestinations(): Promise<string[]> {
-  const res = await fetch(`${API_URL}/schedule/destinations`);
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
-}
-
-export async function checkConsent(telegramId: string): Promise<{ consentGiven: boolean }> {
-  const res = await fetch(`${API_URL}/bot/consent/${telegramId}`);
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
-}
-
-export async function acceptConsent(data: {
+export function acceptConsent(data: {
   telegramId: string;
   username?: string;
   firstName?: string;
   lastName?: string;
-}): Promise<{ consentGiven: boolean }> {
-  const res = await fetch(`${API_URL}/bot/consent`, {
+}) {
+  return api<{ consentGiven: boolean }>("/bot/consent", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
-}
-
-export async function getRequests(telegramId: string): Promise<ShipmentRequest[]> {
-  const res = await fetch(`${API_URL}/bot/requests/${telegramId}`);
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
-  }
-
-  return res.json();
 }

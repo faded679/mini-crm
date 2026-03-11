@@ -1,35 +1,13 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ready, getTelegramUser } from "./telegram";
 import { checkConsent } from "./api";
-import MyRequests from "./pages/MyRequests";
-import NewRequest from "./pages/NewRequest";
-import Schedule from "./pages/Schedule";
+import BottomNav from "./components/BottomNav";
 import Consent from "./pages/Consent";
-
-function NavBar() {
-  const { pathname } = useLocation();
-  return (
-    <nav className="flex border-b border-tg-secondary-bg bg-tg-bg sticky top-0 z-10">
-      <Link
-        to="/"
-        className={`flex-1 text-center py-3 text-sm font-medium transition ${
-          pathname === "/" ? "text-tg-button border-b-2 border-tg-button" : "text-tg-hint"
-        }`}
-      >
-        📋 Заявки
-      </Link>
-      <Link
-        to="/schedule"
-        className={`flex-1 text-center py-3 text-sm font-medium transition ${
-          pathname === "/schedule" ? "text-tg-button border-b-2 border-tg-button" : "text-tg-hint"
-        }`}
-      >
-        📅 Расписание
-      </Link>
-    </nav>
-  );
-}
+import Home from "./pages/Home";
+import NewRequest from "./pages/NewRequest";
+import History from "./pages/History";
+import Info from "./pages/Info";
 
 export default function App() {
   const [consentChecked, setConsentChecked] = useState(false);
@@ -62,14 +40,15 @@ export default function App() {
   }
 
   return (
-    <div>
-      <NavBar />
+    <div className="min-h-screen">
       <Routes>
-        <Route path="/" element={<MyRequests />} />
+        <Route path="/" element={<Home />} />
         <Route path="/new" element={<NewRequest />} />
-        <Route path="/schedule" element={<Schedule />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/info" element={<Info />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <BottomNav />
     </div>
   );
 }
