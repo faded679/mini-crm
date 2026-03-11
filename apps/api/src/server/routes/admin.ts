@@ -6,6 +6,7 @@ import { notifyClient } from "../services/telegram-notifier.js";
 import { sendClientDocument } from "../services/telegram-notifier.js";
 import { RequestStatus } from "@prisma/client";
 import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
+import { generateActPdfBuffer } from "../services/act-pdf.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -501,6 +502,88 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
       pdf,
       fileName,
       `Счёт ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/invoices/:id/act-pdf  — generate and download Act PDF
+router.get("/invoices/:id/act-pdf", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const invoice = await (prisma as any).invoice.findUnique({
+      where: { id },
+      include: { items: true, counterparty: true },
+    });
+    if (!invoice) throw new ApiError(404, "Invoice not found");
+
+    const pdf = await generateActPdfBuffer({
+      actNumber: invoice.number,
+      actDate: invoice.date.toISOString(),
+      invoiceNumber: invoice.number,
+      invoiceDate: invoice.date.toISOString(),
+      counterparty: invoice.counterparty,
+      items: invoice.items.map((it: any) => ({
+        description: it.description,
+        quantity: it.quantity,
+        unit: it.unit,
+        price: it.price,
+        amount: it.amount,
+      })),
+    });
+
+    const fileName = `Акт_${invoice.number}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    res.send(pdf);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/invoices/:id/send-act  — send Act PDF to client via Telegram
+router.post("/invoices/:id/send-act", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const { clientTelegramId } = req.body as { clientTelegramId: string };
+
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+    if (!clientTelegramId) throw new ApiError(400, "clientTelegramId required");
+
+    const invoice = await (prisma as any).invoice.findUnique({
+      where: { id },
+      include: { items: true, counterparty: true },
+    });
+    if (!invoice) throw new ApiError(404, "Invoice not found");
+
+    const total = invoice.items.reduce((s: number, it: any) => s + it.amount, 0);
+
+    const pdf = await generateActPdfBuffer({
+      actNumber: invoice.number,
+      actDate: invoice.date.toISOString(),
+      invoiceNumber: invoice.number,
+      invoiceDate: invoice.date.toISOString(),
+      counterparty: invoice.counterparty,
+      items: invoice.items.map((it: any) => ({
+        description: it.description,
+        quantity: it.quantity,
+        unit: it.unit,
+        price: it.price,
+        amount: it.amount,
+      })),
+    });
+    const fileName = `Акт_${invoice.number}.pdf`;
+
+    await sendClientDocument(
+      clientTelegramId,
+      pdf,
+      fileName,
+      `Акт выполненных работ ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
     );
 
     res.json({ ok: true });

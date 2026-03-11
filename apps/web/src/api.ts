@@ -353,6 +353,17 @@ export function sendInvoicePdf(id: number, clientTelegramId: string) {
   });
 }
 
+export function getActPdfUrlById(id: number): string {
+  return `${API_URL}/admin/invoices/${id}/act-pdf`;
+}
+
+export function sendActPdf(id: number, clientTelegramId: string) {
+  return request<{ ok: true }>(`/admin/invoices/${id}/send-act`, {
+    method: "POST",
+    body: JSON.stringify({ clientTelegramId }),
+  });
+}
+
 export function getClients() {
   return request<Client[]>("/admin/clients");
 }

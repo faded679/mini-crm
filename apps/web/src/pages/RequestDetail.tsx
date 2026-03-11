@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   getToken,
   getInvoicePdfUrlById,
+  getActPdfUrlById,
   getCities,
   getBoxTypes,
   getPalletTypes,
@@ -10,6 +11,7 @@ import {
   getRequestById,
   createInvoice,
   sendInvoicePdf,
+  sendActPdf,
   updateRequest,
   updateRequestStatus,
   createRequestService,
@@ -66,6 +68,8 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [invoiceCounterpartyId, setInvoiceCounterpartyId] = useState<number | "">("");
   const [invoiceSending, setInvoiceSending] = useState(false);
   const [invoiceDownloading, setInvoiceDownloading] = useState(false);
+  const [actSending, setActSending] = useState(false);
+  const [actDownloading, setActDownloading] = useState(false);
 
   // Multi-item invoice
   const emptyItem = (): InvoiceItemPayload => ({ description: "", quantity: 1, unit: "усл", price: 0, amount: 0 });
@@ -975,56 +979,115 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                     Итого: <b>{createdInvoice.items.reduce((s, it) => s + it.amount, 0).toLocaleString("ru-RU")} руб.</b>
                   </p>
                 </div>
-                <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2"></div>
-                  <div className="flex items-center gap-2">
-                    <a
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        if (invoiceDownloading || !createdInvoice) return;
-                        setInvoiceDownloading(true);
-                        try {
-                          const token = getToken();
-                          if (!token) throw new Error("Not authenticated");
-                          const url = getInvoicePdfUrlById(createdInvoice.id);
-                          const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-                          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                          const blob = await res.blob();
-                          const objectUrl = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = objectUrl;
-                          a.download = `Счет_${createdInvoice.number}.pdf`;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          URL.revokeObjectURL(objectUrl);
-                        } finally {
-                          setInvoiceDownloading(false);
-                        }
-                      }}
-                    >
-                      {invoiceDownloading ? "Скачивание..." : "Скачать PDF"}
-                    </a>
+                <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Счёт</span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (invoiceDownloading || !createdInvoice) return;
+                          setInvoiceDownloading(true);
+                          try {
+                            const token = getToken();
+                            if (!token) throw new Error("Not authenticated");
+                            const url = getInvoicePdfUrlById(createdInvoice.id);
+                            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            const blob = await res.blob();
+                            const objectUrl = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = objectUrl;
+                            a.download = `Счет_${createdInvoice.number}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(objectUrl);
+                          } finally {
+                            setInvoiceDownloading(false);
+                          }
+                        }}
+                      >
+                        {invoiceDownloading ? "Скачивание..." : "Скачать счёт"}
+                      </a>
+                      <button
+                        className={cn(
+                          "px-4 py-2 rounded-lg text-sm font-medium",
+                          "bg-emerald-600 hover:bg-emerald-700 text-white",
+                        )}
+                        disabled={invoiceSending}
+                        onClick={async () => {
+                          if (!createdInvoice || !request || invoiceSending) return;
+                          setInvoiceSending(true);
+                          try {
+                            await sendInvoicePdf(createdInvoice.id, request.client.telegramId);
+                          } finally {
+                            setInvoiceSending(false);
+                          }
+                        }}
+                      >
+                        {invoiceSending ? "Отправка..." : "Отправить счёт"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Акт</span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (actDownloading || !createdInvoice) return;
+                          setActDownloading(true);
+                          try {
+                            const token = getToken();
+                            if (!token) throw new Error("Not authenticated");
+                            const url = getActPdfUrlById(createdInvoice.id);
+                            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            const blob = await res.blob();
+                            const objectUrl = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = objectUrl;
+                            a.download = `Акт_${createdInvoice.number}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(objectUrl);
+                          } finally {
+                            setActDownloading(false);
+                          }
+                        }}
+                      >
+                        {actDownloading ? "Скачивание..." : "Скачать акт"}
+                      </a>
+                      <button
+                        className={cn(
+                          "px-4 py-2 rounded-lg text-sm font-medium",
+                          "bg-emerald-600 hover:bg-emerald-700 text-white",
+                        )}
+                        disabled={actSending}
+                        onClick={async () => {
+                          if (!createdInvoice || !request || actSending) return;
+                          setActSending(true);
+                          try {
+                            await sendActPdf(createdInvoice.id, request.client.telegramId);
+                          } finally {
+                            setActSending(false);
+                          }
+                        }}
+                      >
+                        {actSending ? "Отправка..." : "Отправить акт"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2">
                     <button
-                      className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-medium",
-                        "bg-emerald-600 hover:bg-emerald-700 text-white",
-                      )}
-                      disabled={invoiceSending}
-                      onClick={async () => {
-                        if (!createdInvoice || !request || invoiceSending) return;
-                        setInvoiceSending(true);
-                        try {
-                          await sendInvoicePdf(createdInvoice.id, request.client.telegramId);
-                          setConfirmInvoice(false);
-                          setCreatedInvoice(null);
-                        } finally {
-                          setInvoiceSending(false);
-                        }
-                      }}
+                      className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                      onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
                     >
-                      {invoiceSending ? "Отправка...." : "Отправить клиенту"}
+                      Закрыть
                     </button>
                   </div>
                 </div>
