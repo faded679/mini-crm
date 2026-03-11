@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 
 const tabs = [
-  { path: "/new", label: "+ Заявка", icon: PlusIcon },
+  { path: "/new", label: "Заявка", icon: PlusIcon },
   { path: "/history", label: "История", icon: HistoryIcon },
   { path: "/info", label: "Информация", icon: InfoIcon },
 ];
@@ -47,8 +47,8 @@ export default function BottomNav() {
   const { pathname } = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-tg-bg border-t border-tg-secondary-bg z-50">
-      <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+    <nav className="fixed bottom-2 left-2 right-2 bg-tg-bg border border-tg-secondary-bg z-50 rounded-2xl shadow-lg">
+      <div className="flex justify-around items-center h-14 max-w-md mx-auto">
         {tabs.map((tab) => {
           const active = pathname === tab.path || (tab.path === "/new" && pathname === "/");
           const Icon = tab.icon;
