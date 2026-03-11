@@ -278,4 +278,20 @@ router.get("/rates", async (req: Request, res: Response, next: NextFunction) => 
   }
 });
 
+// GET /bot/schedule?cityId=N — delivery dates for a city
+router.get("/schedule", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cityId = Number(req.query.cityId);
+    if (!Number.isFinite(cityId)) throw new ApiError(400, "cityId is required");
+
+    const schedules = await (prisma as any).deliverySchedule.findMany({
+      where: { cityId, deliveryDate: { gte: new Date() } },
+      orderBy: { deliveryDate: "asc" },
+    });
+    res.json(schedules);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

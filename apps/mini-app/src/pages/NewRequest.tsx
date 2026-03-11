@@ -6,10 +6,12 @@ import {
   getBoxTypes,
   getPalletTypes,
   getRates,
+  getScheduleForCity,
   type City,
   type BoxType,
   type PalletType,
   type PriceRate,
+  type ScheduleEntry,
 } from "../api";
 import { getTelegramUser } from "../telegram";
 
@@ -29,8 +31,10 @@ export default function NewRequest() {
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
 
   const [cityId, setCityId] = useState<number | null>(null);
+  const [deliveryDate, setDeliveryDate] = useState("");
   const [packaging, setPackaging] = useState<"pallets" | "boxes" | "">("");
   const [typeId, setTypeId] = useState<number | null>(null);
   const [qty, setQty] = useState("");
@@ -48,8 +52,10 @@ export default function NewRequest() {
   useEffect(() => {
     if (cityId) {
       getRates(cityId).then(setRates).catch(() => setRates([]));
+      getScheduleForCity(cityId).then(setSchedule).catch(() => setSchedule([]));
     } else {
       setRates([]);
+      setSchedule([]);
     }
   }, [cityId]);
 
@@ -118,7 +124,7 @@ export default function NewRequest() {
         firstName: user.firstName,
         lastName: user.lastName,
         city: selectedCity.shortName,
-        deliveryDate: new Date().toISOString(),
+        deliveryDate: deliveryDate || new Date().toISOString(),
         packagingType: mainPkg,
         ...(mainBoxTypeId ? { boxTypeId: mainBoxTypeId } : {}),
         boxCount: totalQty,
@@ -149,12 +155,13 @@ export default function NewRequest() {
           value={cityId ?? ""}
           onChange={(e) => {
             setCityId(e.target.value ? Number(e.target.value) : null);
+            setDeliveryDate("");
             setPackaging("");
             setTypeId(null);
             setQty("");
             setItems([]);
           }}
-          className="w-full p-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+          className="w-full h-12 px-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
         >
           <option value="">Выберите направление</option>
           {cities.map((c) => (
@@ -162,6 +169,37 @@ export default function NewRequest() {
           ))}
         </select>
       </div>
+
+      {/* Delivery date */}
+      {cityId && (
+        <div className="mb-3">
+          <label className="block text-sm font-medium mb-1 text-tg-hint">Дата выгрузки</label>
+          <select
+            value={deliveryDate}
+            onChange={(e) => {
+              setDeliveryDate(e.target.value);
+              setPackaging("");
+              setTypeId(null);
+              setQty("");
+            }}
+            className="w-full h-12 px-3 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text"
+          >
+            <option value="">Выберите дату</option>
+            {schedule.map((s) => (
+              <option key={s.id} value={s.deliveryDate}>
+                {new Date(s.deliveryDate).toLocaleDateString("ru-RU", {
+                  day: "numeric",
+                  month: "long",
+                  weekday: "short",
+                })}
+              </option>
+            ))}
+          </select>
+          {schedule.length === 0 && (
+            <p className="text-xs text-tg-hint mt-1">Нет доступных дат для этого направления</p>
+          )}
+        </div>
+      )}
 
       {/* Packaging type */}
       <div className="mb-3">
@@ -171,7 +209,7 @@ export default function NewRequest() {
             <button
               key={p}
               type="button"
-              disabled={!cityId}
+              disabled={!deliveryDate}
               onClick={() => {
                 setPackaging(p);
                 setTypeId(null);

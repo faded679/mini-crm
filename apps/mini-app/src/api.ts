@@ -43,6 +43,14 @@ export interface PriceRate {
   palletType: PalletType | null;
 }
 
+export interface ScheduleEntry {
+  id: number;
+  cityId: number;
+  destination: string;
+  deliveryDate: string;
+  acceptDays: string;
+}
+
 export interface ShipmentRequest {
   id: number;
   city: string;
@@ -88,6 +96,10 @@ export function getPalletTypes() {
 
 export function getRates(cityId: number) {
   return api<PriceRate[]>(`/bot/rates?cityId=${cityId}`);
+}
+
+export function getScheduleForCity(cityId: number) {
+  return api<ScheduleEntry[]>(`/bot/schedule?cityId=${cityId}`);
 }
 
 export function getRequests(telegramId: string) {
