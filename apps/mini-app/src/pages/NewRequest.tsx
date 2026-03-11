@@ -142,7 +142,7 @@ export default function NewRequest() {
 
   return (
     <div className="p-4 pb-24">
-      <h1 className="text-xl font-bold text-tg-text mb-4">Новая заявка</h1>
+      <h1 className="text-xl font-bold text-tg-text mb-4">Заявка</h1>
 
       {error && (
         <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</div>
@@ -173,7 +173,7 @@ export default function NewRequest() {
       {/* Delivery date */}
       {cityId && (
         <div className="mb-3">
-          <label className="block text-sm font-medium mb-1 text-tg-hint">Дата выгрузки</label>
+          <label className="block text-sm font-medium mb-1 text-tg-hint">Дата выгрузки на складе маркетплейса</label>
           <select
             value={deliveryDate}
             onChange={(e) => {
