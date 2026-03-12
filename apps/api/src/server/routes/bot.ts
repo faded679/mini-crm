@@ -3,6 +3,24 @@ import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
 import { notifyClient } from "../services/telegram-notifier.js";
 
+function pluralPallet(n: number): string {
+  const abs = Math.abs(n) % 100;
+  const last = abs % 10;
+  if (abs > 10 && abs < 20) return "палет";
+  if (last === 1) return "палета";
+  if (last >= 2 && last <= 4) return "палеты";
+  return "палет";
+}
+
+function pluralBox(n: number): string {
+  const abs = Math.abs(n) % 100;
+  const last = abs % 10;
+  if (abs > 10 && abs < 20) return "коробок";
+  if (last === 1) return "коробка";
+  if (last >= 2 && last <= 4) return "коробки";
+  return "коробок";
+}
+
 const router = Router();
 
 // GET /bot/box-types — list available box types
@@ -120,19 +138,39 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         year: "numeric",
       });
 
-      const pkgLabel = packagingType === "pallets" ? "палет" : "коробок";
-      const itemLines = Array.isArray(items) && items.length > 0
-        ? items.map((it: any) => `${it.description ?? ""} x${it.quantity}`).join("\n")
-        : `${Number(boxCount)} ${pkgLabel}`;
+      // Build cargo line: "3 палеты (301–400)" or multiple lines
+      let cargoLine = "";
+      if (Array.isArray(items) && items.length > 0) {
+        cargoLine = items.map((it: any) => {
+          const qty = Number(it.quantity) || 0;
+          const unitLabel = String(it.unit ?? "шт");
+          // Extract type name from description (after last " — ")
+          const parts = String(it.description ?? "").split(" — ");
+          const typeName = parts.length > 1 ? parts[parts.length - 1] : "";
+          const pkgWord = unitLabel === "пал" ? pluralPallet(qty) : pluralBox(qty);
+          return typeName ? `${qty} ${pkgWord} (${typeName})` : `${qty} ${pkgWord}`;
+        }).join("\n");
+      } else {
+        const qty = Number(boxCount);
+        cargoLine = `${qty} ${packagingType === "pallets" ? pluralPallet(qty) : pluralBox(qty)}`;
+      }
 
-      let msg = `<b>Заявка №${request.id} добавлена</b>\n\n`;
-      msg += `<b>Доставка:</b> Белгород — ${cityRecord.fullName ?? city}\n`;
-      msg += `${itemLines}\n`;
-      msg += `<b>Дата доставки на склад:</b> ${dateStr}\n`;
+      // Calculate total cost
+      const totalCost = Array.isArray(items) && items.length > 0
+        ? items.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0)
+        : 0;
+
+      let msg = `<b>Заявка №${request.id} принята</b> ✅\n\n`;
+      msg += `<b>Маршрут:</b> Белгород → ${cityRecord.fullName ?? city}\n`;
+      msg += `<b>Груз:</b> ${cargoLine}\n`;
+      if (totalCost > 0) {
+        msg += `<b>Предварительный расчет доставки:</b> ${totalCost.toLocaleString("ru-RU")} руб.\n`;
+      }
+      msg += `<b>Дата доставки:</b> ${dateStr}\n`;
 
       if (schedule?.acceptDays) {
-        msg += `\nОбратите внимание, чтобы ваш товар успел попасть на отгрузку, важно сдать товар на наш склад в:\n\n`;
-        msg += `<b>${schedule.acceptDays}</b>`;
+        msg += `\nЧтобы груз попал в рейс, сдайте его на наш склад заранее:\n\n`;
+        msg += `${schedule.acceptDays}`;
       }
 
       await notifyClient(String(telegramId), msg);
