@@ -657,3 +657,19 @@ export function deleteServicePrice(id: number) {
     method: "DELETE",
   });
 }
+
+// --------------- Broadcast ---------------
+
+export interface BroadcastResult {
+  ok: boolean;
+  sent: number;
+  failed: number;
+  total: number;
+}
+
+export function sendBroadcast(message: string, clientIds?: number[]) {
+  return request<BroadcastResult>("/admin/broadcast", {
+    method: "POST",
+    body: JSON.stringify({ message, clientIds }),
+  });
+}

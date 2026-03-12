@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth";
 import { useTheme } from "../theme";
-import { Package, Users, LogOut, Calendar, Moon, Sun, Building2, DollarSign, FileText } from "lucide-react";
+import { Package, Users, LogOut, Calendar, Moon, Sun, Building2, DollarSign, FileText, Megaphone } from "lucide-react";
 import { getRequests } from "../api";
 
 export default function Layout() {
@@ -83,6 +83,10 @@ export default function Layout() {
                 <NavLink to="/prices" className={linkClass}>
                   <DollarSign size={18} />
                   Прайс
+                </NavLink>
+                <NavLink to="/broadcast" className={linkClass}>
+                  <Megaphone size={18} />
+                  Рассылка
                 </NavLink>
               </nav>
             </div>

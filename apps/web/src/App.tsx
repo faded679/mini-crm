@@ -10,6 +10,7 @@ import Schedule from "./pages/Schedule";
 import Counterparties from "./pages/Counterparties";
 import Invoices from "./pages/Invoices";
 import Prices from "./pages/Prices";
+import Broadcast from "./pages/Broadcast";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/counterparties" element={<Counterparties />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/prices" element={<Prices />} />
+            <Route path="/broadcast" element={<Broadcast />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

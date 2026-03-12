@@ -1696,4 +1696,42 @@ router.delete("/schedule/:id", async (req: Request, res: Response, next: NextFun
   }
 });
 
+// --------------- Broadcast ---------------
+
+// POST /admin/broadcast — send message to all clients (or selected)
+router.post("/broadcast", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { message, clientIds } = req.body as {
+      message: string;
+      clientIds?: number[];
+    };
+
+    if (!message || !message.trim()) throw new ApiError(400, "Message is required");
+
+    let clients: any[];
+    if (Array.isArray(clientIds) && clientIds.length > 0) {
+      clients = await prisma.client.findMany({
+        where: { id: { in: clientIds } },
+      });
+    } else {
+      clients = await prisma.client.findMany();
+    }
+
+    let sent = 0;
+    let failed = 0;
+    for (const client of clients) {
+      try {
+        await notifyClient(client.telegramId, message);
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+
+    res.json({ ok: true, sent, failed, total: clients.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
