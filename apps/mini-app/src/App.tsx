@@ -42,6 +42,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
+      <div className="fixed top-0 left-0 right-0 h-1 z-40" style={{ background: "linear-gradient(90deg, #dc2626 0%, #2563eb 100%)" }} />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/new" element={<NewRequest />} />

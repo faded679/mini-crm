@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const tabs = [
@@ -40,10 +41,28 @@ function InfoIcon({ active }: { active: boolean }) {
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const onFocus = () => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") setHidden(true);
+    };
+    const onBlur = () => setTimeout(() => setHidden(false), 100);
+
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", onBlur);
+    return () => {
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("focusout", onBlur);
+    };
+  }, []);
+
+  if (hidden) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-center items-end gap-4 px-4 pb-3 pt-2">
+      <div className="flex justify-center items-end gap-8 px-4 pb-4 pt-2">
         {tabs.map((tab) => {
           const active = pathname === tab.path || (tab.path === "/new" && pathname === "/");
           const Icon = tab.icon;
@@ -51,16 +70,16 @@ export default function BottomNav() {
             <Link
               key={tab.path}
               to={tab.path}
-              className={`flex flex-col items-center gap-1 transition-all active:scale-90 ${active ? "" : ""}`}
+              className={`flex flex-col items-center gap-1 transition-all active:scale-90`}
             >
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-md ${
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-md ${
                 active
                   ? "bg-tg-button shadow-lg scale-105"
                   : "bg-tg-secondary-bg"
               }`}>
                 <Icon active={active} />
               </div>
-              <span className={`text-[10px] font-semibold transition-colors ${active ? "text-tg-button" : "text-tg-hint"}`}>
+              <span className={`text-[11px] font-semibold transition-colors ${active ? "text-tg-button" : "text-tg-hint"}`}>
                 {tab.label}
               </span>
             </Link>

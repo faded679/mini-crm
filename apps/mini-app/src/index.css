@@ -43,3 +43,7 @@ select {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.accent-gradient {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.06) 0%, rgba(37, 99, 235, 0.06) 100%);
+}

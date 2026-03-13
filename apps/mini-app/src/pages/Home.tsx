@@ -4,7 +4,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28 accent-gradient">
       <div className="w-full max-w-sm fade-in">
         <div className="text-center mb-6">
           <div className="text-4xl mb-2">🚛</div>
@@ -12,7 +12,7 @@ export default function Home() {
           <p className="text-xs text-tg-hint mt-1">Белгород → склады WB и OZON</p>
         </div>
 
-        <div className="bg-tg-secondary-bg rounded-xl p-3 mb-5 space-y-2.5">
+        <div className="bg-tg-secondary-bg rounded-xl p-3 mb-5 space-y-2.5" style={{ borderLeft: "3px solid #dc2626" }}>
           {[
             { icon: "📦", text: "Приём товара на складе в Белгороде" },
             { icon: "📊", text: "Работаем с FBS и FBO" },

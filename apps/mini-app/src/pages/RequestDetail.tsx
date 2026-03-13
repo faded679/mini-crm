@@ -89,35 +89,27 @@ export default function RequestDetail() {
 
       {/* Services */}
       {request.services.length > 0 && (
-        <div className="mb-3">
+        <div>
           <h2 className="text-sm font-bold text-tg-text mb-2">Услуги</h2>
           <div className="bg-tg-secondary-bg rounded-xl overflow-hidden">
             {request.services.map((srv) => (
-              <div key={srv.id} className="flex items-center px-3 py-2 border-b last:border-b-0" style={{ borderColor: "var(--tg-theme-bg-color, #fff)" }}>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-tg-text truncate">{srv.description}</div>
-                  <div className="text-[11px] text-tg-hint">
+              <div key={srv.id} className="px-3 py-2.5 border-b last:border-b-0" style={{ borderColor: "var(--tg-theme-bg-color, #fff)" }}>
+                <div className="text-sm text-tg-text leading-snug mb-1">{srv.description}</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-tg-hint">
                     {srv.quantity} {srv.unit} × {srv.price.toLocaleString("ru-RU")} ₽
-                  </div>
+                  </span>
+                  <span className="text-sm font-semibold text-tg-text">
+                    {srv.amount.toLocaleString("ru-RU")} ₽
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-tg-text ml-2 whitespace-nowrap">
-                  {srv.amount.toLocaleString("ru-RU")} ₽
-                </span>
               </div>
             ))}
-            <div className="flex justify-between items-center px-3 py-2" style={{ backgroundColor: "var(--tg-theme-bg-color, #fff)" }}>
+            <div className="flex justify-between items-center px-3 py-2.5" style={{ backgroundColor: "var(--tg-theme-bg-color, #fff)" }}>
               <span className="text-sm font-bold text-tg-text">Итого</span>
               <span className="text-sm font-bold text-tg-button">{total.toLocaleString("ru-RU")} ₽</span>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Comment */}
-      {request.comment && (
-        <div className="bg-tg-secondary-bg rounded-xl px-3 py-3">
-          <h2 className="text-sm font-bold text-tg-text mb-1">Комментарий</h2>
-          <p className="text-xs text-tg-hint leading-relaxed">{request.comment}</p>
         </div>
       )}
     </div>
