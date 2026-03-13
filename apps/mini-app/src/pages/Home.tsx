@@ -25,11 +25,11 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-semibold">
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <span className="inline-flex items-center px-5 py-2 rounded-full bg-purple-600 text-white text-base font-bold">
             Wildberries
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-semibold">
+          <span className="inline-flex items-center px-5 py-2 rounded-full bg-blue-600 text-white text-base font-bold">
             OZON
           </span>
         </div>

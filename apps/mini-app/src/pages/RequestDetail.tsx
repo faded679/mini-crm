@@ -56,18 +56,6 @@ export default function RequestDetail() {
 
   return (
     <div className="px-3 pt-3 pb-24 fade-in">
-      {/* Back button */}
-      <button
-        onClick={() => navigate("/history")}
-        className="flex items-center gap-1 text-tg-link text-sm font-medium mb-3 active:opacity-60"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-        История
-      </button>
-
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-bold text-tg-text">Заявка #{request.id}</h1>

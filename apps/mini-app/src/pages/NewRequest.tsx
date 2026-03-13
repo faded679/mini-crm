@@ -158,29 +158,27 @@ export default function NewRequest() {
         <div className="bg-red-100 text-red-700 px-3 py-2 rounded-lg mb-3 text-xs">{error}</div>
       )}
 
-      {/* Direction */}
-      <select
-        value={cityId ?? ""}
-        onChange={(e) => {
-          setCityId(e.target.value ? Number(e.target.value) : null);
-          setDeliveryDate("");
-          setPackaging("");
-          setTypeId(null);
-          setQty("");
-          setItems([]);
-        }}
-        className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-2.5"
-      >
-        <option value="">Направление</option>
-        {cities.map((c) => (
-          <option key={c.id} value={c.id}>{c.shortName}</option>
-        ))}
-      </select>
+      {/* Direction & Date */}
+      <div className={`grid ${cityId ? "grid-cols-2" : "grid-cols-1"} gap-2 mb-2.5`}>
+        <select
+          value={cityId ?? ""}
+          onChange={(e) => {
+            setCityId(e.target.value ? Number(e.target.value) : null);
+            setDeliveryDate("");
+            setPackaging("");
+            setTypeId(null);
+            setQty("");
+            setItems([]);
+          }}
+          className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
+        >
+          <option value="">Направление</option>
+          {cities.map((c) => (
+            <option key={c.id} value={c.id}>{c.shortName}</option>
+          ))}
+        </select>
 
-      {/* Delivery date */}
-      {cityId && (
-        <div className="mb-2.5 slide-up">
-          <label className="block text-[11px] font-medium mb-1 text-tg-hint uppercase tracking-wide">Дата выгрузки</label>
+        {cityId && (
           <select
             value={deliveryDate}
             onChange={(e) => {
@@ -189,9 +187,9 @@ export default function NewRequest() {
               setTypeId(null);
               setQty("");
             }}
-            className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
+            className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up"
           >
-            <option value="">Выберите дату</option>
+            <option value="">Дата</option>
             {schedule.map((s) => (
               <option key={s.id} value={s.deliveryDate}>
                 {new Date(s.deliveryDate).toLocaleDateString("ru-RU", {
@@ -202,10 +200,10 @@ export default function NewRequest() {
               </option>
             ))}
           </select>
-          {schedule.length === 0 && (
-            <p className="text-[11px] text-tg-hint mt-1">Нет доступных дат</p>
-          )}
-        </div>
+        )}
+      </div>
+      {cityId && schedule.length === 0 && (
+        <p className="text-[11px] text-tg-hint mb-2">Нет доступных дат</p>
       )}
 
       {/* Packaging type */}

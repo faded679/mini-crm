@@ -2,10 +2,22 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const tabs = [
+  { path: "/", label: "Главная", icon: HomeIcon },
   { path: "/new", label: "Заявка", icon: PlusIcon },
   { path: "/history", label: "История", icon: HistoryIcon },
   { path: "/info", label: "Инфо", icon: InfoIcon },
 ];
+
+function HomeIcon({ active }: { active: boolean }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+      className={`w-6 h-6 transition-colors ${active ? "text-tg-button-text" : "text-tg-hint"}`}>
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
 
 function PlusIcon({ active }: { active: boolean }) {
   return (
@@ -70,25 +82,21 @@ export default function BottomNav() {
   if (hidden) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-center items-end gap-8 px-4 pb-4 pt-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)] bg-tg-secondary-bg border-t" style={{ borderColor: "var(--tg-theme-hint-color, #ccc)" }}>
+      <div className="flex">
         {tabs.map((tab) => {
-          const active = pathname === tab.path || (tab.path === "/new" && pathname === "/");
+          const active = pathname === tab.path;
           const Icon = tab.icon;
           return (
             <Link
               key={tab.path}
               to={tab.path}
-              className={`flex flex-col items-center gap-1 transition-all active:scale-90`}
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 transition-all active:opacity-70 ${
+                active ? "bg-tg-button" : ""
+              }`}
             >
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-md ${
-                active
-                  ? "bg-tg-button shadow-lg scale-105"
-                  : "bg-tg-secondary-bg"
-              }`}>
-                <Icon active={active} />
-              </div>
-              <span className={`text-[11px] font-semibold transition-colors ${active ? "text-tg-button" : "text-tg-hint"}`}>
+              <Icon active={active} />
+              <span className={`text-[10px] font-semibold mt-1 ${active ? "text-tg-button-text" : "text-tg-hint"}`}>
                 {tab.label}
               </span>
             </Link>
