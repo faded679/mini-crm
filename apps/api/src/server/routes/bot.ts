@@ -138,39 +138,75 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         year: "numeric",
       });
 
-      // Build cargo line: "3 палеты (301–400)" or multiple lines
+      // Build cargo line: "1 палета (301–400) кг"
       let cargoLine = "";
       if (Array.isArray(items) && items.length > 0) {
         cargoLine = items.map((it: any) => {
           const qty = Number(it.quantity) || 0;
           const unitLabel = String(it.unit ?? "шт");
-          // Extract type name from description (after last " — ")
           const parts = String(it.description ?? "").split(" — ");
           const typeName = parts.length > 1 ? parts[parts.length - 1] : "";
           const pkgWord = unitLabel === "пал" ? pluralPallet(qty) : pluralBox(qty);
-          return typeName ? `${qty} ${pkgWord} (${typeName})` : `${qty} ${pkgWord}`;
+          return typeName ? `${qty} ${pkgWord} (${typeName}) кг` : `${qty} ${pkgWord}`;
         }).join("\n");
       } else {
         const qty = Number(boxCount);
         cargoLine = `${qty} ${packagingType === "pallets" ? pluralPallet(qty) : pluralBox(qty)}`;
       }
 
-      // Calculate total cost
-      const totalCost = Array.isArray(items) && items.length > 0
-        ? items.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0)
-        : 0;
+      // Build accept days with actual dates
+      let acceptLines = "";
+      if (schedule?.acceptDays) {
+        const delDate = new Date(deliveryDate);
+        const dayNameToIndex: Record<string, number> = {
+          "воскресенье": 0, "понедельник": 1, "вторник": 2, "среда": 3,
+          "четверг": 4, "пятница": 5, "суббота": 6,
+        };
+        // Parse entries like "Понедельник: 9:00–18:00, Вторник: 9:00–15:00"
+        // or "Пн: 09:00–18:00\nВт: 09:00–15:00"
+        const shortToFull: Record<string, string> = {
+          "пн": "понедельник", "вт": "вторник", "ср": "среда", "чт": "четверг",
+          "пт": "пятница", "сб": "суббота", "вс": "воскресенье",
+        };
+        const entries = schedule.acceptDays.split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean);
+        const lines: string[] = [];
+        for (const entry of entries) {
+          const match = entry.match(/^(\S+)[:\s]+(.+)$/i);
+          if (!match) { lines.push(entry); continue; }
+          let dayName = match[1].toLowerCase().replace(/:$/, "");
+          const timeRange = match[2].trim().replace(/[–—-]/g, " до ").replace(/\s+/g, " ");
+          // Resolve short names
+          if (shortToFull[dayName]) dayName = shortToFull[dayName];
+          const dayIdx = dayNameToIndex[dayName];
+          let dateLabel = "";
+          if (dayIdx !== undefined) {
+            // Find the closest date before deliveryDate that matches this weekday
+            for (let d = 1; d <= 14; d++) {
+              const candidate = new Date(delDate);
+              candidate.setDate(candidate.getDate() - d);
+              if (candidate.getDay() === dayIdx) {
+                dateLabel = candidate.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+                break;
+              }
+            }
+          }
+          const fullDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+          const formattedTime = `с ${timeRange}`;
+          lines.push(dateLabel
+            ? `${fullDayName} ${formattedTime} (${dateLabel})`
+            : `${fullDayName} ${formattedTime}`);
+        }
+        acceptLines = lines.join(", \n");
+      }
 
       let msg = `<b>Заявка №${request.id} принята</b> ✅\n\n`;
-      msg += `<b>Маршрут:</b> Белгород → ${cityRecord.fullName ?? city}\n`;
-      msg += `<b>Груз:</b> ${cargoLine}\n`;
-      if (totalCost > 0) {
-        msg += `<b>Предварительный расчет доставки:</b> ${totalCost.toLocaleString("ru-RU")} руб.\n`;
-      }
-      msg += `<b>Дата доставки:</b> ${dateStr}\n`;
+      msg += `<b>Направление:</b> Белгород → ${cityRecord.fullName ?? city}\n`;
+      msg += `<b>Поставка:</b> ${cargoLine}\n`;
+      msg += `<b>Запланированная дата в л/к МП:</b> ${dateStr}\n`;
 
-      if (schedule?.acceptDays) {
+      if (acceptLines) {
         msg += `\nЧтобы груз попал в рейс, сдайте его на наш склад заранее:\n\n`;
-        msg += `${schedule.acceptDays}`;
+        msg += acceptLines;
       }
 
       await notifyClient(String(telegramId), msg);
