@@ -32,7 +32,7 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return <div className="p-4 text-center text-tg-hint">Загрузка...</div>;
+    return <div className="flex items-center justify-center min-h-screen text-tg-hint text-sm">Загрузка...</div>;
   }
 
   if (consentChecked && !consentGiven) {

@@ -34,35 +34,35 @@ export default function Consent({ onAccepted }: ConsentProps) {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">📋 Согласие на обработку данных</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 pb-8 fade-in">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-4">
+          <div className="text-3xl mb-2">🔒</div>
+          <h1 className="text-lg font-bold text-tg-text">Согласие на обработку данных</h1>
+        </div>
 
-      <div className="bg-tg-secondary-bg rounded-xl p-4 mb-4 text-sm text-tg-text leading-relaxed">
-        <p className="mb-3">
-          Для использования сервиса нам необходимо ваше согласие на обработку персональных данных.
-        </p>
-        <p className="mb-2 font-medium">Мы обрабатываем следующие данные:</p>
-        <ul className="list-disc pl-5 mb-3 space-y-1">
-          <li>Telegram ID, имя пользователя, имя и фамилия</li>
-          <li>Данные о заявках на перевозку (город, дата, габариты, вес)</li>
-        </ul>
-        <p>
-          Данные используются исключительно для обработки ваших заявок на перевозку грузов
-          и не передаются третьим лицам.
-        </p>
+        <div className="bg-tg-secondary-bg rounded-xl px-3 py-3 mb-4 text-xs text-tg-hint leading-relaxed space-y-2">
+          <p>Для использования сервиса нам необходимо ваше согласие на обработку персональных данных.</p>
+          <p className="font-medium text-tg-text">Мы обрабатываем:</p>
+          <ul className="list-disc pl-4 space-y-0.5">
+            <li>Telegram ID, имя пользователя</li>
+            <li>Данные заявок (город, дата, вес)</li>
+          </ul>
+          <p>Данные не передаются третьим лицам.</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-100 text-red-700 px-3 py-2 rounded-lg mb-3 text-xs">{error}</div>
+        )}
+
+        <button
+          onClick={handleAccept}
+          disabled={loading}
+          className="w-full py-3 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold disabled:opacity-50 transition active:scale-[0.97]"
+        >
+          {loading ? "Обработка..." : "Даю согласие"}
+        </button>
       </div>
-
-      {error && (
-        <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</div>
-      )}
-
-      <button
-        onClick={handleAccept}
-        disabled={loading}
-        className="w-full p-3 rounded-lg bg-tg-button text-tg-button-text font-medium disabled:opacity-50"
-      >
-        {loading ? "Обработка..." : "✅ Даю согласие"}
-      </button>
     </div>
   );
 }
