@@ -3,13 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
   createRequest,
   getCities,
-  getBoxTypes,
-  getPalletTypes,
   getRates,
   getScheduleForCity,
   type City,
-  type BoxType,
-  type PalletType,
   type PriceRate,
   type ScheduleEntry,
 } from "../api";
@@ -28,15 +24,12 @@ export default function NewRequest() {
   const navigate = useNavigate();
 
   const [cities, setCities] = useState<City[]>([]);
-  const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
-  const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
   const [packaging, setPackaging] = useState<"pallets" | "boxes" | "">("");
-  const [typeId, setTypeId] = useState<number | null>(null);
   const [qty, setQty] = useState("");
 
   const [items, setItems] = useState<LineItem[]>([]);
@@ -45,8 +38,6 @@ export default function NewRequest() {
 
   useEffect(() => {
     getCities().then(setCities).catch(() => {});
-    getBoxTypes().then(setBoxTypes).catch(() => {});
-    getPalletTypes().then(setPalletTypes).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -61,22 +52,11 @@ export default function NewRequest() {
 
   const selectedCity = cities.find((c) => c.id === cityId);
 
-  const typeOptions = packaging === "boxes"
-    ? boxTypes.map((t) => ({ id: t.id, name: t.name }))
-    : packaging === "pallets"
-    ? palletTypes.map((t) => ({ id: t.id, name: t.name }))
-    : [];
-
   const findPrice = useCallback(
-    (pkg: "pallets" | "boxes", tId: number | null) => {
+    (pkg: "pallets" | "boxes") => {
       if (!rates.length) return 0;
       const unit = pkg === "pallets" ? "pallet" : "boxes";
-      const rate = rates.find((r) => {
-        if (r.unit !== unit) return false;
-        if (unit === "boxes") return r.boxTypeId === tId;
-        if (unit === "pallet") return r.palletTypeId === tId;
-        return false;
-      });
+      const rate = rates.find((r) => r.unit === unit);
       return rate?.price ?? 0;
     },
     [rates],
@@ -84,17 +64,15 @@ export default function NewRequest() {
 
   const handleAddItem = () => {
     if (!packaging || !qty || Number(qty) <= 0) return;
-    const price = findPrice(packaging, typeId);
+    const price = findPrice(packaging);
     const amount = price * Number(qty);
-    const typeName =
-      typeOptions.find((t) => t.id === typeId)?.name ?? (packaging === "pallets" ? "Палета" : "Коробка");
+    const typeName = packaging === "pallets" ? "Палета" : "Коробка";
 
     setItems((prev) => [
       ...prev,
-      { packaging, typeName, typeId, qty: Number(qty), price, amount },
+      { packaging, typeName, typeId: null, qty: Number(qty), price, amount },
     ]);
     setQty("");
-    setTypeId(null);
   };
 
   const handleRemoveItem = (idx: number) => {
@@ -116,8 +94,6 @@ export default function NewRequest() {
     try {
       const totalQty = items.reduce((s, it) => s + it.qty, 0);
       const mainPkg = items[0].packaging;
-      const mainBoxTypeId = mainPkg === "boxes" ? items[0].typeId ?? undefined : undefined;
-
       await createRequest({
         telegramId: user.id,
         username: user.username,
@@ -126,7 +102,6 @@ export default function NewRequest() {
         city: selectedCity.shortName,
         deliveryDate: deliveryDate || new Date().toISOString(),
         packagingType: mainPkg,
-        ...(mainBoxTypeId ? { boxTypeId: mainBoxTypeId } : {}),
         boxCount: totalQty,
         comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
@@ -162,7 +137,6 @@ export default function NewRequest() {
           setCityId(e.target.value ? Number(e.target.value) : null);
           setDeliveryDate("");
           setPackaging("");
-          setTypeId(null);
           setQty("");
           setItems([]);
         }}
@@ -183,7 +157,6 @@ export default function NewRequest() {
             onChange={(e) => {
               setDeliveryDate(e.target.value);
               setPackaging("");
-              setTypeId(null);
               setQty("");
             }}
             className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
@@ -214,7 +187,6 @@ export default function NewRequest() {
               type="button"
               onClick={() => {
                 setPackaging(p);
-                setTypeId(null);
                 setQty("");
               }}
               className={`py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -226,22 +198,6 @@ export default function NewRequest() {
               {p === "pallets" ? "📦 Палеты" : "📋 Коробки"}
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Type */}
-      {packaging && (
-        <div className="mb-2.5 slide-up">
-          <select
-            value={typeId ?? ""}
-            onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
-          >
-            <option value="">{packaging === "pallets" ? "Тип палет" : "Тип коробок"}</option>
-            {typeOptions.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
         </div>
       )}
 

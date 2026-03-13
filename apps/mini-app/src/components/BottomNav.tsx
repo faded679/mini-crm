@@ -44,12 +44,21 @@ export default function BottomNav() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    const vv = window.visualViewport;
+    if (vv) {
+      const onResize = () => {
+        const keyboardOpen = vv.height < window.innerHeight * 0.75;
+        setHidden(keyboardOpen);
+      };
+      vv.addEventListener("resize", onResize);
+      return () => vv.removeEventListener("resize", onResize);
+    }
+    // fallback for browsers without visualViewport
     const onFocus = () => {
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") setHidden(true);
     };
-    const onBlur = () => setTimeout(() => setHidden(false), 100);
-
+    const onBlur = () => setTimeout(() => setHidden(false), 150);
     document.addEventListener("focusin", onFocus);
     document.addEventListener("focusout", onBlur);
     return () => {

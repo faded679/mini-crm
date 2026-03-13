@@ -4,7 +4,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28 accent-gradient">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28">
       <div className="w-full max-w-sm fade-in">
         <div className="text-center mb-6">
           <div className="text-4xl mb-2">🚛</div>

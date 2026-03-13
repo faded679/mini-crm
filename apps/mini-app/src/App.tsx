@@ -41,7 +41,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen accent-gradient">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/new" element={<NewRequest />} />
