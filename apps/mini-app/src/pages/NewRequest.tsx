@@ -213,7 +213,9 @@ export default function NewRequest() {
               type="button"
               onClick={() => {
                 setPackaging(p);
-                setTypeId(null);
+                const opts = p === "boxes"
+                  ? boxTypes : palletTypes;
+                setTypeId(opts.length > 0 ? opts[0].id : null);
                 setQty("");
               }}
               className={`py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -236,7 +238,6 @@ export default function NewRequest() {
             onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)}
             className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
           >
-            <option value="" disabled>Выберите</option>
             {typeOptions.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}

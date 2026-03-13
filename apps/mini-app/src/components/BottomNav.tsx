@@ -44,26 +44,26 @@ export default function BottomNav() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const vv = window.visualViewport;
-    if (vv) {
-      const onResize = () => {
-        const keyboardOpen = vv.height < window.innerHeight * 0.75;
-        setHidden(keyboardOpen);
-      };
-      vv.addEventListener("resize", onResize);
-      return () => vv.removeEventListener("resize", onResize);
-    }
-    // fallback for browsers without visualViewport
-    const onFocus = () => {
+    const isInputFocused = () => {
       const tag = document.activeElement?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") setHidden(true);
+      return tag === "INPUT" || tag === "TEXTAREA";
     };
-    const onBlur = () => setTimeout(() => setHidden(false), 150);
-    document.addEventListener("focusin", onFocus);
-    document.addEventListener("focusout", onBlur);
+
+    const onFocusIn = () => { if (isInputFocused()) setHidden(true); };
+    const onFocusOut = () => { setTimeout(() => { if (!isInputFocused()) setHidden(false); }, 120); };
+    const onResize = () => { if (!isInputFocused()) setHidden(false); };
+
+    document.addEventListener("focusin", onFocusIn, true);
+    document.addEventListener("focusout", onFocusOut, true);
+    window.addEventListener("resize", onResize);
+    const vv = window.visualViewport;
+    if (vv) vv.addEventListener("resize", onResize);
+
     return () => {
-      document.removeEventListener("focusin", onFocus);
-      document.removeEventListener("focusout", onBlur);
+      document.removeEventListener("focusin", onFocusIn, true);
+      document.removeEventListener("focusout", onFocusOut, true);
+      window.removeEventListener("resize", onResize);
+      if (vv) vv.removeEventListener("resize", onResize);
     };
   }, []);
 
