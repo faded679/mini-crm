@@ -81,12 +81,14 @@ export default function BottomNav() {
               <Link
                 key={tab.path}
                 to={tab.path}
-                className="flex-1 flex flex-col items-center justify-center py-4 transition-all active:opacity-70"
+                className="flex-1 flex flex-col items-center justify-center py-2.5 transition-all active:opacity-70"
               >
-                <Icon active={active} />
-                <span className={`text-xs font-medium mt-1 ${active ? "text-white" : "text-neutral-500"}`}>
-                  {tab.label}
-                </span>
+                <div className={`flex flex-col items-center px-4 py-1.5 rounded-xl transition-all ${active ? "bg-neutral-700" : ""}`}>
+                  <Icon active={active} />
+                  <span className={`text-[11px] font-medium mt-0.5 ${active ? "text-white" : "text-neutral-500"}`}>
+                    {tab.label}
+                  </span>
+                </div>
               </Link>
             );
           })}
