@@ -248,16 +248,14 @@ export default function NewRequest() {
       {/* Quantity + Add */}
       {packaging && (
         <div className="mb-3 slide-up">
-          <select
+          <input
+            type="number"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
+            min="1"
+            placeholder="Кол-во"
             className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-2"
-          >
-            <option value="">Кол-во</option>
-            {Array.from({ length: 50 }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
+          />
           <button
             type="button"
             onClick={handleAddItem}
