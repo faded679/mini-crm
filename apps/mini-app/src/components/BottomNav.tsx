@@ -72,7 +72,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="mx-3 mb-2 rounded-2xl overflow-hidden" style={{ backgroundColor: "#1e1e1e" }}>
+      <div className="mx-3 mb-4 rounded-2xl overflow-hidden" style={{ backgroundColor: "#1e1e1e" }}>
         <div className="flex">
           {tabs.map((tab) => {
             const active = pathname === tab.path;
