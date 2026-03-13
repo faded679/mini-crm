@@ -154,59 +154,17 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         cargoLine = `${qty} ${packagingType === "pallets" ? pluralPallet(qty) : pluralBox(qty)}`;
       }
 
-      // Build accept days with actual dates
-      let acceptLines = "";
-      if (schedule?.acceptDays) {
-        const delDate = new Date(deliveryDate);
-        const dayNameToIndex: Record<string, number> = {
-          "воскресенье": 0, "понедельник": 1, "вторник": 2, "среда": 3,
-          "четверг": 4, "пятница": 5, "суббота": 6,
-        };
-        // Parse entries like "Понедельник: 9:00–18:00, Вторник: 9:00–15:00"
-        // or "Пн: 09:00–18:00\nВт: 09:00–15:00"
-        const shortToFull: Record<string, string> = {
-          "пн": "понедельник", "вт": "вторник", "ср": "среда", "чт": "четверг",
-          "пт": "пятница", "сб": "суббота", "вс": "воскресенье",
-        };
-        const entries = schedule.acceptDays.split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean);
-        const lines: string[] = [];
-        for (const entry of entries) {
-          const match = entry.match(/^(\S+)[:\s]+(.+)$/i);
-          if (!match) { lines.push(entry); continue; }
-          let dayName = match[1].toLowerCase().replace(/:$/, "");
-          const timeRange = match[2].trim().replace(/[–—-]/g, " до ").replace(/\s+/g, " ");
-          // Resolve short names
-          if (shortToFull[dayName]) dayName = shortToFull[dayName];
-          const dayIdx = dayNameToIndex[dayName];
-          let dateLabel = "";
-          if (dayIdx !== undefined) {
-            // Find the closest date before deliveryDate that matches this weekday
-            for (let d = 1; d <= 14; d++) {
-              const candidate = new Date(delDate);
-              candidate.setDate(candidate.getDate() - d);
-              if (candidate.getDay() === dayIdx) {
-                dateLabel = candidate.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
-                break;
-              }
-            }
-          }
-          const fullDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-          const formattedTime = `с ${timeRange}`;
-          lines.push(dateLabel
-            ? `${fullDayName} ${formattedTime} (${dateLabel})`
-            : `${fullDayName} ${formattedTime}`);
-        }
-        acceptLines = lines.join(", \n");
-      }
+      // Use schedule destination for nice city name, fallback to cityRecord.fullName or shortName
+      const destination = schedule?.destination || cityRecord.fullName || city;
 
       let msg = `<b>Заявка №${request.id} принята</b> ✅\n\n`;
-      msg += `<b>Направление:</b> Белгород → ${cityRecord.fullName ?? city}\n`;
+      msg += `<b>Направление:</b> Белгород → ${destination}\n`;
       msg += `<b>Поставка:</b> ${cargoLine}\n`;
       msg += `<b>Запланированная дата в л/к МП:</b> ${dateStr}\n`;
 
-      if (acceptLines) {
+      if (schedule?.acceptDays) {
         msg += `\nЧтобы груз попал в рейс, сдайте его на наш склад заранее:\n\n`;
-        msg += acceptLines;
+        msg += schedule.acceptDays;
       }
 
       await notifyClient(String(telegramId), msg);
