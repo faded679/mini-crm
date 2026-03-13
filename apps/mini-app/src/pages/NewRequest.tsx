@@ -14,6 +14,7 @@ import {
   type ScheduleEntry,
 } from "../api";
 import { getTelegramUser } from "../telegram";
+import soloveyLogo from "../assets/solovey.png";
 
 interface LineItem {
   packaging: "pallets" | "boxes";
@@ -150,7 +151,7 @@ export default function NewRequest() {
     <div className="px-3 pt-3 pb-28 fade-in">
       <div className="flex items-center justify-between mb-3">
         <h1 className="text-lg font-bold text-tg-text">Новая заявка</h1>
-        <img src="/solovey.png" alt="Solovey" className="w-10 h-10 object-contain" />
+        <img src={soloveyLogo} alt="Solovey" className="w-10 h-10 object-contain" />
       </div>
 
       {error && (
