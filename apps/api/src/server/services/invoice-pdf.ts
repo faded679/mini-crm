@@ -7,16 +7,16 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ===================== РЕКВИЗИТЫ ИП (СТАТИЧНЫЕ) =====================
-// TODO: заменить на реальные реквизиты ИП Соловьёв
 const SELLER = {
-  name: "ИП Соловьёв Александр Сергеевич",
-  inn: "312345678901",
-  address: "г. Москва, ул. Примерная, д. 1, кв. 1",
-  account: "40802810900000000001",
-  bik: "044525000",
-  correspondentAccount: "30101810400000000225",
-  bank: "АО «Банк»",
-  director: "Соловьёв А.С.",
+  name: "ИП Соловьёв Артём Александрович",
+  inn: "302201915296",
+  address: "309167, РОССИЯ, БЕЛГОРОДСКАЯ ОБЛ, КРАСНОЯРУСЖКИЙ Р-Н, ПОСЕЛОК СТЕПНОЕ, УЛ САДОВАЯ, Д 9/1",
+  account: "40802810100002843508",
+  bik: "044525974",
+  correspondentAccount: "30101810145250000974",
+  bank: 'АО "ТИНЬКОФФ БАНК" Г. Москва',
+  director: "Соловьёв А.А.",
+  directorFull: "Соловьёв Артём Александрович",
 };
 
 type InvoiceItem = {
@@ -135,7 +135,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     ? FONT.replace("DejaVuSans", "DejaVuSans-Bold")
     : FONT;
 
-  const M = 36; // margin
+  const M = 40; // margin
   const doc = new PDFDocument({ size: "A4", margin: M });
   doc.registerFont("Main", FONT);
   doc.registerFont("Bold", FONT_BOLD);
@@ -145,123 +145,134 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)),
   );
 
-  // Generate QR code as data URL → buffer
+  // Generate QR code
   const qrText = `ST00012|Name=${SELLER.name}|PersonalAcc=${SELLER.account}|BankName=${SELLER.bank}|BIC=${SELLER.bik}|CorrespAcc=${SELLER.correspondentAccount}|PayeeINN=${SELLER.inn}|Sum=${Math.round(total * 100)}`;
-  const qrDataUrl = await QRCode.toDataURL(qrText, { width: 100, margin: 1 });
+  const qrDataUrl = await QRCode.toDataURL(qrText, { width: 120, margin: 1 });
   const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
-
-  // Load stamp image if exists
-  const stampPath = path.join(__dirname, "..", "..", "..", "assets", "stamp.png");
-  const hasStamp = fs.existsSync(stampPath);
 
   return await new Promise<Buffer>((resolve, reject) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const W = 595.28 - M * 2; // usable width
+    const W = 595.28 - M * 2;
     let y = M;
 
-    // ============ ВЕРХНЯЯ ТАБЛИЦА (реквизиты банка) — СТАТИЧНАЯ ============
-    const bankTableH = 80;
-    drawRect(doc, M, y, W, bankTableH, 1);
-    // vertical split: left = bank info, right = QR
-    const bankLeftW = W - 110;
-    drawLine(doc, M + bankLeftW, y, M + bankLeftW, y + bankTableH, 0.5);
-    // horizontal split in left part
-    drawLine(doc, M, y + 20, M + bankLeftW, y + 20, 0.5);
-    drawLine(doc, M, y + 40, M + bankLeftW, y + 40, 0.5);
-    drawLine(doc, M, y + 60, M + bankLeftW, y + 60, 0.5);
+    // ============ WARNING TEXT ============
+    doc.font("Main").fontSize(6).fillColor("#333");
+    doc.text(
+      "Внимание! Оплата данного счета означает согласие с условиями поставки товара. Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.",
+      M, y, { width: W - 100, lineGap: 1 },
+    );
+    doc.fillColor("#000");
 
-    // Bank info
+    // QR code top-right
+    doc.image(qrBuffer, M + W - 88, y - 4, { width: 88, height: 88 });
+
+    y = Math.max(doc.y + 8, M + 50);
+
+    // ============ BANK DETAILS TABLE ============
+    const bkW = W;
+    const bkLeft = 310; // left column width
+    const bkRight = bkW - bkLeft;
+    const rowH = 16;
+
+    // Row 1: Bank name | BИК + value
+    drawRect(doc, M, y, bkW, rowH * 2);
+    drawLine(doc, M + bkLeft, y, M + bkLeft, y + rowH * 2);
+    // BIK label+value
     doc.font("Main").fontSize(7);
-    doc.text(`${SELLER.bank}`, M + 3, y + 3, { width: bankLeftW - 6 });
-    doc.text(`БИК`, M + 3, y + 23);
-    doc.text(SELLER.bik, M + 80, y + 23);
-    doc.text(`Корр. счёт`, M + 3, y + 43);
-    doc.text(SELLER.correspondentAccount, M + 80, y + 43);
-    doc.text(`Р/счёт`, M + 3, y + 63);
-    doc.text(SELLER.account, M + 80, y + 63);
+    doc.text(SELLER.bank, M + 3, y + 3, { width: bkLeft - 6 });
+    doc.text("БИК", M + bkLeft + 3, y + 3);
+    doc.text(SELLER.bik, M + bkLeft + 50, y + 3);
+    // Row 2: (bank continues) | Сч. №
+    drawLine(doc, M, y + rowH, M + bkW, y + rowH);
+    doc.text("Сч. №", M + bkLeft + 3, y + rowH + 3);
+    doc.text(SELLER.correspondentAccount, M + bkLeft + 50, y + rowH + 3);
+    y += rowH * 2;
 
-    // QR code
-    doc.image(qrBuffer, M + bankLeftW + 5, y + 2, { width: 76, height: 76 });
+    // Row 3–4: ИНН + КПП | Сч. №
+    drawRect(doc, M, y, bkW, rowH * 2);
+    drawLine(doc, M + bkLeft, y, M + bkLeft, y + rowH * 2);
+    doc.font("Main").fontSize(6);
+    doc.text("Банк получателя", M + 3, y - rowH * 2 + 2, { width: 60 });
+    doc.fontSize(7);
+    // ИНН
+    doc.text("ИНН", M + 3, y + 3);
+    doc.text(SELLER.inn, M + 32, y + 3);
+    // КПП
+    doc.text("КПП", M + 130, y + 3);
+    // Сч. №
+    doc.text("Сч. №", M + bkLeft + 3, y + 3);
+    doc.text(SELLER.account, M + bkLeft + 50, y + 3);
+    drawLine(doc, M, y + rowH, M + bkLeft, y + rowH);
+    // Получатель
+    doc.text(SELLER.name, M + 3, y + rowH + 3, { width: bkLeft - 6 });
+    y += rowH * 2;
 
-    y += bankTableH + 4;
+    // Получатель label
+    doc.font("Main").fontSize(6);
+    doc.text("Получатель", M + 3, y + 2, { width: 60 });
+    y += 14;
 
-    // Seller info row
-    const sellerRowH = 30;
-    drawRect(doc, M, y, W, sellerRowH, 0.5);
-    doc.fontSize(7).text("Получатель", M + 3, y + 2);
-    doc.fontSize(8).font("Bold").text(SELLER.name, M + 3, y + 12, { width: W - 6 });
-    doc.font("Main");
-    doc.fontSize(7).text(`ИНН ${SELLER.inn}`, M + W - 150, y + 2);
-
-    y += sellerRowH + 10;
-
-    // ============ ЗАГОЛОВОК СЧЁТА ============
-    doc.font("Bold").fontSize(14);
-    doc.text(`Счёт на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, y, {
+    // ============ TITLE ============
+    y += 6;
+    doc.font("Bold").fontSize(13).fillColor("#000");
+    doc.text(`Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, y, {
       width: W,
-      align: "center",
+      align: "left",
     });
-    doc.font("Main");
-    y += 22;
-
+    y = doc.y + 4;
     drawLine(doc, M, y, M + W, y, 1.5);
-    y += 8;
+    y += 10;
 
-    // ============ ИСПОЛНИТЕЛЬ (СТАТИЧНЫЙ) ============
-    doc.fontSize(9);
-    doc.font("Bold").text("Исполнитель:", M, y, { continued: true });
-    doc.font("Main").text(` ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`);
+    // ============ SELLER ============
+    doc.font("Main").fontSize(8);
+    doc.font("Bold").text("Исполнитель:", M, y, { continued: true, width: W });
+    doc.font("Main").text(
+      `   ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`,
+      { width: W },
+    );
     y = doc.y + 4;
 
-    // ============ ЗАКАЗЧИК (ИЗ БД) ============
-    doc.font("Bold").text("Заказчик:", M, y, { continued: true });
+    // ============ BUYER ============
+    doc.font("Bold").text("Заказчик:", M, y, { continued: true, width: W });
     const cpParts = [counterparty.name];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
-    if (counterparty.kpp) cpParts.push(`КПП ${counterparty.kpp}`);
-    if (counterparty.address) cpParts.push(counterparty.address);
-    doc.font("Main").text(` ${cpParts.join(", ")}`);
+    doc.font("Main").text(`   ${cpParts.join(", ")}`, { width: W });
     y = doc.y + 4;
 
-    // ============ ПРИМЕЧАНИЕ (ДОГОВОР ИЗ БД) ============
+    // ============ NOTE ============
     if (counterparty.contract) {
-      doc.font("Bold").text("Основание:", M, y, { continued: true });
-      doc.font("Main").text(` ${counterparty.contract}`);
+      doc.font("Bold").text("Примечание:", M, y, { continued: true, width: W });
+      doc.font("Main").text(`   ${counterparty.contract}`, { width: W });
       y = doc.y + 4;
     }
 
     y += 6;
-    drawLine(doc, M, y, M + W, y, 0.5);
-    y += 8;
 
-    // ============ ТАБЛИЦА УСЛУГ ============
-    const colWidths = [28, W - 28 - 50 - 60 - 70 - 70, 50, 60, 70, 70];
+    // ============ TABLE ============
+    const colWidths = [24, W - 24 - 42 - 46 - 62 - 62, 42, 46, 62, 62];
     const colX = [M];
     for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
-    const headerH = 20;
+    const headerH = 18;
 
     // Header
-    drawRect(doc, M, y, W, headerH, 0.5);
-    for (let i = 1; i < colX.length; i++) {
-      drawLine(doc, colX[i], y, colX[i], y + headerH, 0.5);
-    }
+    drawRect(doc, M, y, W, headerH);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + headerH);
     doc.font("Bold").fontSize(7);
-    const headers = ["№", "Наименование", "Кол-во", "Ед.", "Цена", "Сумма"];
+    const headers = ["№", "Товары (работы, услуги)", "Кол-во", "Ед. изм.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
-      doc.text(h, colX[i] + 2, y + 6, { width: colWidths[i] - 4, align: "center" });
+      doc.text(h, colX[i] + 2, y + 5, { width: colWidths[i] - 4, align: "center" });
     });
     y += headerH;
 
     // Rows
-    doc.font("Main").fontSize(8);
+    doc.font("Main").fontSize(7.5);
     items.forEach((item, idx) => {
-      const descH = Math.max(16, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 8);
-      drawRect(doc, M, y, W, descH, 0.5);
-      for (let i = 1; i < colX.length; i++) {
-        drawLine(doc, colX[i], y, colX[i], y + descH, 0.5);
-      }
-      const textY = y + 4;
+      const descH = Math.max(15, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 6);
+      drawRect(doc, M, y, W, descH);
+      for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH);
+      const textY = y + 3;
       doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center" });
       doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6 });
       doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center" });
@@ -271,50 +282,121 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
       y += descH;
     });
 
-    y += 6;
+    y += 8;
 
-    // ============ ИТОГО ============
-    doc.font("Bold").fontSize(9);
-    doc.text(`Итого: ${formatMoney(total)} руб.`, M, y, { width: W, align: "right" });
+    // ============ TOTALS ============
+    doc.font("Bold").fontSize(8);
+    doc.text("Итого:", M, y, { width: W - 66, align: "right" });
+    doc.text(formatMoney(total), M + W - 64, y, { width: 62, align: "right" });
     y += 14;
-    doc.text(`Без налога (НДС)`, M, y, { width: W, align: "right" });
-    y += 14;
-    doc.font("Bold").fontSize(10);
-    doc.text(`Всего к оплате: ${formatMoney(total)} руб.`, M, y, { width: W, align: "right" });
+    doc.text("Без налога (НДС)", M, y, { width: W - 66, align: "right" });
+    doc.font("Main").text("-", M + W - 64, y, { width: 62, align: "right" });
     y += 16;
 
-    // Сумма прописью
-    doc.font("Main").fontSize(9);
-    doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y);
-    y += 14;
-    doc.font("Bold").fontSize(9);
-    doc.text(numberToWordsRu(total), M, y);
-    y += 20;
-
-    drawLine(doc, M, y, M + W, y, 1);
-    y += 12;
-
-    // ============ ИСПОЛНИТЕЛЬ + ПЕЧАТЬ ============
-    doc.font("Bold").fontSize(9);
-    doc.text("Исполнитель", M, y);
-    y += 14;
-
-    // Signature line
-    drawLine(doc, M + 80, y + 2, M + 220, y + 2, 0.5);
+    // ============ AMOUNT IN WORDS ============
     doc.font("Main").fontSize(8);
-    doc.text(`/${SELLER.director}/`, M + 225, y - 4);
+    doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y);
+    y = doc.y + 3;
+    doc.font("Bold").fontSize(8);
+    doc.text(`${numberToWordsRu(total)} Без НДС.`, M, y, { width: W });
+    y = doc.y + 16;
 
-    // Stamp image (if exists)
-    if (hasStamp) {
-      try {
-        doc.image(stampPath, M + 300, y - 40, { width: 120 });
-      } catch {
-        // stamp file invalid, skip
-      }
-    }
+    drawLine(doc, M, y, M + W, y, 0.5);
+    y += 16;
 
-    y += 30;
+    // ============ SIGNATURES ============
+    const sigMid = M + W / 2;
 
+    doc.font("Bold").fontSize(9);
+    doc.text("Руководитель", M, y);
+    doc.text("Бухгалтер", sigMid + 10, y);
+    y += 3;
+
+    // Signature lines
+    drawLine(doc, M + 80, y + 12, sigMid - 10, y + 12, 0.5);
+    drawLine(doc, sigMid + 70, y + 12, M + W, y + 12, 0.5);
+
+    // Draw signature scribble for Руководитель
+    drawSignature(doc, M + 100, y + 4);
+
+    // Draw signature scribble for Бухгалтер
+    drawSignature(doc, sigMid + 90, y + 4);
+
+    y += 16;
+
+    // ============ STAMP ============
+    drawStamp(doc, M + W / 2 - 20, y + 10, 52);
+
+    y += 120;
     doc.end();
   });
+}
+
+// Draw a realistic-looking signature scribble
+function drawSignature(doc: PDFKit.PDFDocument, x: number, y: number) {
+  doc.save();
+  doc.strokeColor("#1a237e").lineWidth(0.8);
+  doc.moveTo(x, y + 8)
+    .bezierCurveTo(x + 10, y - 2, x + 20, y + 12, x + 30, y + 2)
+    .bezierCurveTo(x + 40, y - 6, x + 50, y + 10, x + 60, y + 4)
+    .bezierCurveTo(x + 70, y - 2, x + 80, y + 8, x + 90, y + 2)
+    .stroke();
+  doc.moveTo(x + 15, y + 5)
+    .bezierCurveTo(x + 25, y - 4, x + 45, y + 14, x + 55, y)
+    .stroke();
+  doc.restore();
+}
+
+// Draw a round blue stamp programmatically
+function drawStamp(doc: PDFKit.PDFDocument, cx: number, cy: number, r: number) {
+  doc.save();
+
+  // Outer circle
+  doc.strokeColor("#1a4da0").lineWidth(2);
+  doc.circle(cx, cy, r).stroke();
+
+  // Inner circle
+  doc.lineWidth(1.5);
+  doc.circle(cx, cy, r - 6).stroke();
+
+  // Center text
+  doc.fillColor("#1a4da0");
+  doc.font("Bold").fontSize(8);
+  doc.text("СОЛОВЬЕВ", cx - 28, cy - 8, { width: 56, align: "center" });
+  doc.font("Main").fontSize(6);
+  doc.text("Артём Александрович", cx - 38, cy + 2, { width: 76, align: "center" });
+
+  // Curved text around the top: ИП
+  doc.font("Main").fontSize(6);
+  const topText = "ИНДИВИДУАЛЬНЫЙ ПРЕДПРИНИМАТЕЛЬ";
+  const angleStart = Math.PI + 0.35;
+  const angleEnd = 2 * Math.PI - 0.35;
+  const arcR = r - 12;
+  for (let i = 0; i < topText.length; i++) {
+    const angle = angleStart + (i / (topText.length - 1)) * (angleEnd - angleStart);
+    const tx = cx + arcR * Math.cos(angle);
+    const ty = cy + arcR * Math.sin(angle);
+    doc.save();
+    doc.translate(tx, ty);
+    doc.rotate((angle * 180) / Math.PI + 90);
+    doc.text(topText[i], -3, -4, { width: 8, lineBreak: false });
+    doc.restore();
+  }
+
+  // Curved text around the bottom: ОГРНИП
+  const bottomText = `ОГРНИП 323312100037191`;
+  const bAngleStart = 0.35;
+  const bAngleEnd = Math.PI - 0.35;
+  for (let i = 0; i < bottomText.length; i++) {
+    const angle = bAngleStart + (i / (bottomText.length - 1)) * (bAngleEnd - bAngleStart);
+    const tx = cx + arcR * Math.cos(angle);
+    const ty = cy + arcR * Math.sin(angle);
+    doc.save();
+    doc.translate(tx, ty);
+    doc.rotate((angle * 180) / Math.PI - 90);
+    doc.text(bottomText[i], -3, -4, { width: 8, lineBreak: false });
+    doc.restore();
+  }
+
+  doc.restore();
 }
