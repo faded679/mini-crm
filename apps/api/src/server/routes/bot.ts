@@ -203,6 +203,27 @@ router.get("/requests/:telegramId", async (req: Request, res: Response, next: Ne
   }
 });
 
+// GET /bot/request-detail/:id — single request with services (read-only for client)
+router.get("/request-detail/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const request = await (prisma as any).shipmentRequest.findUnique({
+      where: { id },
+      include: {
+        services: { orderBy: { id: "asc" } },
+        boxType: true,
+      },
+    });
+    if (!request) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.json(request);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /bot/consent/:telegramId — check consent status
 router.get("/consent/:telegramId", async (req: Request, res: Response, next: NextFunction) => {
   try {

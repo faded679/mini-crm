@@ -7,7 +7,7 @@ export default function Info() {
   ];
 
   return (
-    <div className="px-3 pt-3 pb-16 fade-in">
+    <div className="px-3 pt-3 pb-28 fade-in">
       <h1 className="text-lg font-bold text-tg-text mb-3">Информация</h1>
 
       <div className="space-y-2 mb-4">

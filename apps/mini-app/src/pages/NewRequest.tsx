@@ -148,7 +148,7 @@ export default function NewRequest() {
   };
 
   return (
-    <div className="px-3 pt-3 pb-16 fade-in">
+    <div className="px-3 pt-3 pb-28 fade-in">
       <h1 className="text-lg font-bold text-tg-text mb-3">Новая заявка</h1>
 
       {error && (
@@ -247,22 +247,22 @@ export default function NewRequest() {
 
       {/* Quantity + Add */}
       {packaging && (
-        <div className="flex gap-2 mb-3 slide-up">
+        <div className="mb-3 slide-up">
           <input
             type="number"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             min="1"
             placeholder="Кол-во"
-            className="flex-1 h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
+            className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-2"
           />
           <button
             type="button"
             onClick={handleAddItem}
             disabled={!qty || Number(qty) <= 0}
-            className="h-11 px-4 rounded-xl bg-tg-button text-tg-button-text text-sm font-medium disabled:opacity-40 transition active:scale-95"
+            className="w-full h-11 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold disabled:opacity-40 transition active:scale-[0.97]"
           >
-            Добавить
+            + Добавить
           </button>
         </div>
       )}

@@ -107,6 +107,24 @@ export function getRequests(telegramId: string) {
   return api<ShipmentRequest[]>(`/bot/requests/${telegramId}`);
 }
 
+export interface RequestService {
+  id: number;
+  description: string;
+  unit: string;
+  quantity: number;
+  price: number;
+  amount: number;
+}
+
+export interface ShipmentRequestDetail extends ShipmentRequest {
+  services: RequestService[];
+  boxType: BoxType | null;
+}
+
+export function getRequestDetail(id: number) {
+  return api<ShipmentRequestDetail>(`/bot/request-detail/${id}`);
+}
+
 export function createRequest(data: CreateRequestPayload) {
   return api<ShipmentRequest>("/bot/requests", {
     method: "POST",

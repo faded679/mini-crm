@@ -37,7 +37,7 @@ export default function History() {
 
   if (requests.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 pb-16 fade-in">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 pb-28 fade-in">
         <div className="text-3xl mb-3">📭</div>
         <p className="text-tg-hint text-sm mb-4">Заявок пока нет</p>
         <button
@@ -51,7 +51,7 @@ export default function History() {
   }
 
   return (
-    <div className="px-3 pt-3 pb-16 fade-in">
+    <div className="px-3 pt-3 pb-28 fade-in">
       <h1 className="text-lg font-bold text-tg-text mb-3">История</h1>
 
       <div className="space-y-2">
@@ -60,7 +60,8 @@ export default function History() {
           return (
             <div
               key={r.id}
-              className="bg-tg-secondary-bg rounded-xl px-3 py-2.5 active:opacity-80 transition"
+              onClick={() => navigate(`/history/${r.id}`)}
+              className="bg-tg-secondary-bg rounded-xl px-3 py-2.5 active:opacity-70 transition cursor-pointer"
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-bold text-tg-text">#{r.id}</span>
@@ -70,7 +71,13 @@ export default function History() {
               </div>
               <div className="flex items-center justify-between text-xs text-tg-hint">
                 <span>{r.city} · {r.packagingType === "pallets" ? "Палеты" : "Коробки"} ×{r.boxCount}</span>
-                <span>{formatDate(r.createdAt)}</span>
+                <div className="flex items-center gap-1">
+                  <span>{formatDate(r.createdAt)}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-tg-hint">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
               </div>
             </div>
           );
