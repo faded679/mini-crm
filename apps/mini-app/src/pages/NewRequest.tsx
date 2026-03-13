@@ -159,7 +159,7 @@ export default function NewRequest() {
       )}
 
       {/* Direction & Date */}
-      <div className={`grid ${cityId ? "grid-cols-2" : "grid-cols-1"} gap-2 mb-2.5`}>
+      <div className={`flex gap-2 mb-2.5`}>
         <select
           value={cityId ?? ""}
           onChange={(e) => {
@@ -170,7 +170,7 @@ export default function NewRequest() {
             setQty("");
             setItems([]);
           }}
-          className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
+          className={`h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm ${cityId ? "w-2/3" : "w-full"}`}
         >
           <option value="">Направление</option>
           {cities.map((c) => (
@@ -187,7 +187,7 @@ export default function NewRequest() {
               setTypeId(null);
               setQty("");
             }}
-            className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up"
+            className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-1/3 min-w-0"
           >
             <option value="">Дата</option>
             {schedule.map((s) => (
@@ -208,7 +208,9 @@ export default function NewRequest() {
 
       {/* Packaging type */}
       {deliveryDate && (
-        <div className="grid grid-cols-2 gap-2 mb-2.5 slide-up">
+        <div className="mb-2.5 slide-up">
+          <p className="text-xs text-tg-hint mb-1.5">Выберите тип упаковки</p>
+          <div className="grid grid-cols-2 gap-2">
           {(["pallets", "boxes"] as const).map((p) => (
             <button
               key={p}
@@ -229,6 +231,7 @@ export default function NewRequest() {
               {p === "pallets" ? "📦 Палеты" : "📋 Коробки"}
             </button>
           ))}
+          </div>
         </div>
       )}
 
