@@ -72,7 +72,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="mx-3 mb-4 rounded-2xl overflow-hidden" style={{ backgroundColor: "#1e1e1e" }}>
+      <div className="mx-3 mb-6 rounded-2xl overflow-hidden" style={{ backgroundColor: "#1e1e1e" }}>
         <div className="flex">
           {tabs.map((tab) => {
             const active = pathname === tab.path;
@@ -81,9 +81,9 @@ export default function BottomNav() {
               <Link
                 key={tab.path}
                 to={tab.path}
-                className="flex-1 flex flex-col items-center justify-center py-2.5 transition-all active:opacity-70"
+                className="flex-1 flex flex-col items-center justify-center py-2 transition-all active:opacity-70"
               >
-                <div className={`flex flex-col items-center px-4 py-1.5 rounded-xl transition-all ${active ? "bg-neutral-700" : ""}`}>
+                <div className={`w-20 flex flex-col items-center py-1.5 rounded-xl transition-all ${active ? "bg-neutral-700" : ""}`}>
                   <Icon active={active} />
                   <span className={`text-[11px] font-medium mt-0.5 ${active ? "text-white" : "text-neutral-500"}`}>
                     {tab.label}
