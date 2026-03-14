@@ -1,5 +1,4 @@
 import PDFDocument from "pdfkit";
-import QRCode from "qrcode";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -145,10 +144,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)),
   );
 
-  // Generate QR code
-  const qrText = `ST00012|Name=${SELLER.name}|PersonalAcc=${SELLER.account}|BankName=${SELLER.bank}|BIC=${SELLER.bik}|CorrespAcc=${SELLER.correspondentAccount}|PayeeINN=${SELLER.inn}|Sum=${Math.round(total * 100)}`;
-  const qrDataUrl = await QRCode.toDataURL(qrText, { width: 120, margin: 1 });
-  const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
+  // No QR code needed
 
   return await new Promise<Buffer>((resolve, reject) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
@@ -158,17 +154,13 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     let y = M;
 
     // ============ WARNING TEXT ============
-    doc.font("Main").fontSize(8.5).fillColor("#333");
+    doc.font("Main").fontSize(7).fillColor("#333");
     doc.text(
       "Внимание! Оплата данного счета означает согласие с условиями поставки товара. Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.",
-      M, y, { width: W - 100, lineGap: 0, align: "center" },
+      M, y, { width: W, lineGap: 0 },
     );
     doc.fillColor("#000");
-
-    // QR code top-right
-    doc.image(qrBuffer, M + W - 88, y - 4, { width: 88, height: 88 });
-
-    y = Math.max(doc.y + 8, M + 50);
+    y = doc.y + 10;
 
     // ============ BANK DETAILS TABLE ============
     const bkW = W;
@@ -246,29 +238,29 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     y += 8;
 
     // ============ SELLER ============
-    doc.font("Main").fontSize(9.5);
-    doc.font("Bold").text("Поставщик:", M, y, { continued: true, width: W });
+    doc.font("Main").fontSize(9);
+    doc.font("Bold").text("Исполнитель:", M, y, { continued: true, width: W });
     doc.font("Main").text(
-      `   ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`,
+      `  ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`,
       { width: W, lineGap: 0 },
     );
-    y = doc.y + 2;
+    y = doc.y + 4;
 
     // ============ BUYER ============
-    doc.font("Bold").text("Покупатель:", M, y, { continued: true, width: W });
+    doc.font("Bold").text("Заказчик:", M, y, { continued: true, width: W });
     const cpParts = [counterparty.name];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
-    doc.font("Main").text(`   ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
-    y = doc.y + 2;
+    doc.font("Main").text(`  ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
+    y = doc.y + 4;
 
     // ============ NOTE ============
     if (counterparty.contract) {
       doc.font("Bold").text("Примечание:", M, y, { continued: true, width: W });
-      doc.font("Main").text(`   ${counterparty.contract}`, { width: W, lineGap: 0 });
-      y = doc.y + 2;
+      doc.font("Main").text(`  ${counterparty.contract}`, { width: W, lineGap: 0 });
+      y = doc.y + 4;
     }
 
-    y += 10;
+    y += 6;
 
     // ============ TABLE ============
     const colWidths = [24, W - 24 - 42 - 46 - 62 - 62, 42, 46, 62, 62];
@@ -328,109 +320,9 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
     y = doc.y + 2;
     doc.font("Bold").fontSize(9);
-    doc.text(numberToWordsRu(total), M, y, { width: W, lineGap: 0 });
-    y = doc.y + 15;
-
-    drawLine(doc, M, y, M + W, y, 1.5);
-    y += 20;
-
-    // ============ SIGNATURES ============
-    const sigMid = M + W / 2;
-
-    doc.font("Bold").fontSize(9);
-    doc.text("Руководитель", M, y);
-    doc.text("Бухгалтер", sigMid + 10, y);
-    y += 3;
-
-    // Signature lines
-    drawLine(doc, M + 80, y + 12, sigMid - 10, y + 12, 0.5);
-    drawLine(doc, sigMid + 70, y + 12, M + W, y + 12, 0.5);
-
-    // Draw signature scribble for Руководитель
-    drawSignature(doc, M + 100, y + 4);
-
-    // Draw signature scribble for Бухгалтер
-    drawSignature(doc, sigMid + 90, y + 4);
-
-    y += 20;
-
-    // ============ STAMPS (TWO) ============
-    // Stamp under Руководитель
-    drawStamp(doc, M + (sigMid - M) / 2, y + 30, 60);
-    
-    // Stamp under Бухгалтер
-    drawStamp(doc, sigMid + (M + W - sigMid) / 2, y + 30, 60);
-
-    y += 120;
+    doc.text(numberToWordsRu(total) + " Без НДС.", M, y, { width: W, lineGap: 0 });
+    y = doc.y + 10;
     doc.end();
   });
 }
 
-// Draw a realistic-looking signature scribble
-function drawSignature(doc: PDFKit.PDFDocument, x: number, y: number) {
-  doc.save();
-  doc.strokeColor("#1a237e").lineWidth(0.8);
-  doc.moveTo(x, y + 8)
-    .bezierCurveTo(x + 10, y - 2, x + 20, y + 12, x + 30, y + 2)
-    .bezierCurveTo(x + 40, y - 6, x + 50, y + 10, x + 60, y + 4)
-    .bezierCurveTo(x + 70, y - 2, x + 80, y + 8, x + 90, y + 2)
-    .stroke();
-  doc.moveTo(x + 15, y + 5)
-    .bezierCurveTo(x + 25, y - 4, x + 45, y + 14, x + 55, y)
-    .stroke();
-  doc.restore();
-}
-
-// Draw a round blue stamp programmatically
-function drawStamp(doc: PDFKit.PDFDocument, cx: number, cy: number, r: number) {
-  doc.save();
-
-  // Outer circle
-  doc.strokeColor("#2563eb").lineWidth(2.5);
-  doc.circle(cx, cy, r).stroke();
-
-  // Inner circle
-  doc.lineWidth(1.8);
-  doc.circle(cx, cy, r - 8).stroke();
-
-  // Center text
-  doc.fillColor("#2563eb");
-  doc.font("Bold").fontSize(10);
-  doc.text("СОЛОВЬЕВ", cx - r * 0.6, cy - 10, { width: r * 1.2, align: "center" });
-  doc.font("Main").fontSize(7);
-  doc.text("Артём Александрович", cx - r * 0.7, cy + 2, { width: r * 1.4, align: "center" });
-
-  // Curved text around the top: ИП
-  doc.font("Main").fontSize(5.5);
-  const topText = "ИНДИВИДУАЛЬНЫЙ ПРЕДПРИНИМАТЕЛЬ";
-  const angleStart = Math.PI + 0.25;
-  const angleEnd = 2 * Math.PI - 0.25;
-  const arcR = r - 14;
-  for (let i = 0; i < topText.length; i++) {
-    const angle = angleStart + (i / (topText.length - 1)) * (angleEnd - angleStart);
-    const tx = cx + arcR * Math.cos(angle);
-    const ty = cy + arcR * Math.sin(angle);
-    doc.save();
-    doc.translate(tx, ty);
-    doc.rotate((angle * 180) / Math.PI + 90);
-    doc.text(topText[i], -2.5, -3.5, { width: 6, lineBreak: false });
-    doc.restore();
-  }
-
-  // Curved text around the bottom: ОГРНИП
-  const bottomText = `ОГРНИП 323312100037191`;
-  const bAngleStart = 0.25;
-  const bAngleEnd = Math.PI - 0.25;
-  for (let i = 0; i < bottomText.length; i++) {
-    const angle = bAngleStart + (i / (bottomText.length - 1)) * (bAngleEnd - bAngleStart);
-    const tx = cx + arcR * Math.cos(angle);
-    const ty = cy + arcR * Math.sin(angle);
-    doc.save();
-    doc.translate(tx, ty);
-    doc.rotate((angle * 180) / Math.PI - 90);
-    doc.text(bottomText[i], -2.5, -3.5, { width: 6, lineBreak: false });
-    doc.restore();
-  }
-
-  doc.restore();
-}

@@ -398,7 +398,7 @@ export default function Prices() {
               onChange={(e) => setAddComment(e.target.value)}
               className="w-40 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
             />
-          </div>
+          </div>   
 
           <button
             onClick={handleAddRate}

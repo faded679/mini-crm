@@ -125,74 +125,6 @@ function findFont(name: string): string {
   throw new Error(`Шрифт ${name}.ttf не найден. Кандидаты: ${candidates.join(", ")}`);
 }
 
-// Draw a signature scribble
-function drawSignature(doc: PDFKit.PDFDocument, x: number, y: number) {
-  doc.save();
-  doc.strokeColor("#1a237e").lineWidth(0.8);
-  doc.moveTo(x, y + 8)
-    .bezierCurveTo(x + 10, y - 2, x + 20, y + 12, x + 30, y + 2)
-    .bezierCurveTo(x + 40, y - 6, x + 50, y + 10, x + 60, y + 4)
-    .bezierCurveTo(x + 70, y - 2, x + 80, y + 8, x + 90, y + 2)
-    .stroke();
-  doc.moveTo(x + 15, y + 5)
-    .bezierCurveTo(x + 25, y - 4, x + 45, y + 14, x + 55, y)
-    .stroke();
-  doc.restore();
-}
-
-// Draw a round blue stamp programmatically
-function drawStamp(doc: PDFKit.PDFDocument, cx: number, cy: number, r: number) {
-  doc.save();
-
-  // Outer circle
-  doc.strokeColor("#2563eb").lineWidth(2.5);
-  doc.circle(cx, cy, r).stroke();
-
-  // Inner circle
-  doc.lineWidth(1.8);
-  doc.circle(cx, cy, r - 8).stroke();
-
-  // Center text
-  doc.fillColor("#2563eb");
-  doc.font("Bold").fontSize(10);
-  doc.text("СОЛОВЬЕВ", cx - r * 0.6, cy - 10, { width: r * 1.2, align: "center" });
-  doc.font("Main").fontSize(7);
-  doc.text("Артём Александрович", cx - r * 0.7, cy + 2, { width: r * 1.4, align: "center" });
-
-  // Curved text around the top
-  doc.font("Main").fontSize(5.5);
-  const topText = "ИНДИВИДУАЛЬНЫЙ ПРЕДПРИНИМАТЕЛЬ";
-  const angleStart = Math.PI + 0.25;
-  const angleEnd = 2 * Math.PI - 0.25;
-  const arcR = r - 14;
-  for (let i = 0; i < topText.length; i++) {
-    const angle = angleStart + (i / (topText.length - 1)) * (angleEnd - angleStart);
-    const tx = cx + arcR * Math.cos(angle);
-    const ty = cy + arcR * Math.sin(angle);
-    doc.save();
-    doc.translate(tx, ty);
-    doc.rotate((angle * 180) / Math.PI + 90);
-    doc.text(topText[i], -2.5, -3.5, { width: 6, lineBreak: false });
-    doc.restore();
-  }
-
-  // Curved text around the bottom
-  const bottomText = `ОГРНИП 323312100037191`;
-  const bAngleStart = 0.25;
-  const bAngleEnd = Math.PI - 0.25;
-  for (let i = 0; i < bottomText.length; i++) {
-    const angle = bAngleStart + (i / (bottomText.length - 1)) * (bAngleEnd - bAngleStart);
-    const tx = cx + arcR * Math.cos(angle);
-    const ty = cy + arcR * Math.sin(angle);
-    doc.save();
-    doc.translate(tx, ty);
-    doc.rotate((angle * 180) / Math.PI - 90);
-    doc.text(bottomText[i], -2.5, -3.5, { width: 6, lineBreak: false });
-    doc.restore();
-  }
-
-  doc.restore();
-}
 
 export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer> {
   const { actNumber, actDate, invoiceNumber, invoiceDate, counterparty, items } = params;
@@ -221,39 +153,37 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     let y = M;
 
     // ============ TITLE ============
-    doc.font("Bold").fontSize(13).fillColor("#1a3c7a");
+    doc.font("Bold").fontSize(14).fillColor("#000");
     doc.text(`Акт № ${actNumber} от ${formatDate(actDate)} г.`, M, y, { width: W });
-    doc.fillColor("#000");
-    y = doc.y + 8;
-
-    drawLine(doc, M, y, M + W, y, 1);
-    y += 10;
+    y = doc.y + 4;
+    drawLine(doc, M, y, M + W, y, 1.5);
+    y += 8;
 
     // ============ ИСПОЛНИТЕЛЬ ============
-    const labelW = 75;
-    doc.font("Main").fontSize(8);
-    doc.text("Исполнитель:", M, y, { width: labelW });
+    const labelW = 85;
+    doc.font("Main").fontSize(9);
+    doc.text("Исполнитель:", M, y, { width: labelW, continued: true });
     doc.font("Bold").text(
-      `${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}, р/с ${SELLER.account}, в банке ${SELLER.bank}, БИК ${SELLER.bik}, к/с ${SELLER.correspondentAccount}`,
-      M + labelW, y, { width: W - labelW },
+      `  ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}, д/но ${SELLER.account}, в банке ${SELLER.bank}, БИК ${SELLER.bik}, к/с ${SELLER.correspondentAccount}`,
+      { width: W, lineGap: 0 },
     );
-    y = doc.y + 6;
+    y = doc.y + 4;
 
     // ============ ЗАКАЗЧИК ============
-    doc.font("Main").text("Заказчик:", M, y, { width: labelW });
+    doc.font("Main").text("Заказчик:", M, y, { width: labelW, continued: true });
     const cpParts = [counterparty.name];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
     if (counterparty.account) cpParts.push(`р/с ${counterparty.account}`);
     if (counterparty.bank) cpParts.push(`в банке ${counterparty.bank}`);
     if (counterparty.bik) cpParts.push(`БИК ${counterparty.bik}`);
     if (counterparty.correspondentAccount) cpParts.push(`к/с ${counterparty.correspondentAccount}`);
-    doc.font("Bold").text(cpParts.join(", "), M + labelW, y, { width: W - labelW });
-    y = doc.y + 6;
+    doc.font("Bold").text(`  ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
+    y = doc.y + 4;
 
     // ============ ОСНОВАНИЕ ============
-    doc.font("Main").text("Основание:", M, y, { width: labelW });
-    doc.font("Main").text(`По счету № ${invoiceNumber} от ${formatDateShort(invoiceDate)}`, M + labelW, y, { width: W - labelW });
-    y = doc.y + 12;
+    doc.font("Main").text("Основание:", M, y, { width: labelW, continued: true });
+    doc.font("Main").text(`  По счету № ${invoiceNumber} от ${formatDateShort(invoiceDate)}`, { width: W, lineGap: 0 });
+    y = doc.y + 8;
 
     // ============ TABLE ============
     const colWidths = [28, W - 28 - 40 - 40 - 70 - 70, 40, 40, 70, 70];
@@ -262,24 +192,24 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     const headerH = 18;
 
     // Header
-    drawRect(doc, M, y, W, headerH);
-    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + headerH);
-    doc.font("Bold").fontSize(7);
+    drawRect(doc, M, y, W, headerH, 0.8);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + headerH, 0.8);
+    doc.font("Bold").fontSize(8);
     const headers = ["№", "Наименование работ, услуг", "Кол-во", "Ед.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
-      doc.text(h, colX[i] + 2, y + 3, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
+      doc.text(h, colX[i] + 2, y + 5, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
     });
     y += headerH;
 
     // Rows
-    doc.font("Main").fontSize(8.5);
+    doc.font("Main").fontSize(8);
     items.forEach((item, idx) => {
-      const descH = Math.max(18, doc.heightOfString(item.description, { width: colWidths[1] - 8 }) + 8);
-      drawRect(doc, M, y, W, descH);
-      for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH);
-      const textY = y + 5;
+      const descH = Math.max(16, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 6);
+      drawRect(doc, M, y, W, descH, 0.8);
+      for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH, 0.8);
+      const textY = y + 3;
       doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
-      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
+      doc.text(item.description, colX[1] + 2, textY, { width: colWidths[1] - 4, lineGap: 0 });
       doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center", lineGap: 0 });
       doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center", lineGap: 0 });
       doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right", lineGap: 0 });
@@ -287,62 +217,36 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
       y += descH;
     });
 
-    y += 14;
-
-    // ============ TOTALS ============
+    // ============ TOTALS (in table rows) ============
+    const totalRowH = 14;
+    drawRect(doc, M, y, W, totalRowH, 0.8);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
     doc.font("Bold").fontSize(8);
-    doc.text("Итого:", M, y, { width: W - 66, align: "right" });
-    doc.text(formatMoney(total), M + W - 64, y, { width: 62, align: "right" });
-    y += 14;
-    doc.text("Без налога (НДС)", M, y, { width: W - 66, align: "right" });
-    doc.font("Main").text("-", M + W - 64, y, { width: 62, align: "right" });
-    y += 16;
+    doc.text("Итого:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
+    y += totalRowH;
+    
+    drawRect(doc, M, y, W, totalRowH, 0.8);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
+    doc.text("Без налога (НДС)", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.font("Main").text("-", M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
+    y += totalRowH + 10;
 
     // ============ AMOUNT IN WORDS ============
-    doc.font("Main").fontSize(8);
-    doc.text(`Всего оказано услуг ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y);
-    y = doc.y + 3;
-    doc.font("Bold").fontSize(8);
-    doc.text(numberToWordsRu(total), M, y, { width: W });
-    y = doc.y + 14;
+    doc.font("Main").fontSize(9);
+    doc.text(`Всего оказано услуг ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
+    y = doc.y + 2;
+    doc.font("Bold").fontSize(9);
+    doc.text(numberToWordsRu(total), M, y, { width: W, lineGap: 0 });
+    y = doc.y + 10;
 
     // ============ DISCLAIMER ============
-    doc.font("Main").fontSize(8);
+    doc.font("Main").fontSize(9);
     doc.text(
       "Вышеперечисленные услуги выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.",
-      M, y, { width: W },
+      M, y, { width: W, lineGap: 0 },
     );
-    y = doc.y + 16;
-
-    drawLine(doc, M, y, M + W, y, 0.5);
-    y += 16;
-
-    // ============ SIGNATURES ============
-    const halfW = W / 2;
-
-    doc.font("Bold").fontSize(10);
-    doc.text("ИСПОЛНИТЕЛЬ", M, y);
-    doc.text("ЗАКАЗЧИК", M + halfW + 10, y);
-
-    const sigY = y + 4;
-
-    // Signature scribble for ИСПОЛНИТЕЛЬ
-    drawSignature(doc, M + 10, sigY + 6);
-
-    // Signature lines
-    drawLine(doc, M, sigY + 22, M + halfW - 20, sigY + 22, 0.5);
-    drawLine(doc, M + halfW + 10, sigY + 22, M + W, sigY + 22, 0.5);
-
-    // Names under lines
-    doc.font("Main").fontSize(7);
-    doc.text(`ИП ${SELLER.director}`, M, sigY + 26);
-    const cpDirector = counterparty.director || counterparty.name;
-    doc.text(cpDirector, M + halfW + 10, sigY + 26);
-
-    // ============ STAMP ============
-    drawStamp(doc, M + halfW / 2, sigY + 60, 65);
-
-    y = sigY + 120;
+    y = doc.y + 10;
     doc.end();
   });
 }
