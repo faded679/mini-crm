@@ -4,10 +4,11 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28 relative">
+      <img src="/logo.jpg" alt="Logo" className="absolute top-4 right-4 h-16 w-auto object-contain" />
       <div className="w-full max-w-sm fade-in">
         <div className="text-center mb-6">
-          <div className="text-4xl mb-2">🚛</div>
+
           <h1 className="text-xl font-bold text-tg-text">Доставка на маркетплейсы</h1>
           <p className="text-xs text-tg-hint mt-1">Белгород → склады WB и OZON</p>
         </div>
