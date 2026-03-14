@@ -246,7 +246,38 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
       "Вышеперечисленные услуги выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.",
       M, y, { width: W, lineGap: 0 },
     );
-    y = doc.y + 10;
+    y = doc.y + 16;
+
+    drawLine(doc, M, y, M + W, y, 0.5);
+    y += 16;
+
+    // ============ SIGNATURES ============
+    const halfW = W / 2;
+
+    doc.font("Bold").fontSize(10);
+    doc.text("ИСПОЛНИТЕЛЬ", M, y);
+    doc.text("ЗАКАЗЧИК", M + halfW + 10, y);
+
+    const sigY = y + 4;
+
+    // Signature lines
+    drawLine(doc, M, sigY + 22, M + halfW - 20, sigY + 22, 0.5);
+    drawLine(doc, M + halfW + 10, sigY + 22, M + W, sigY + 22, 0.5);
+
+    // Names under lines
+    doc.font("Main").fontSize(7);
+    doc.text(`ИП ${SELLER.director}`, M, sigY + 26);
+    const cpDirector = counterparty.director || counterparty.name;
+    doc.text(cpDirector, M + halfW + 10, sigY + 26);
+
+    // ============ STAMP WITH SIGNATURE (centered) ============
+    const stampPath = path.join(__dirname, "..", "..", "..", "assets", "examples", "печать2.png");
+    if (fs.existsSync(stampPath)) {
+      doc.image(stampPath, M + halfW / 2 - 60, sigY + 40, { width: 120, height: 120 });
+    }
+
+    y = sigY + 120;
     doc.end();
   });
 }
+

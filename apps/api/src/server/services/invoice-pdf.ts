@@ -321,7 +321,29 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     y = doc.y + 3;
     doc.font("Bold").fontSize(7);
     doc.text(numberToWordsRu(total) + " Без НДС.", M, y, { width: W, lineGap: 0 });
-    y = doc.y + 10;
+    y = doc.y + 20;
+
+    // ============ SIGNATURES ============
+    const sigMid = M + W / 2;
+
+    doc.font("Bold").fontSize(9);
+    doc.text("Руководитель", M, y);
+    doc.text("Бухгалтер", sigMid + 10, y);
+    y += 3;
+
+    // Signature lines
+    drawLine(doc, M + 80, y + 12, sigMid - 10, y + 12, 0.5);
+    drawLine(doc, sigMid + 70, y + 12, M + W, y + 12, 0.5);
+
+    y += 20;
+
+    // ============ STAMP WITH SIGNATURE (centered) ============
+    const stampPath = path.join(__dirname, "..", "..", "..", "assets", "examples", "печать2.png");
+    if (fs.existsSync(stampPath)) {
+      doc.image(stampPath, M + W / 2 - 60, y + 10, { width: 120, height: 120 });
+    }
+
+    y += 120;
     doc.end();
   });
 }
