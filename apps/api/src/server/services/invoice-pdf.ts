@@ -165,66 +165,61 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     // ============ BANK DETAILS TABLE ============
     const bkW = W;
     const leftColW = bkW * 0.55;
-    const rightLabelW = bkW * 0.10;
-    const rightValueW = bkW * 0.35;
-    const rowH = 16;
+    const rightLabelW = bkW * 0.12;
+    const rightValueW = bkW * 0.33;
+    const row1H = 28; // Большая высота для банка и БИК/кс
+    const row2H = 16;
+    const row3H = 24;
 
     const tableY = y;
 
     // Outer border
-    drawRect(doc, M, tableY, bkW, rowH * 4, 0.8);
+    drawRect(doc, M, tableY, bkW, row1H + row2H + row3H, 0.8);
 
     // Vertical dividers
-    drawLine(doc, M + leftColW, tableY, M + leftColW, tableY + rowH * 4, 0.8);
-    drawLine(doc, M + leftColW + rightLabelW, tableY, M + leftColW + rightLabelW, tableY + rowH * 4, 0.8);
+    drawLine(doc, M + leftColW, tableY, M + leftColW, tableY + row1H + row2H + row3H, 0.8);
+    drawLine(doc, M + leftColW + rightLabelW, tableY, M + leftColW + rightLabelW, tableY + row1H + row2H + row3H, 0.8);
 
-    // Horizontal lines
-    drawLine(doc, M, tableY + rowH, M + bkW, tableY + rowH, 0.8);
-    drawLine(doc, M, tableY + rowH * 2, M + bkW, tableY + rowH * 2, 0.8);
-    drawLine(doc, M, tableY + rowH * 3, M + bkW, tableY + rowH * 3, 0.8);
+    // Horizontal lines (only 2 lines now)
+    drawLine(doc, M, tableY + row1H, M + bkW, tableY + row1H, 0.8);
+    drawLine(doc, M, tableY + row1H + row2H, M + bkW, tableY + row1H + row2H, 0.8);
 
-    // Additional vertical line in row 3 left (between ИНН and КПП)
+    // Additional vertical line in row 2 left (between ИНН and КПП)
     const innKppDivider = M + 140;
-    drawLine(doc, innKppDivider, tableY + rowH * 2, innKppDivider, tableY + rowH * 3, 0.8);
+    drawLine(doc, innKppDivider, tableY + row1H, innKppDivider, tableY + row1H + row2H, 0.8);
 
-    // Left column labels (small gray text)
-    doc.font("Main").fontSize(7).fillColor("#666");
-    doc.text("Банк получателя", M + 2, tableY + 2);
-    
-    // Row 1 left: Bank name
-    doc.font("Main").fontSize(8.5).fillColor("#000");
-    doc.text(SELLER.bank, M + 2, tableY + 9, { width: leftColW - 4, lineGap: 0 });
+    // ===== ROW 1: Bank and БИК/кс =====
+    // Left: Bank name at top, label at bottom
+    doc.font("Main").fontSize(7.5).fillColor("#000");
+    doc.text(SELLER.bank, M + 2, tableY + 3, { width: leftColW - 4, lineGap: 0 });
+    doc.font("Main").fontSize(6).fillColor("#666");
+    doc.text("Банк получателя", M + 2, tableY + row1H - 9);
 
-    // Row 1 right: БИК label and value
-    doc.font("Main").fontSize(8.5).fillColor("#000");
-    doc.text("БИК", M + leftColW + 2, tableY + 9);
-    doc.text(SELLER.bik, M + leftColW + rightLabelW + 2, tableY + 9);
+    // Right: БИК and к/с in one cell (no line between them)
+    doc.font("Main").fontSize(7).fillColor("#000");
+    doc.text("БИК", M + leftColW + 2, tableY + 3);
+    doc.text(SELLER.bik, M + leftColW + rightLabelW + 2, tableY + 3);
+    doc.text("Сч. №", M + leftColW + 2, tableY + 14);
+    doc.font("Main").fontSize(6.5);
+    doc.text(SELLER.correspondentAccount, M + leftColW + rightLabelW + 2, tableY + 14, { width: rightValueW - 4, lineGap: 0 });
 
-    // Row 2 right: Сч. № label and value
-    doc.text("Сч. №", M + leftColW + 2, tableY + rowH + 9);
-    doc.text(SELLER.correspondentAccount, M + leftColW + rightLabelW + 2, tableY + rowH + 9);
+    // ===== ROW 2: ИНН/КПП and Сч. № =====
+    doc.font("Main").fontSize(7).fillColor("#000");
+    doc.text("ИНН", M + 2, tableY + row1H + 5);
+    doc.text(SELLER.inn, M + 26, tableY + row1H + 5);
+    doc.text("КПП", innKppDivider + 2, tableY + row1H + 5);
+    doc.text("Сч. №", M + leftColW + 2, tableY + row1H + 5);
+    doc.font("Main").fontSize(6.5);
+    doc.text(SELLER.account, M + leftColW + rightLabelW + 2, tableY + row1H + 5, { width: rightValueW - 4, lineGap: 0 });
 
-    // Row 3 left: ИНН
-    doc.text("ИНН", M + 2, tableY + rowH * 2 + 9);
-    doc.text(SELLER.inn, M + 30, tableY + rowH * 2 + 9);
-
-    // Row 3 left: КПП
-    doc.text("КПП", innKppDivider + 2, tableY + rowH * 2 + 9);
-
-    // Row 3 right: Сч. № label and value
-    doc.text("Сч. №", M + leftColW + 2, tableY + rowH * 2 + 9);
-    doc.text(SELLER.account, M + leftColW + rightLabelW + 2, tableY + rowH * 2 + 9);
-
-    // Row 4 left label
-    doc.font("Main").fontSize(7).fillColor("#666");
-    doc.text("Получатель", M + 2, tableY + rowH * 3 + 2);
-
-    // Row 4 left: Получатель name
-    doc.font("Main").fontSize(8.5).fillColor("#000");
-    doc.text(SELLER.name, M + 2, tableY + rowH * 3 + 9, { width: leftColW - 4, lineGap: 0 });
+    // ===== ROW 3: Получатель =====
+    doc.font("Main").fontSize(6).fillColor("#666");
+    doc.text("Получатель", M + 2, tableY + row1H + row2H + 2);
+    doc.font("Main").fontSize(7.5).fillColor("#000");
+    doc.text(SELLER.name, M + 2, tableY + row1H + row2H + 10, { width: leftColW - 4, lineGap: 0 });
 
     doc.fillColor("#000");
-    y = tableY + rowH * 4 + 4;
+    y = tableY + row1H + row2H + row3H + 4;
 
     // ============ TITLE ============
     y += 8;
