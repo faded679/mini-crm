@@ -5,7 +5,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 pb-28 relative">
-      <img src="/logo.jpg" alt="Logo" className="absolute top-4 right-4 h-16 w-auto object-contain" />
+      <img src="/logo.jpg" alt="Logo" className="absolute top-4 left-4 h-16 w-auto object-contain" />
       <div className="w-full max-w-sm fade-in">
         <div className="text-center mb-6">
 
