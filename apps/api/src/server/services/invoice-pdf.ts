@@ -295,7 +295,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
       doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right", lineGap: 0 });
       y += descH;
     });
-
+doc.strokeOpacity(0);
     // ============ TOTALS ============
     const totalRowH = 14;
     drawRect(doc, M, y, W, totalRowH, 0.8);
@@ -318,7 +318,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.text("Всего к оплате:", M + 2, y + 3, { width: W - colWidths[5] - 6, align: "right" });
     doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
     y += totalRowH + 10;
-
+doc.strokeOpacity(1);
     // ============ AMOUNT IN WORDS ============
     doc.font("Main").fontSize(8);
     doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
