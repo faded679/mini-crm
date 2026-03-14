@@ -267,7 +267,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     drawRect(doc, M, y, W, headerH, 1.5);
     for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + headerH, 0.8);
     doc.font("Bold").fontSize(8);
-    const headers = ["№", "Наименование товара, работ, услуг", "Коли-\nчество", "Ед.\nизм.", "Цена", "Сумма"];
+    const headers = ["№", "Наименование товара, работ, услуг", "Кол-во", "Ед.изм.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
       doc.text(h, colX[i] + 2, y + 4, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
     });
