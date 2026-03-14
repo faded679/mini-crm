@@ -259,7 +259,7 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     const colWidths = [24, W - 24 - 42 - 36 - 62 - 62, 42, 36, 62, 62];
     const colX = [M];
     for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
-    const headerH = 18;
+    const headerH = 14;
 
     // Header
     drawRect(doc, M, y, W, headerH);
@@ -267,23 +267,23 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     doc.font("Bold").fontSize(7);
     const headers = ["№", "Наименование работ, услуг", "Кол-во", "Ед.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
-      doc.text(h, colX[i] + 2, y + 5, { width: colWidths[i] - 4, align: "center" });
+      doc.text(h, colX[i] + 2, y + 3, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
     });
     y += headerH;
 
     // Rows
     doc.font("Main").fontSize(7.5);
     items.forEach((item, idx) => {
-      const descH = Math.max(15, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 6);
+      const descH = Math.max(12, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 4);
       drawRect(doc, M, y, W, descH);
       for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH);
-      const textY = y + 3;
-      doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center" });
-      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6 });
-      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center" });
-      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center" });
-      doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right" });
-      doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right" });
+      const textY = y + 2;
+      doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
+      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
+      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center", lineGap: 0 });
+      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center", lineGap: 0 });
+      doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right", lineGap: 0 });
+      doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right", lineGap: 0 });
       y += descH;
     });
 

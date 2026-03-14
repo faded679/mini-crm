@@ -173,63 +173,66 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     // ============ BANK DETAILS TABLE ============
     const bkW = W;
     const leftColW = 310;
-    const rightColW = bkW - leftColW;
-    const rowH = 18;
+    const rightLabelW = 35;
+    const rightValueW = bkW - leftColW - rightLabelW;
+    const rowH = 14;
 
     const tableY = y;
 
     // Outer border
     drawRect(doc, M, tableY, bkW, rowH * 4, 0.8);
 
-    // Vertical divider between left and right columns
+    // Vertical dividers
     drawLine(doc, M + leftColW, tableY, M + leftColW, tableY + rowH * 4, 0.8);
+    drawLine(doc, M + leftColW + rightLabelW, tableY, M + leftColW + rightLabelW, tableY + rowH * 4, 0.8);
 
     // Horizontal lines
     drawLine(doc, M, tableY + rowH, M + bkW, tableY + rowH, 0.8);
     drawLine(doc, M, tableY + rowH * 2, M + bkW, tableY + rowH * 2, 0.8);
     drawLine(doc, M, tableY + rowH * 3, M + bkW, tableY + rowH * 3, 0.8);
 
+    // Additional vertical line in row 3 left (between ИНН and КПП)
+    const innKppDivider = M + 140;
+    drawLine(doc, innKppDivider, tableY + rowH * 2, innKppDivider, tableY + rowH * 3, 0.8);
+
     // Left column labels (small gray text)
     doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("Банк получателя", M + 2, tableY + 2);
+    doc.text("Банк получателя", M + 2, tableY + 1);
     
     // Row 1 left: Bank name
-    doc.font("Main").fontSize(8).fillColor("#000");
-    doc.text(SELLER.bank, M + 2, tableY + 10, { width: leftColW - 4 });
+    doc.font("Main").fontSize(7).fillColor("#000");
+    doc.text(SELLER.bank, M + 2, tableY + 7, { width: leftColW - 4, lineGap: 0 });
 
-    // Row 1 right: БИК
-    doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("БИК", M + leftColW + 2, tableY + 2);
-    doc.font("Main").fontSize(8).fillColor("#000");
-    doc.text(SELLER.bik, M + leftColW + 2, tableY + 10);
+    // Row 1 right: БИК label and value
+    doc.font("Main").fontSize(7).fillColor("#000");
+    doc.text("БИК", M + leftColW + 2, tableY + 7);
+    doc.text(SELLER.bik, M + leftColW + rightLabelW + 2, tableY + 7);
 
-    // Row 2 right: Сч. №
-    doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("Сч. №", M + leftColW + 2, tableY + rowH + 2);
-    doc.font("Main").fontSize(8).fillColor("#000");
-    doc.text(SELLER.correspondentAccount, M + leftColW + 2, tableY + rowH + 10);
+    // Row 2 right: Сч. № label and value
+    doc.text("Сч. №", M + leftColW + 2, tableY + rowH + 7);
+    doc.text(SELLER.correspondentAccount, M + leftColW + rightLabelW + 2, tableY + rowH + 7);
 
-    // Row 3 left: ИНН and КПП
-    doc.font("Main").fontSize(8).fillColor("#000");
-    doc.text("ИНН " + SELLER.inn, M + 2, tableY + rowH * 2 + 6);
-    doc.text("КПП", M + 150, tableY + rowH * 2 + 6);
+    // Row 3 left: ИНН
+    doc.text("ИНН", M + 2, tableY + rowH * 2 + 7);
+    doc.text(SELLER.inn, M + 25, tableY + rowH * 2 + 7);
 
-    // Row 3 right: Сч. №
-    doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("Сч. №", M + leftColW + 2, tableY + rowH * 2 + 2);
-    doc.font("Main").fontSize(8).fillColor("#000");
-    doc.text(SELLER.account, M + leftColW + 2, tableY + rowH * 2 + 10);
+    // Row 3 left: КПП
+    doc.text("КПП", innKppDivider + 2, tableY + rowH * 2 + 7);
+
+    // Row 3 right: Сч. № label and value
+    doc.text("Сч. №", M + leftColW + 2, tableY + rowH * 2 + 7);
+    doc.text(SELLER.account, M + leftColW + rightLabelW + 2, tableY + rowH * 2 + 7);
 
     // Row 4 left label
     doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("Получатель", M + 2, tableY + rowH * 3 + 2);
+    doc.text("Получатель", M + 2, tableY + rowH * 3 + 1);
 
     // Row 4 left: Получатель name
-    doc.font("Main").fontSize(8).fillColor("#000");
-    doc.text(SELLER.name, M + 2, tableY + rowH * 3 + 10, { width: leftColW - 4 });
+    doc.font("Main").fontSize(7).fillColor("#000");
+    doc.text(SELLER.name, M + 2, tableY + rowH * 3 + 7, { width: leftColW - 4, lineGap: 0 });
 
     doc.fillColor("#000");
-    y = tableY + rowH * 4 + 6;
+    y = tableY + rowH * 4 + 4;
 
     // ============ TITLE ============
     y += 6;
@@ -271,7 +274,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     const colWidths = [24, W - 24 - 42 - 46 - 62 - 62, 42, 46, 62, 62];
     const colX = [M];
     for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
-    const headerH = 18;
+    const headerH = 14;
 
     // Header
     drawRect(doc, M, y, W, headerH);
@@ -279,23 +282,23 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.font("Bold").fontSize(7);
     const headers = ["№", "Товары (работы, услуги)", "Кол-во", "Ед. изм.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
-      doc.text(h, colX[i] + 2, y + 5, { width: colWidths[i] - 4, align: "center" });
+      doc.text(h, colX[i] + 2, y + 3, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
     });
     y += headerH;
 
     // Rows
     doc.font("Main").fontSize(7.5);
     items.forEach((item, idx) => {
-      const descH = Math.max(15, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 6);
+      const descH = Math.max(12, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 4);
       drawRect(doc, M, y, W, descH);
       for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH);
-      const textY = y + 3;
-      doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center" });
-      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6 });
-      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center" });
-      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center" });
-      doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right" });
-      doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right" });
+      const textY = y + 2;
+      doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
+      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
+      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center", lineGap: 0 });
+      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center", lineGap: 0 });
+      doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right", lineGap: 0 });
+      doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right", lineGap: 0 });
       y += descH;
     });
 
