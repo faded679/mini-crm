@@ -14,9 +14,9 @@ bot.command("start", handleStart);
 bot.command("new", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
-  const { consentGiven } = await checkConsent(String(userId));
-  if (!consentGiven) {
-    await ctx.reply("Сначала необходимо дать согласие на обработку персональных данных. Введите /start");
+  const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
+  if (!consentGiven || !hasPhone || !hasInn) {
+    await ctx.reply("Сначала необходимо завершить регистрацию. Введите /start");
     return;
   }
   await handleNewRequest(ctx);
@@ -45,9 +45,9 @@ bot.callbackQuery(/^packaging:(pallets|boxes)$/, async (ctx) => {
 bot.command("my", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
-  const { consentGiven } = await checkConsent(String(userId));
-  if (!consentGiven) {
-    await ctx.reply("Сначала необходимо дать согласие на обработку персональных данных. Введите /start");
+  const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
+  if (!consentGiven || !hasPhone || !hasInn) {
+    await ctx.reply("Сначала необходимо завершить регистрацию. Введите /start");
     return;
   }
   await handleMyRequests(ctx);
@@ -125,8 +125,10 @@ bot.on("message:text", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  // Handle INN input
-  if (waitingForInn.has(userId)) {
+  // Check if user needs to provide INN (either in waitingForInn set or missing INN in registration)
+  const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
+  
+  if (consentGiven && hasPhone && !hasInn) {
     const text = ctx.message.text.trim();
 
     if (!/^\d{10}$|^\d{12}$/.test(text)) {

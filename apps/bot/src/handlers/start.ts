@@ -23,22 +23,10 @@ export async function handleStart(ctx: Context): Promise<void> {
   if (!userId) return;
 
   try {
-    const { consentGiven } = await checkConsent(String(userId));
+    const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
 
-    if (consentGiven) {
-      await ctx.reply(WELCOME_TEXT, {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "📦 Открыть приложение",
-                web_app: { url: env.MINI_APP_URL },
-              },
-            ],
-          ],
-        },
-      });
-    } else {
+    // Step 1: Check consent
+    if (!consentGiven) {
       await ctx.reply(CONSENT_TEXT, {
         parse_mode: "HTML",
         reply_markup: {
@@ -52,7 +40,45 @@ export async function handleStart(ctx: Context): Promise<void> {
           ],
         },
       });
+      return;
     }
+
+    // Step 2: Check phone
+    if (!hasPhone) {
+      await ctx.reply(
+        "📱 Пожалуйста, отправьте ваш номер телефона, нажав кнопку ниже:",
+        {
+          reply_markup: {
+            keyboard: [
+              [{ text: "📱 Отправить номер телефона", request_contact: true }],
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+      return;
+    }
+
+    // Step 3: Check INN
+    if (!hasInn) {
+      await ctx.reply("🏢 Введите ИНН вашей организации (10 или 12 цифр):");
+      return;
+    }
+
+    // All steps completed - show welcome
+    await ctx.reply(WELCOME_TEXT, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "📦 Открыть приложение",
+              web_app: { url: env.MINI_APP_URL },
+            },
+          ],
+        ],
+      },
+    });
   } catch {
     await ctx.reply("Произошла ошибка. Попробуйте позже.");
   }

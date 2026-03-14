@@ -44,7 +44,7 @@ export async function createRequest(data: CreateRequestPayload): Promise<Shipmen
   return res.json() as Promise<ShipmentRequest>;
 }
 
-export async function checkConsent(telegramId: string): Promise<{ consentGiven: boolean }> {
+export async function checkConsent(telegramId: string): Promise<{ consentGiven: boolean; hasPhone: boolean; hasInn: boolean }> {
   const res = await fetch(`${env.API_URL}/bot/consent/${telegramId}`);
 
   if (!res.ok) {
@@ -52,7 +52,7 @@ export async function checkConsent(telegramId: string): Promise<{ consentGiven: 
     throw new Error(`API error ${res.status}: ${body}`);
   }
 
-  return res.json() as Promise<{ consentGiven: boolean }>;
+  return res.json() as Promise<{ consentGiven: boolean; hasPhone: boolean; hasInn: boolean }>;
 }
 
 export async function acceptConsent(data: {

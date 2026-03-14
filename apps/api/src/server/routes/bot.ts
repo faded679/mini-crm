@@ -231,15 +231,25 @@ router.get("/consent/:telegramId", async (req: Request, res: Response, next: Nex
 
     const client = await prisma.client.findUnique({
       where: { telegramId },
-      select: { consentGiven: true, consentAt: true },
+      select: { 
+        consentGiven: true, 
+        consentAt: true, 
+        phone: true, 
+        counterparties: { select: { id: true }, take: 1 }
+      },
     });
 
     if (!client) {
-      res.json({ consentGiven: false });
+      res.json({ consentGiven: false, hasPhone: false, hasInn: false });
       return;
     }
 
-    res.json({ consentGiven: client.consentGiven, consentAt: client.consentAt });
+    res.json({ 
+      consentGiven: client.consentGiven, 
+      consentAt: client.consentAt,
+      hasPhone: !!client.phone,
+      hasInn: client.counterparties.length > 0
+    });
   } catch (err) {
     next(err);
   }
