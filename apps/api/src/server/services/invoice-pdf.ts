@@ -329,21 +329,27 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.font("Bold").fontSize(9);
     doc.text("Руководитель", M, y);
     doc.text("Бухгалтер", sigMid + 10, y);
-    y += 3;
+    y += 15;
 
     // Signature lines
-    drawLine(doc, M + 80, y + 12, sigMid - 10, y + 12, 0.5);
-    drawLine(doc, sigMid + 70, y + 12, M + W, y + 12, 0.5);
+    const lineY = y + 10;
+    drawLine(doc, M + 80, lineY, sigMid - 10, lineY, 0.5);
+    drawLine(doc, sigMid + 70, lineY, M + W, lineY, 0.5);
 
-    y += 20;
-
-    // ============ STAMP WITH SIGNATURE (centered) ============
+    // ============ STAMPS WITH SIGNATURES (on the lines) ============
     const stampPath = path.join(__dirname, "..", "..", "..", "assets", "examples", "печать2.png");
     if (fs.existsSync(stampPath)) {
-      doc.image(stampPath, M + W / 2 - 60, y + 10, { width: 120, height: 120 });
+      // Печать для Руководителя (слева)
+      doc.image(stampPath, M + 100, lineY - 50, { width: 100, height: 100 });
+      // Печать для Бухгалтера (справа)
+      doc.image(stampPath, sigMid + 90, lineY - 50, { width: 100, height: 100 });
     }
 
-    y += 120;
+    // Names above the lines
+    doc.font("Main").fontSize(7);
+    doc.text(`ИП ${SELLER.directorFull}`, M, lineY - 55, { width: sigMid - M - 20 });
+
+    y = lineY + 60;
     doc.end();
   });
 }

@@ -258,25 +258,27 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     doc.text("ИСПОЛНИТЕЛЬ", M, y);
     doc.text("ЗАКАЗЧИК", M + halfW + 10, y);
 
-    const sigY = y + 4;
+    y += 15;
 
     // Signature lines
-    drawLine(doc, M, sigY + 22, M + halfW - 20, sigY + 22, 0.5);
-    drawLine(doc, M + halfW + 10, sigY + 22, M + W, sigY + 22, 0.5);
+    const lineY = y + 10;
+    drawLine(doc, M, lineY, M + halfW - 20, lineY, 0.5);
+    drawLine(doc, M + halfW + 10, lineY, M + W, lineY, 0.5);
 
-    // Names under lines
-    doc.font("Main").fontSize(7);
-    doc.text(`ИП ${SELLER.director}`, M, sigY + 26);
-    const cpDirector = counterparty.director || counterparty.name;
-    doc.text(cpDirector, M + halfW + 10, sigY + 26);
-
-    // ============ STAMP WITH SIGNATURE (centered) ============
+    // ============ STAMP WITH SIGNATURE (on the line for ИСПОЛНИТЕЛЬ) ============
     const stampPath = path.join(__dirname, "..", "..", "..", "assets", "examples", "печать2.png");
     if (fs.existsSync(stampPath)) {
-      doc.image(stampPath, M + halfW / 2 - 60, sigY + 40, { width: 120, height: 120 });
+      // Печать на линии Исполнителя
+      doc.image(stampPath, M + 20, lineY - 50, { width: 100, height: 100 });
     }
 
-    y = sigY + 120;
+    // Names above the lines
+    doc.font("Main").fontSize(7);
+    doc.text(`ИП ${SELLER.director}`, M, lineY - 55, { width: halfW - 20 });
+    const cpDirector = counterparty.director || counterparty.name;
+    doc.text(cpDirector, M + halfW + 10, lineY - 55, { width: halfW - 20 });
+
+    y = lineY + 60;
     doc.end();
   });
 }
