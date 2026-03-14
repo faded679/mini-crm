@@ -203,7 +203,7 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     ? FONT.replace("DejaVuSans", "DejaVuSans-Bold")
     : FONT;
 
-  const M = 40;
+  const M = 28;
   const doc = new PDFDocument({ size: "A4", margin: M });
   doc.registerFont("Main", FONT);
   doc.registerFont("Bold", FONT_BOLD);
@@ -256,10 +256,10 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     y = doc.y + 12;
 
     // ============ TABLE ============
-    const colWidths = [24, W - 24 - 42 - 36 - 62 - 62, 42, 36, 62, 62];
+    const colWidths = [28, W - 28 - 40 - 40 - 70 - 70, 40, 40, 70, 70];
     const colX = [M];
     for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
-    const headerH = 14;
+    const headerH = 18;
 
     // Header
     drawRect(doc, M, y, W, headerH);
@@ -272,12 +272,12 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     y += headerH;
 
     // Rows
-    doc.font("Main").fontSize(7.5);
+    doc.font("Main").fontSize(8.5);
     items.forEach((item, idx) => {
-      const descH = Math.max(12, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 4);
+      const descH = Math.max(18, doc.heightOfString(item.description, { width: colWidths[1] - 8 }) + 8);
       drawRect(doc, M, y, W, descH);
       for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH);
-      const textY = y + 2;
+      const textY = y + 5;
       doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
       doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
       doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center", lineGap: 0 });
@@ -287,7 +287,7 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
       y += descH;
     });
 
-    y += 8;
+    y += 14;
 
     // ============ TOTALS ============
     doc.font("Bold").fontSize(8);
