@@ -34,12 +34,21 @@ export default function Home() {
           </span>
         </div>
 
-        <button
-          onClick={() => navigate("/new")}
-          className="w-full py-3.5 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:scale-[0.97] transition-transform"
-        >
-          Оставить заявку
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={() => navigate("/new")}
+            className="w-full py-3.5 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:scale-[0.97] transition-transform"
+          >
+            Оставить заявку
+          </button>
+          
+          <button
+            onClick={() => navigate("/fbs")}
+            className="w-full py-3.5 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:scale-[0.97] transition-transform"
+          >
+            FBS
+          </button>
+        </div>
       </div>
     </div>
   );

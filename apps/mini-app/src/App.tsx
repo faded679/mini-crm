@@ -6,6 +6,7 @@ import BottomNav from "./components/BottomNav";
 import Consent from "./pages/Consent";
 import Home from "./pages/Home";
 import NewRequest from "./pages/NewRequest";
+import FbsRequest from "./pages/FbsRequest";
 import History from "./pages/History";
 import Info from "./pages/Info";
 import RequestDetail from "./pages/RequestDetail";
@@ -45,6 +46,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/new" element={<NewRequest />} />
+        <Route path="/fbs" element={<FbsRequest />} />
         <Route path="/history" element={<History />} />
         <Route path="/history/:id" element={<RequestDetail />} />
         <Route path="/info" element={<Info />} />
