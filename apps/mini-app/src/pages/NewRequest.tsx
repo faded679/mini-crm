@@ -167,7 +167,7 @@ export default function NewRequest() {
             setQty("");
             setItems([]);
           }}
-          className={`h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none ${cityId ? "w-2/3" : "w-2/3"}`}
+          className={`h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none ${cityId ? "w-3/5" : "w-3/5"}`}
         >
           <option value="">Направление</option>
           {cities.map((c) => (
@@ -184,7 +184,7 @@ export default function NewRequest() {
               setTypeId(null);
               setQty("");
             }}
-            className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-1/3 min-w-0"
+            className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none"
           >
             <option value="">Дата</option>
             {schedule.map((s) => (
