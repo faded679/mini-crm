@@ -318,7 +318,7 @@ doc.strokeOpacity(0);
     doc.text("Всего к оплате:", M + 2, y + 3, { width: W - colWidths[5] - 6, align: "right" });
     doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
     y += totalRowH + 10;
-doc.strokeOpacity(1);
+
     // ============ AMOUNT IN WORDS ============
     doc.font("Main").fontSize(8);
     doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
@@ -351,7 +351,7 @@ doc.strokeOpacity(1);
 
     // Names above the lines
     doc.font("Main").fontSize(7);
-    doc.text(`ИП ${SELLER.directorFull}`, M, lineY - 55, { width: sigMid - M - 20 });
+    doc.text(`ИП ${SELLER.directorFull}`, M + 20, lineY - 40, { width: sigMid - M - 20 });
 
     y = lineY + 60;
     doc.end();
