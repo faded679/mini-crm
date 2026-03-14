@@ -158,10 +158,10 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     let y = M;
 
     // ============ WARNING TEXT ============
-    doc.font("Main").fontSize(6).fillColor("#333");
+    doc.font("Main").fontSize(8.5).fillColor("#333");
     doc.text(
       "Внимание! Оплата данного счета означает согласие с условиями поставки товара. Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом, при наличии доверенности и паспорта.",
-      M, y, { width: W - 100, lineGap: 1 },
+      M, y, { width: W - 100, lineGap: 0, align: "center" },
     );
     doc.fillColor("#000");
 
@@ -172,10 +172,10 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
 
     // ============ BANK DETAILS TABLE ============
     const bkW = W;
-    const leftColW = 310;
-    const rightLabelW = 35;
-    const rightValueW = bkW - leftColW - rightLabelW;
-    const rowH = 14;
+    const leftColW = bkW * 0.55;
+    const rightLabelW = bkW * 0.10;
+    const rightValueW = bkW * 0.35;
+    const rowH = 16;
 
     const tableY = y;
 
@@ -196,133 +196,143 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     drawLine(doc, innKppDivider, tableY + rowH * 2, innKppDivider, tableY + rowH * 3, 0.8);
 
     // Left column labels (small gray text)
-    doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("Банк получателя", M + 2, tableY + 1);
+    doc.font("Main").fontSize(7).fillColor("#666");
+    doc.text("Банк получателя", M + 2, tableY + 2);
     
     // Row 1 left: Bank name
-    doc.font("Main").fontSize(7).fillColor("#000");
-    doc.text(SELLER.bank, M + 2, tableY + 7, { width: leftColW - 4, lineGap: 0 });
+    doc.font("Main").fontSize(8.5).fillColor("#000");
+    doc.text(SELLER.bank, M + 2, tableY + 9, { width: leftColW - 4, lineGap: 0 });
 
     // Row 1 right: БИК label and value
-    doc.font("Main").fontSize(7).fillColor("#000");
-    doc.text("БИК", M + leftColW + 2, tableY + 7);
-    doc.text(SELLER.bik, M + leftColW + rightLabelW + 2, tableY + 7);
+    doc.font("Main").fontSize(8.5).fillColor("#000");
+    doc.text("БИК", M + leftColW + 2, tableY + 9);
+    doc.text(SELLER.bik, M + leftColW + rightLabelW + 2, tableY + 9);
 
     // Row 2 right: Сч. № label and value
-    doc.text("Сч. №", M + leftColW + 2, tableY + rowH + 7);
-    doc.text(SELLER.correspondentAccount, M + leftColW + rightLabelW + 2, tableY + rowH + 7);
+    doc.text("Сч. №", M + leftColW + 2, tableY + rowH + 9);
+    doc.text(SELLER.correspondentAccount, M + leftColW + rightLabelW + 2, tableY + rowH + 9);
 
     // Row 3 left: ИНН
-    doc.text("ИНН", M + 2, tableY + rowH * 2 + 7);
-    doc.text(SELLER.inn, M + 25, tableY + rowH * 2 + 7);
+    doc.text("ИНН", M + 2, tableY + rowH * 2 + 9);
+    doc.text(SELLER.inn, M + 30, tableY + rowH * 2 + 9);
 
     // Row 3 left: КПП
-    doc.text("КПП", innKppDivider + 2, tableY + rowH * 2 + 7);
+    doc.text("КПП", innKppDivider + 2, tableY + rowH * 2 + 9);
 
     // Row 3 right: Сч. № label and value
-    doc.text("Сч. №", M + leftColW + 2, tableY + rowH * 2 + 7);
-    doc.text(SELLER.account, M + leftColW + rightLabelW + 2, tableY + rowH * 2 + 7);
+    doc.text("Сч. №", M + leftColW + 2, tableY + rowH * 2 + 9);
+    doc.text(SELLER.account, M + leftColW + rightLabelW + 2, tableY + rowH * 2 + 9);
 
     // Row 4 left label
-    doc.font("Main").fontSize(6).fillColor("#666");
-    doc.text("Получатель", M + 2, tableY + rowH * 3 + 1);
+    doc.font("Main").fontSize(7).fillColor("#666");
+    doc.text("Получатель", M + 2, tableY + rowH * 3 + 2);
 
     // Row 4 left: Получатель name
-    doc.font("Main").fontSize(7).fillColor("#000");
-    doc.text(SELLER.name, M + 2, tableY + rowH * 3 + 7, { width: leftColW - 4, lineGap: 0 });
+    doc.font("Main").fontSize(8.5).fillColor("#000");
+    doc.text(SELLER.name, M + 2, tableY + rowH * 3 + 9, { width: leftColW - 4, lineGap: 0 });
 
     doc.fillColor("#000");
     y = tableY + rowH * 4 + 4;
 
     // ============ TITLE ============
-    y += 6;
-    doc.font("Bold").fontSize(13).fillColor("#000");
+    y += 8;
+    doc.font("Bold").fontSize(14).fillColor("#000");
     doc.text(`Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, y, {
       width: W,
       align: "left",
     });
-    y = doc.y + 4;
+    y = doc.y + 7;
     drawLine(doc, M, y, M + W, y, 1.5);
-    y += 10;
+    y += 8;
 
     // ============ SELLER ============
-    doc.font("Main").fontSize(8);
-    doc.font("Bold").text("Исполнитель:", M, y, { continued: true, width: W });
+    doc.font("Main").fontSize(9.5);
+    doc.font("Bold").text("Поставщик:", M, y, { continued: true, width: W });
     doc.font("Main").text(
       `   ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`,
-      { width: W },
+      { width: W, lineGap: 0 },
     );
-    y = doc.y + 4;
+    y = doc.y + 2;
 
     // ============ BUYER ============
-    doc.font("Bold").text("Заказчик:", M, y, { continued: true, width: W });
+    doc.font("Bold").text("Покупатель:", M, y, { continued: true, width: W });
     const cpParts = [counterparty.name];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
-    doc.font("Main").text(`   ${cpParts.join(", ")}`, { width: W });
-    y = doc.y + 4;
+    doc.font("Main").text(`   ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
+    y = doc.y + 2;
 
     // ============ NOTE ============
     if (counterparty.contract) {
       doc.font("Bold").text("Примечание:", M, y, { continued: true, width: W });
-      doc.font("Main").text(`   ${counterparty.contract}`, { width: W });
-      y = doc.y + 4;
+      doc.font("Main").text(`   ${counterparty.contract}`, { width: W, lineGap: 0 });
+      y = doc.y + 2;
     }
 
-    y += 6;
+    y += 10;
 
     // ============ TABLE ============
     const colWidths = [24, W - 24 - 42 - 46 - 62 - 62, 42, 46, 62, 62];
     const colX = [M];
     for (let i = 1; i < colWidths.length; i++) colX.push(colX[i - 1] + colWidths[i - 1]);
-    const headerH = 14;
+    const headerH = 16;
 
     // Header
-    drawRect(doc, M, y, W, headerH);
-    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + headerH);
-    doc.font("Bold").fontSize(7);
-    const headers = ["№", "Товары (работы, услуги)", "Кол-во", "Ед. изм.", "Цена", "Сумма"];
+    drawRect(doc, M, y, W, headerH, 1.5);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + headerH, 0.8);
+    doc.font("Bold").fontSize(8);
+    const headers = ["№", "Наименование товара, работ, услуг", "Коли-\nчество", "Ед.\nизм.", "Цена", "Сумма"];
     headers.forEach((h, i) => {
-      doc.text(h, colX[i] + 2, y + 3, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
+      doc.text(h, colX[i] + 2, y + 4, { width: colWidths[i] - 4, align: "center", lineGap: 0 });
     });
     y += headerH;
 
     // Rows
-    doc.font("Main").fontSize(7.5);
+    doc.font("Main").fontSize(7.8);
     items.forEach((item, idx) => {
-      const descH = Math.max(12, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 4);
-      drawRect(doc, M, y, W, descH);
-      for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH);
+      const descH = Math.max(14, doc.heightOfString(item.description, { width: colWidths[1] - 4 }) + 4);
+      drawRect(doc, M, y, W, descH, 0.8);
+      for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH, 0.8);
       const textY = y + 2;
       doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
-      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
-      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "center", lineGap: 0 });
-      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center", lineGap: 0 });
+      doc.text(item.description, colX[1] + 2, textY, { width: colWidths[1] - 4, lineGap: 0 });
+      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "right", lineGap: 0 });
+      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "left", lineGap: 0 });
       doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right", lineGap: 0 });
       doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right", lineGap: 0 });
       y += descH;
     });
 
-    y += 8;
-
     // ============ TOTALS ============
+    const totalRowH = 14;
+    drawRect(doc, M, y, W, totalRowH, 0.8);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
     doc.font("Bold").fontSize(8);
-    doc.text("Итого:", M, y, { width: W - 66, align: "right" });
-    doc.text(formatMoney(total), M + W - 64, y, { width: 62, align: "right" });
-    y += 14;
-    doc.text("Без налога (НДС)", M, y, { width: W - 66, align: "right" });
-    doc.font("Main").text("-", M + W - 64, y, { width: 62, align: "right" });
-    y += 16;
+    doc.text("Итого:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
+    y += totalRowH;
+    
+    drawRect(doc, M, y, W, totalRowH, 0.8);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
+    doc.text("В том числе НДС:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.font("Main").text("-", M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
+    y += totalRowH;
+    
+    drawRect(doc, M, y, W, totalRowH, 0.8);
+    for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
+    doc.font("Bold").text("Всего к оплате:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
+    y += totalRowH + 10;
 
     // ============ AMOUNT IN WORDS ============
-    doc.font("Main").fontSize(8);
-    doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y);
-    y = doc.y + 3;
-    doc.font("Bold").fontSize(8);
-    doc.text(`${numberToWordsRu(total)} Без НДС.`, M, y, { width: W });
-    y = doc.y + 16;
+    doc.font("Main").fontSize(9);
+    doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
+    y = doc.y + 2;
+    doc.font("Bold").fontSize(9);
+    doc.text(numberToWordsRu(total), M, y, { width: W, lineGap: 0 });
+    y = doc.y + 15;
 
-    drawLine(doc, M, y, M + W, y, 0.5);
-    y += 16;
+    drawLine(doc, M, y, M + W, y, 1.5);
+    y += 20;
 
     // ============ SIGNATURES ============
     const sigMid = M + W / 2;
