@@ -233,7 +233,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
       width: W,
       align: "left",
     });
-    y = doc.y + 7;
+    y = doc.y + 6;
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
 

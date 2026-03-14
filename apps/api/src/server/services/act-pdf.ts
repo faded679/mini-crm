@@ -159,7 +159,7 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
 
-    // ============ ИСПОЛНИТЕЛЬ ============
+    // ============ ИСПОЛНИТЕЛЬ ==========
     const labelW = 85;
     doc.font("Main").fontSize(9);
     doc.text("Исполнитель:", M, y, { width: labelW, continued: true });
