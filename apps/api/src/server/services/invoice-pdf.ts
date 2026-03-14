@@ -351,7 +351,7 @@ doc.strokeOpacity(0);
 
     // Names above the lines
     doc.font("Main").fontSize(7);
-    doc.text(`ИП ${SELLER.directorFull}`, M + 20, lineY - 40, { width: sigMid - M - 20 });
+    doc.text(`ИП ${SELLER.directorFull}`, M + 50, lineY - 10, { width: sigMid - M - 20 });
 
     y = lineY + 60;
     doc.end();
