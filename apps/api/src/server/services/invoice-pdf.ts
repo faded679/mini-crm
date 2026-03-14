@@ -126,7 +126,9 @@ function findFont(name: string): string {
 }
 
 export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promise<Buffer> {
-  const { invoiceNumber, invoiceDate, counterparty, items } = params;
+  const { invoiceNumber, invoiceDate, counterparty, items: rawItems } = params;
+  // Filter out empty items - only show rows with actual data
+  const items = rawItems.filter(item => item.description && item.description.trim() !== "");
   const total = items.reduce((s, i) => s + i.amount, 0);
 
   const FONT = findFont("DejaVuSans");
@@ -195,10 +197,15 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.font("Main").fontSize(6).fillColor("#666");
     doc.text("Банк получателя", M + 2, tableY + row1H - 9);
 
-    // Right: БИК and к/с in one cell (no line between them)
+    // Right: БИК and к/с with horizontal line between labels (but not between numbers)
     doc.font("Main").fontSize(7).fillColor("#000");
     doc.text("БИК", M + leftColW + 2, tableY + 3);
     doc.text(SELLER.bik, M + leftColW + rightLabelW + 2, tableY + 3);
+    
+    // Horizontal line between БИК and Сч.№ (only in right column)
+    const midLineY = tableY + 11;
+    drawLine(doc, M + leftColW, midLineY, M + bkW, midLineY, 0.8);
+    
     doc.text("Сч. №", M + leftColW + 2, tableY + 14);
     doc.font("Main").fontSize(6.5);
     doc.text(SELLER.correspondentAccount, M + leftColW + rightLabelW + 2, tableY + 14, { width: rightValueW - 4, lineGap: 0 });
@@ -293,28 +300,30 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     const totalRowH = 14;
     drawRect(doc, M, y, W, totalRowH, 0.8);
     for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
-    doc.font("Bold").fontSize(8);
-    doc.text("Итого:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.font("Bold").fontSize(7);
+    doc.text("Итого:", M + 2, y + 3, { width: W - colWidths[5] - 6, align: "right" });
     doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
     y += totalRowH;
     
     drawRect(doc, M, y, W, totalRowH, 0.8);
     for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
-    doc.text("В том числе НДС:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.font("Bold").fontSize(6.5);
+    doc.text("В том числе НДС:", M + 2, y + 3, { width: W - colWidths[5] - 6, align: "right" });
     doc.font("Main").text("-", M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
     y += totalRowH;
     
     drawRect(doc, M, y, W, totalRowH, 0.8);
     for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + totalRowH, 0.8);
-    doc.font("Bold").text("Всего к оплате:", M, y + 3, { width: W - colWidths[5] - 4, align: "right" });
+    doc.font("Bold").fontSize(6.5);
+    doc.text("Всего к оплате:", M + 2, y + 3, { width: W - colWidths[5] - 6, align: "right" });
     doc.text(formatMoney(total), M + W - colWidths[5] + 2, y + 3, { width: colWidths[5] - 4, align: "right" });
     y += totalRowH + 10;
 
     // ============ AMOUNT IN WORDS ============
-    doc.font("Main").fontSize(9);
+    doc.font("Main").fontSize(8);
     doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
     y = doc.y + 3;
-    doc.font("Bold").fontSize(7);
+    doc.font("Bold").fontSize(6.5);
     doc.text(numberToWordsRu(total) + " Без НДС.", M, y, { width: W, lineGap: 0 });
     y = doc.y + 20;
 
