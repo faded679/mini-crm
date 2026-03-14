@@ -279,16 +279,16 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     y += headerH;
 
     // Rows
-    doc.font("Main").fontSize(7.8);
+    doc.font("Main").fontSize(7);
     items.forEach((item, idx) => {
-      const descH = Math.max(14, doc.heightOfString(item.description, { width: colWidths[1] - 4 }) + 4);
+      const descH = Math.max(16, doc.heightOfString(item.description, { width: colWidths[1] - 6 }) + 6);
       drawRect(doc, M, y, W, descH, 0.8);
       for (let i = 1; i < colX.length; i++) drawLine(doc, colX[i], y, colX[i], y + descH, 0.8);
-      const textY = y + 2;
+      const textY = y + 3;
       doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
-      doc.text(item.description, colX[1] + 2, textY, { width: colWidths[1] - 4, lineGap: 0 });
+      doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
       doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "right", lineGap: 0 });
-      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "left", lineGap: 0 });
+      doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center", lineGap: 0 });
       doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right", lineGap: 0 });
       doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right", lineGap: 0 });
       y += descH;

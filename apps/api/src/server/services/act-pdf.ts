@@ -159,31 +159,31 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
 
-    // ============ ИСПОЛНИТЕЛЬ ==========
+    // ============ ИСПОЛНИТЕЛЬ ============
     const labelW = 85;
-    doc.font("Main").fontSize(9);
-    doc.text("Исполнитель:", M, y, { width: labelW, continued: true });
+    doc.font("Main").fontSize(8);
+    doc.text("Исполнитель:", M, y, { width: labelW });
     doc.font("Bold").text(
-      `  ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}, д/но ${SELLER.account}, в банке ${SELLER.bank}, БИК ${SELLER.bik}, к/с ${SELLER.correspondentAccount}`,
-      { width: W, lineGap: 0 },
+      `${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}, р/с ${SELLER.account}, в банке ${SELLER.bank}, БИК ${SELLER.bik}, к/с ${SELLER.correspondentAccount}`,
+      M + labelW, y, { width: W - labelW, lineGap: 0 },
     );
-    y = doc.y + 4;
+    y = doc.y + 6;
 
     // ============ ЗАКАЗЧИК ============
-    doc.font("Main").text("Заказчик:", M, y, { width: labelW, continued: true });
+    doc.font("Main").text("Заказчик:", M, y, { width: labelW });
     const cpParts = [counterparty.name];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
     if (counterparty.account) cpParts.push(`р/с ${counterparty.account}`);
     if (counterparty.bank) cpParts.push(`в банке ${counterparty.bank}`);
     if (counterparty.bik) cpParts.push(`БИК ${counterparty.bik}`);
     if (counterparty.correspondentAccount) cpParts.push(`к/с ${counterparty.correspondentAccount}`);
-    doc.font("Bold").text(`  ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
-    y = doc.y + 4;
+    doc.font("Bold").text(cpParts.join(", "), M + labelW, y, { width: W - labelW, lineGap: 0 });
+    y = doc.y + 6;
 
     // ============ ОСНОВАНИЕ ============
-    doc.font("Main").text("Основание:", M, y, { width: labelW, continued: true });
-    doc.font("Main").text(`  По счету № ${invoiceNumber} от ${formatDateShort(invoiceDate)}`, { width: W, lineGap: 0 });
-    y = doc.y + 8;
+    doc.font("Main").text("Основание:", M, y, { width: labelW });
+    doc.font("Main").text(`По счету № ${invoiceNumber} от ${formatDateShort(invoiceDate)}`, M + labelW, y, { width: W - labelW, lineGap: 0 });
+    y = doc.y + 12;
 
     // ============ TABLE ============
     const colWidths = [28, W - 28 - 40 - 40 - 70 - 70, 40, 40, 70, 70];
