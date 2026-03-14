@@ -534,106 +534,57 @@ export default function Requests() {
 
       {showNewModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewModal(false); }}
         >
-          <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <span className="text-2xl">📦</span>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Новая заявка</h2>
-                  <p className="text-sm text-blue-100">Создание заявки на доставку</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Client field with icon */}
-              <div className="group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <span className="text-lg">👤</span>
-                  Клиент
-                </label>
-                <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-4 py-2.5 text-sm rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Новая заявка</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
+                <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
                   <option value="">Выберите клиента</option>
                   {clients.map((c) => <option key={c.id} value={c.id}>{c.firstName ?? ""} {c.lastName ?? ""} {c.phone ? `(${c.phone})` : `(@${c.username ?? c.telegramId})`}</option>)}
                 </select>
               </div>
-
-              {/* City field with icon */}
-              <div className="group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <span className="text-lg">🏙️</span>
-                  Направление
-                </label>
-                <select value={newReq.cityId} onChange={(e) => setNewReq({ ...newReq, cityId: e.target.value })} className="w-full px-4 py-2.5 text-sm rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Направление</label>
+                <select value={newReq.cityId} onChange={(e) => setNewReq({ ...newReq, cityId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
                   <option value="">Выберите город</option>
                   {citiesList.map((c) => <option key={c.id} value={c.id}>{c.shortName}</option>)}
                 </select>
               </div>
-
-              {/* Date field with icon */}
-              <div className="group">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <span className="text-lg">📅</span>
-                  Дата доставки
-                </label>
-                <input type="date" value={newReq.deliveryDate} onChange={(e) => setNewReq({ ...newReq, deliveryDate: e.target.value })} className="w-full px-4 py-2.5 text-sm rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all" />
-              </div>
-
-              {/* Packaging type with enhanced buttons */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <span className="text-lg">📦</span>
-                  Упаковка
-                </label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Дата доставки</label>
+                <input type="date" value={newReq.deliveryDate} onChange={(e) => setNewReq({ ...newReq, deliveryDate: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Упаковка</label>
+                <div className="flex gap-2">
                   {(["pallets", "boxes"] as PackagingType[]).map((p) => (
-                    <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p })} className={cn("relative px-4 py-3 text-sm rounded-xl font-semibold transition-all duration-200 border-2", newReq.packagingType === p ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg scale-105" : "bg-gray-50 text-gray-700 border-gray-200 hover:border-blue-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:border-blue-600")}>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-xl">{p === "pallets" ? "🗃️" : "📦"}</span>
-                        <span>{p === "pallets" ? "Палеты" : "Коробки"}</span>
-                      </div>
+                    <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p })} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReq.packagingType === p ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
+                      {p === "pallets" ? "Палеты" : "Коробки"}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Quantity and Weight in cards */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    <span className="text-lg">🔢</span>
-                    Кол-во мест
-                  </label>
-                  <input type="number" min="1" value={newReq.boxCount} onChange={(e) => setNewReq({ ...newReq, boxCount: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all" />
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Кол-во мест</label>
+                  <input type="number" min="1" value={newReq.boxCount} onChange={(e) => setNewReq({ ...newReq, boxCount: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    <span className="text-lg">⚖️</span>
-                    Вес (кг)
-                  </label>
-                  <input type="number" min="0" step="0.1" value={newReq.weight} onChange={(e) => setNewReq({ ...newReq, weight: e.target.value })} placeholder="необяз." className="w-full px-3 py-2 text-sm rounded-lg border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 dark:text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900 transition-all" />
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Вес (кг)</label>
+                  <input type="number" min="0" step="0.1" value={newReq.weight} onChange={(e) => setNewReq({ ...newReq, weight: e.target.value })} placeholder="необяз." className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
                 </div>
               </div>
-
-              {/* Comment field */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <span className="text-lg">💬</span>
-                  Комментарий
-                </label>
-                <textarea value={newReq.comment} onChange={(e) => setNewReq({ ...newReq, comment: e.target.value })} rows={3} placeholder="Дополнительная информация..." className="w-full px-4 py-2.5 text-sm rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all resize-none" />
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Комментарий</label>
+                <textarea value={newReq.comment} onChange={(e) => setNewReq({ ...newReq, comment: e.target.value })} rows={2} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 resize-none" />
               </div>
             </div>
-
-            {/* Footer with action buttons */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowNewModal(false)} className="px-5 py-2.5 text-sm font-medium rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 transition-all">Отмена</button>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
               <button
                 disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
                 onClick={async () => {
@@ -654,22 +605,9 @@ export default function Requests() {
                   } catch { alert("Ошибка при создании заявки"); }
                   finally { setCreating(false); }
                 }}
-                className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+                className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
               >
-                {creating ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Создание...
-                  </>
-                ) : (
-                  <>
-                    <span>✓</span>
-                    Создать заявку
-                  </>
-                )}
+                {creating ? "Создание..." : "Создать"}
               </button>
             </div>
           </div>
