@@ -351,10 +351,6 @@ doc.strokeOpacity(1);
       doc.image(stampPath, sigMid + 90, lineY - 50, { width: 100, height: 100 });
     }
 
-    // Names above the lines
-    doc.font("Main").fontSize(7);
-    doc.text(`ИП ${SELLER.directorFull}`, M + 50, lineY - 10, { width: sigMid - M - 20 });
-
     y = lineY + 60;
     doc.end();
   });
