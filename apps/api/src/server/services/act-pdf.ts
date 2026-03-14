@@ -155,7 +155,7 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     // ============ TITLE ============
     doc.font("Bold").fontSize(14).fillColor("#000");
     doc.text(`Акт № ${actNumber} от ${formatDate(actDate)} г.`, M, y, { width: W });
-    y = doc.y + 4;
+    y = doc.y + 5;
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
 

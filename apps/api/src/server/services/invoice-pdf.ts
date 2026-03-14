@@ -319,7 +319,7 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.font("Main").fontSize(9);
     doc.text(`Всего наименований ${items.length}, на сумму ${formatMoney(total)} руб.`, M, y, { lineGap: 0 });
     y = doc.y + 2;
-    doc.font("Bold").fontSize(9);
+    doc.font("Bold").fontSize(7);
     doc.text(numberToWordsRu(total) + " Без НДС.", M, y, { width: W, lineGap: 0 });
     y = doc.y + 10;
     doc.end();
