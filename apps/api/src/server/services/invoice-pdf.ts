@@ -322,10 +322,14 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     // Draw signature scribble for Бухгалтер
     drawSignature(doc, sigMid + 90, y + 4);
 
-    y += 16;
+    y += 20;
 
-    // ============ STAMP ============
-    drawStamp(doc, M + W / 2 - 20, y + 10, 52);
+    // ============ STAMPS (TWO) ============
+    // Stamp under Руководитель
+    drawStamp(doc, M + (sigMid - M) / 2, y + 30, 60);
+    
+    // Stamp under Бухгалтер
+    drawStamp(doc, sigMid + (M + W - sigMid) / 2, y + 30, 60);
 
     y += 120;
     doc.end();
@@ -352,26 +356,26 @@ function drawStamp(doc: PDFKit.PDFDocument, cx: number, cy: number, r: number) {
   doc.save();
 
   // Outer circle
-  doc.strokeColor("#1a4da0").lineWidth(2);
+  doc.strokeColor("#2563eb").lineWidth(2.5);
   doc.circle(cx, cy, r).stroke();
 
   // Inner circle
-  doc.lineWidth(1.5);
-  doc.circle(cx, cy, r - 6).stroke();
+  doc.lineWidth(1.8);
+  doc.circle(cx, cy, r - 8).stroke();
 
   // Center text
-  doc.fillColor("#1a4da0");
-  doc.font("Bold").fontSize(8);
-  doc.text("СОЛОВЬЕВ", cx - 28, cy - 8, { width: 56, align: "center" });
-  doc.font("Main").fontSize(6);
-  doc.text("Артём Александрович", cx - 38, cy + 2, { width: 76, align: "center" });
+  doc.fillColor("#2563eb");
+  doc.font("Bold").fontSize(10);
+  doc.text("СОЛОВЬЕВ", cx - r * 0.6, cy - 10, { width: r * 1.2, align: "center" });
+  doc.font("Main").fontSize(7);
+  doc.text("Артём Александрович", cx - r * 0.7, cy + 2, { width: r * 1.4, align: "center" });
 
   // Curved text around the top: ИП
-  doc.font("Main").fontSize(6);
+  doc.font("Main").fontSize(5.5);
   const topText = "ИНДИВИДУАЛЬНЫЙ ПРЕДПРИНИМАТЕЛЬ";
-  const angleStart = Math.PI + 0.35;
-  const angleEnd = 2 * Math.PI - 0.35;
-  const arcR = r - 12;
+  const angleStart = Math.PI + 0.25;
+  const angleEnd = 2 * Math.PI - 0.25;
+  const arcR = r - 14;
   for (let i = 0; i < topText.length; i++) {
     const angle = angleStart + (i / (topText.length - 1)) * (angleEnd - angleStart);
     const tx = cx + arcR * Math.cos(angle);
@@ -379,14 +383,14 @@ function drawStamp(doc: PDFKit.PDFDocument, cx: number, cy: number, r: number) {
     doc.save();
     doc.translate(tx, ty);
     doc.rotate((angle * 180) / Math.PI + 90);
-    doc.text(topText[i], -3, -4, { width: 8, lineBreak: false });
+    doc.text(topText[i], -2.5, -3.5, { width: 6, lineBreak: false });
     doc.restore();
   }
 
   // Curved text around the bottom: ОГРНИП
   const bottomText = `ОГРНИП 323312100037191`;
-  const bAngleStart = 0.35;
-  const bAngleEnd = Math.PI - 0.35;
+  const bAngleStart = 0.25;
+  const bAngleEnd = Math.PI - 0.25;
   for (let i = 0; i < bottomText.length; i++) {
     const angle = bAngleStart + (i / (bottomText.length - 1)) * (bAngleEnd - bAngleStart);
     const tx = cx + arcR * Math.cos(angle);
@@ -394,7 +398,7 @@ function drawStamp(doc: PDFKit.PDFDocument, cx: number, cy: number, r: number) {
     doc.save();
     doc.translate(tx, ty);
     doc.rotate((angle * 180) / Math.PI - 90);
-    doc.text(bottomText[i], -3, -4, { width: 8, lineBreak: false });
+    doc.text(bottomText[i], -2.5, -3.5, { width: 6, lineBreak: false });
     doc.restore();
   }
 
