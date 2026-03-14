@@ -167,7 +167,7 @@ export default function NewRequest() {
             setQty("");
             setItems([]);
           }}
-          className={`h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm ${cityId ? "w-2/3" : "w-full"}`}
+          className={`h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none ${cityId ? "w-2/3" : "w-2/3"}`}
         >
           <option value="">Направление</option>
           {cities.map((c) => (
