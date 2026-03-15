@@ -52,6 +52,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       packagingType,
       comment,
       deliveryTypeId,
+      mpAccountDate,
     } = req.body;
 
     if (!telegramId || !city || !deliveryDate || !boxCount || !packagingType) {
@@ -105,6 +106,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         status: "new",
         ...(parsedWeight !== undefined ? { weight: parsedWeight } : {}),
         ...(deliveryTypeId !== undefined && deliveryTypeId !== null ? { deliveryTypeId: Number(deliveryTypeId) } : {}),
+        ...(mpAccountDate ? { mpAccountDate: new Date(mpAccountDate) } : {}),
       } as any,
     });
 
