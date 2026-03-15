@@ -161,7 +161,7 @@ export default function FbsRequest() {
           className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none shadow-lg transition-all w-3/5"
           style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
         >
-          <option value="">📍 Направление</option>
+
           {cities.map((c) => (
             <option key={c.id} value={c.id}>
               {c.shortName}
@@ -252,7 +252,7 @@ export default function FbsRequest() {
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             min="1"
-            placeholder="³"
+            placeholder="Тест"
             className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-6 shadow-lg transition-all"
             style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
           />
