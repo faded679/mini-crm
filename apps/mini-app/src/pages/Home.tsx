@@ -36,7 +36,7 @@ export default function Home() {
 
         <div className="space-y-3">
           <button
-            onClick={() => navigate("/new?type=fbs")}
+            onClick={() => navigate("/fbs")}
             className="w-full py-3.5 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:scale-[0.97] transition-transform"
           >
             FBS

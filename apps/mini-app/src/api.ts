@@ -134,6 +134,43 @@ export function createRequest(data: CreateRequestPayload) {
   });
 }
 
+// ---------- FBS ----------
+
+export interface CityFbs {
+  id: number;
+  shortName: string;
+  fullName: string;
+}
+
+export interface ScheduleEntryFbs {
+  id: number;
+  cityId: number;
+  destination: string;
+  deliveryDate: string;
+  acceptDays: string;
+}
+
+export interface PriceFbsEntry {
+  id: number;
+  destination: string;
+  volume: string;
+  price: string;
+  comment: string | null;
+}
+
+export function getCitiesFbs() {
+  return api<CityFbs[]>("/bot/cities-fbs");
+}
+
+export function getScheduleFbs(cityId: number) {
+  return api<ScheduleEntryFbs[]>(`/bot/schedule-fbs?cityId=${cityId}`);
+}
+
+export function getPriceFbs(destination?: string) {
+  const qs = destination ? `?destination=${encodeURIComponent(destination)}` : "";
+  return api<PriceFbsEntry[]>(`/bot/price-fbs${qs}`);
+}
+
 export function checkConsent(telegramId: string) {
   return api<{ consentGiven: boolean }>(`/bot/consent/${telegramId}`);
 }

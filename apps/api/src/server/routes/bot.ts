@@ -452,4 +452,47 @@ router.get("/schedule", async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// GET /bot/cities-fbs — list available FBS cities/directions
+router.get("/cities-fbs", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cities = await (prisma as any).cityFbs.findMany({ orderBy: { shortName: "asc" } });
+    res.json(cities);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bot/schedule-fbs?cityId=N — delivery dates for an FBS city
+router.get("/schedule-fbs", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cityId = Number(req.query.cityId);
+    if (!Number.isFinite(cityId)) throw new ApiError(400, "cityId is required");
+
+    const schedules = await (prisma as any).deliveryScheduleFbs.findMany({
+      where: { cityId, deliveryDate: { gte: new Date() } },
+      orderBy: { deliveryDate: "asc" },
+    });
+    res.json(schedules);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bot/price-fbs?destination=X — FBS prices for a destination
+router.get("/price-fbs", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const destination = req.query.destination as string | undefined;
+    const where: any = {};
+    if (destination) where.destination = destination;
+
+    const prices = await (prisma as any).priceFbs.findMany({
+      where,
+      orderBy: [{ destination: "asc" }, { volume: "asc" }],
+    });
+    res.json(prices);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
