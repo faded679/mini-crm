@@ -36,7 +36,11 @@ export default function FbsRequest() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getCitiesFbs().then(setCities).catch(() => {});
+    getCitiesFbs().then((data) => {
+      setCities(data);
+      const def = data.find((c) => c.shortName === "WB Курск FBS");
+      if (def) setCityId(def.id);
+    }).catch(() => {});
   }, []);
 
   const selectedCity = cities.find((c) => c.id === cityId);
@@ -44,7 +48,11 @@ export default function FbsRequest() {
   useEffect(() => {
     if (cityId && selectedCity) {
       getScheduleFbs(cityId).then(setSchedule).catch(() => setSchedule([]));
-      getPriceFbs(selectedCity.shortName).then(setPrices).catch(() => setPrices([]));
+      getPriceFbs(selectedCity.shortName).then((data) => {
+        setPrices(data);
+        const def = data.find((p) => p.volume.includes("0.1"));
+        if (def) setSelectedPriceId(def.id);
+      }).catch(() => setPrices([]));
     } else {
       setSchedule([]);
       setPrices([]);
@@ -210,15 +218,17 @@ export default function FbsRequest() {
             placeholder="Дата поставки на МП"
           />
           <p className="text-[11px] text-tg-hint mt-1 mb-1">📅 Дата поставки на маркетплейс</p>
-          <div
-            className="rounded-xl px-3 py-2 mt-1"
-            style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
-          >
-            <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
-              ⚠️ Важно! Плановая дата поставки на МП должна совпадать с датой выгрузки нашего автомобиля
-              согласно графика. Машина может отгружаться ± 24 часа от даты в графике без предупреждения.
-            </p>
-          </div>
+          {!mpDate && (
+            <div
+              className="rounded-xl px-3 py-2 mt-1"
+              style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
+            >
+              <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
+                ⚠️ Важно! Плановая дата поставки на МП должна совпадать с датой выгрузки нашего автомобиля
+                согласно графика. Машина может отгружаться ± 24 часа от даты в графике без предупреждения.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
