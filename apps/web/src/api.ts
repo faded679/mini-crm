@@ -97,6 +97,12 @@ export type RequestStatus = "new" | "warehouse" | "shipped" | "done";
 
 export type PackagingType = "pallets" | "boxes";
 
+export interface DeliveryType {
+  id: number;
+  name: string;
+  note: string | null;
+}
+
 export type UpdateShipmentRequestPayload = {
   city?: string;
   deliveryDate?: string;
@@ -106,6 +112,7 @@ export type UpdateShipmentRequestPayload = {
   boxCount?: number;
   weight?: number | null;
   comment?: string | null;
+  deliveryTypeId?: number | null;
 };
 
 export interface ShipmentRequest {
@@ -121,6 +128,8 @@ export interface ShipmentRequest {
   comment: string | null;
   status: RequestStatus;
   isRead: boolean;
+  deliveryTypeId?: number | null;
+  deliveryType?: DeliveryType | null;
   createdAt: string;
   client: Client;
   services?: RequestService[];
@@ -376,6 +385,10 @@ export function deleteClient(id: number) {
   return request<void>(`/admin/clients/${id}`, {
     method: "DELETE",
   });
+}
+
+export function getDeliveryTypes() {
+  return request<DeliveryType[]>("/admin/delivery-types");
 }
 
 export interface ScheduleEntry {

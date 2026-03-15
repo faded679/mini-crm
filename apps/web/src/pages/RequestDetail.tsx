@@ -18,6 +18,7 @@ import {
   updateRequestService,
   deleteRequestService,
   suggestRequestService,
+  getDeliveryTypes,
   type City,
   type PackagingType,
   type ShipmentRequestDetail,
@@ -28,6 +29,7 @@ import {
   type PriceRate,
   type InvoiceItemPayload,
   type Invoice,
+  type DeliveryType,
 } from "../api";
 import { cn } from "../lib/utils";
 import { ArrowLeft, FileText, Plus, Trash2 } from "lucide-react";
@@ -63,6 +65,8 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [editVolume, setEditVolume] = useState<string>("");
   const [editWeight, setEditWeight] = useState<string>("");
   const [editComment, setEditComment] = useState<string>("");
+  const [editDeliveryTypeId, setEditDeliveryTypeId] = useState<string>("");
+  const [deliveryTypes, setDeliveryTypes] = useState<DeliveryType[]>([]);
   const [confirmStatus, setConfirmStatus] = useState<RequestStatus | null>(null);
   const [confirmInvoice, setConfirmInvoice] = useState(false);
   const [invoiceCounterpartyId, setInvoiceCounterpartyId] = useState<number | "">("");
@@ -93,6 +97,10 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
 
   useEffect(() => {
     getCities().then(setCities).catch(() => setCities([]));
+  }, []);
+
+  useEffect(() => {
+    getDeliveryTypes().then(setDeliveryTypes).catch(() => setDeliveryTypes([]));
   }, []);
 
   useEffect(() => {
@@ -127,6 +135,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         setEditVolume((r as any).volume == null ? "" : String((r as any).volume));
         setEditWeight(r.weight == null ? "" : String(r.weight));
         setEditComment(r.comment ?? "");
+        setEditDeliveryTypeId(r.deliveryTypeId == null ? "" : String(r.deliveryTypeId));
       })
       .finally(() => setLoading(false));
   }, [resolvedRequestId]);
@@ -245,6 +254,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         volume,
         weight,
         comment: editComment.trim() ? editComment.trim() : null,
+        deliveryTypeId: editDeliveryTypeId === "" ? null : Number(editDeliveryTypeId),
       });
       const updated = await getRequestById(request.id);
       setRequest(updated);
@@ -265,6 +275,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
     setEditWeight(request.weight == null ? "" : String(request.weight));
     setEditComment(request.comment ?? "");
+    setEditDeliveryTypeId(request.deliveryTypeId == null ? "" : String(request.deliveryTypeId));
   };
 
   if (loading) {
@@ -459,6 +470,26 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <p className="text-sm text-gray-900 dark:text-gray-100">{request.comment}</p>
               ) : (
                 <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Тип поставки</p>
+              {editing ? (
+                <select
+                  value={editDeliveryTypeId}
+                  onChange={(e) => setEditDeliveryTypeId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">— не указан —</option>
+                  {deliveryTypes.map((dt) => (
+                    <option key={dt.id} value={dt.id}>{dt.name}{dt.note ? ` (${dt.note})` : ""}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {request.deliveryType?.name || "—"}
+                  {request.deliveryType?.note ? <span className="text-gray-400 ml-1">({request.deliveryType.note})</span> : ""}
+                </p>
               )}
             </div>
             <div>

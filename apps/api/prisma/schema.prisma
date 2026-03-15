@@ -106,12 +106,14 @@ model ShipmentRequest {
   comment     String?
   status      RequestStatus          @default(new)
   isRead      Boolean                @default(false) @map("is_read")
+  deliveryTypeId Int?                @map("delivery_type_id")
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
 
   client       Client                 @relation(fields: [clientId], references: [id])
   cityRef      City                   @relation(fields: [cityId], references: [id])
   boxType      BoxType?               @relation(fields: [boxTypeId], references: [id])
+  deliveryType DeliveryType?          @relation(fields: [deliveryTypeId], references: [id])
   history      RequestStatusHistory[]
   fieldHistory RequestFieldHistory[]
   services     RequestService[]
@@ -266,6 +268,18 @@ model RequestFieldHistory {
   manager   Manager         @relation(fields: [managerId], references: [id])
 
   @@map("request_field_history")
+}
+
+model DeliveryType {
+  id        Int               @id @default(autoincrement())
+  name      String            @unique
+  note      String?           @map("note")
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  requests  ShipmentRequest[]
+
+  @@map("delivery_types")
 }
 
 model ServicePrice {

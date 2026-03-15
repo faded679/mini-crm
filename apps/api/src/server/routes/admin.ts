@@ -168,7 +168,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const requests = await (prisma as any).shipmentRequest.findMany({
-      include: { client: true, boxType: true, services: true },
+      include: { client: true, boxType: true, services: true, deliveryType: true },
       orderBy: { createdAt: "desc" },
     });
     res.json(requests);
@@ -194,6 +194,7 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
           },
         },
         boxType: true,
+        deliveryType: true,
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
         services: { orderBy: { id: "asc" } },
@@ -789,6 +790,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       boxCount?: number;
       weight?: number | null;
       comment?: string | null;
+      deliveryTypeId?: number | null;
     };
 
     const existing = await prisma.shipmentRequest.findUnique({
@@ -861,6 +863,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         boxCount: body.boxCount,
         weight: body.weight === undefined ? undefined : (body.weight as any),
         comment: nextComment,
+        deliveryTypeId: body.deliveryTypeId === undefined ? undefined : body.deliveryTypeId,
       } as any,
       include: { client: true },
     });
@@ -937,6 +940,75 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     }
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --------------- Delivery Types ---------------
+
+// GET /admin/delivery-types
+router.get("/delivery-types", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).deliveryType.findMany({
+      orderBy: { name: "asc" },
+    });
+    res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/delivery-types
+router.post("/delivery-types", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name, note } = req.body as { name?: string; note?: string };
+    if (!name?.trim()) throw new ApiError(400, "name is required");
+
+    const created = await (prisma as any).deliveryType.create({
+      data: { name: name.trim(), note: note?.trim() || null },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/delivery-types/:id
+router.patch("/delivery-types/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { name, note } = req.body as { name?: string; note?: string | null };
+    const data: any = {};
+    if (name?.trim()) data.name = name.trim();
+    if (note !== undefined) data.note = note?.trim() || null;
+    if (Object.keys(data).length === 0) throw new ApiError(400, "Nothing to update");
+
+    const updated = await (prisma as any).deliveryType.update({
+      where: { id },
+      data,
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/delivery-types/:id
+router.delete("/delivery-types/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const requestsCount = await (prisma as any).shipmentRequest.count({ where: { deliveryTypeId: id } });
+    if (requestsCount > 0) {
+      throw new ApiError(400, "Нельзя удалить тип поставки: есть связанные заявки");
+    }
+
+    await (prisma as any).deliveryType.delete({ where: { id } });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }
