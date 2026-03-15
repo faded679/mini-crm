@@ -209,7 +209,7 @@ export default function FbsRequest() {
             style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
             placeholder="Дата поставки на МП"
           />
-          <p className="text-[11px] text-tg-hint mt-1 mb-1">📅 Дата поставки на маркетплейс</p>
+          <p className="text-[11px] text-tg-hint mt-1 mb-1">📅 Дата поставки на маркетплейс в ЛК</p>
           <div
             className="rounded-xl px-3 py-2 mt-1"
             style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
@@ -222,7 +222,7 @@ export default function FbsRequest() {
         </div>
       )}
 
-      {/* Volume (from price-fbs) */}
+      {/* Voume (from price-fbs) */}
       {deliveryDate && mpDate && prices.length > 0 && (
         <div className="mb-3 slide-up">
           <select
