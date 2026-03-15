@@ -80,7 +80,7 @@ export default function ClientDetail() {
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{fullName}</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="text-gray-600 dark:text-gray-400">
-            <span className="text-gray-400 dark:text-gray-500">Username:</span>{" "}
+            <span className="text-gray-400 dark:text-gray-500">Telegram:</span>{" "}
             {client.username ? (
               <a
                 href={`https://t.me/${client.username}`}
@@ -92,7 +92,13 @@ export default function ClientDetail() {
                 @{client.username}
               </a>
             ) : (
-              "—"
+              <a
+                href={`tg://user?id=${client.telegramId}`}
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Открыть в Telegram
+              </a>
             )}
           </div>
           <div className="text-gray-600 dark:text-gray-400">
