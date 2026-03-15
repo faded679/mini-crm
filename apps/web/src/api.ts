@@ -372,6 +372,12 @@ export function getClientById(id: number) {
   return request<ClientDetail>(`/admin/clients/${id}`);
 }
 
+export function deleteClient(id: number) {
+  return request<void>(`/admin/clients/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export interface ScheduleEntry {
   id: number;
   destination: string;

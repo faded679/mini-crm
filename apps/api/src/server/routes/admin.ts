@@ -992,6 +992,46 @@ router.get("/clients/:id", async (req: Request, res: Response, next: NextFunctio
   }
 });
 
+// DELETE /admin/clients/:id
+router.delete("/clients/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const client = await prisma.client.findUnique({ where: { id } });
+    if (!client) throw new ApiError(404, "Client not found");
+
+    // Delete related records in order (cascade)
+    // 1. Delete request status history
+    await prisma.requestStatusHistory.deleteMany({
+      where: {
+        request: {
+          clientId: id,
+        },
+      },
+    });
+
+    // 2. Delete shipment requests
+    await prisma.shipmentRequest.deleteMany({
+      where: { clientId: id },
+    });
+
+    // 3. Delete counterparty contacts
+    await prisma.counterpartyContact.deleteMany({
+      where: { clientId: id },
+    });
+
+    // 4. Delete the client
+    await prisma.client.delete({
+      where: { id },
+    });
+
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/counterparties
 router.get("/counterparties", async (_req: Request, res: Response, next: NextFunction) => {
   try {

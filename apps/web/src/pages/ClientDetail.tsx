@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
   getClientById,
+  deleteClient,
   type ClientDetail as ClientDetailType,
   type RequestStatus,
 } from "../api";
@@ -43,6 +44,22 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const [client, setClient] = useState<ClientDetailType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!client) return;
+    if (!confirm(`Удалить клиента ${client.firstName} ${client.lastName || ""}?\n\nВнимание: Будут удалены все заявки и связи с организациями!`)) return;
+    
+    setDeleting(true);
+    try {
+      await deleteClient(client.id);
+      navigate("/clients");
+    } catch (err) {
+      alert("Ошибка при удалении клиента: " + (err instanceof Error ? err.message : "Неизвестная ошибка"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -77,7 +94,17 @@ export default function ClientDetail() {
       </Link>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{fullName}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg font-medium bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition"
+          >
+            <Trash2 size={16} />
+            {deleting ? "Удаление..." : "Удалить клиента"}
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Telegram:</span>{" "}
