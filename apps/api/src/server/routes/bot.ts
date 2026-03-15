@@ -317,8 +317,11 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
     });
     if (!client) throw new ApiError(404, "Client not found");
 
-    // Validate INN through DaData API
+    // Validate INN through DaData API and get organization name
     const dadataToken = process.env.DADATA_TOKEN;
+    let orgName = `Организация ${inn}`;
+    let orgData: any = null;
+
     if (dadataToken) {
       try {
         const dadataRes = await fetch(
@@ -339,6 +342,11 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
           if (!json.suggestions || json.suggestions.length === 0) {
             throw new ApiError(400, "ИНН не найден в базе данных. Проверьте правильность ввода.");
           }
+          // Get organization name from DaData
+          orgData = json.suggestions[0]?.data;
+          if (orgData) {
+            orgName = orgData.name?.short_with_opf || orgData.name?.full_with_opf || orgData.name?.short || orgData.name?.full || orgName;
+          }
         }
       } catch (err) {
         if (err instanceof ApiError) throw err;
@@ -354,7 +362,7 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
     if (!counterparty) {
       counterparty = await (prisma as any).counterparty.create({
         data: {
-          name: `Организация ${inn}`,
+          name: orgName,
           inn: String(inn),
         },
       });
