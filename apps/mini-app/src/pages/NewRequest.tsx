@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   createRequest,
   getCities,
@@ -27,6 +27,7 @@ interface LineItem {
 
 export default function NewRequest() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [cities, setCities] = useState<City[]>([]);
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
@@ -43,12 +44,21 @@ export default function NewRequest() {
   const [items, setItems] = useState<LineItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [deliveryTypeId, setDeliveryTypeId] = useState<number | null>(null);
 
   useEffect(() => {
     getCities().then(setCities).catch(() => {});
     getBoxTypes().then(setBoxTypes).catch(() => {});
     getPalletTypes().then(setPalletTypes).catch(() => {});
-  }, []);
+    
+    // Set delivery type based on URL parameter
+    const typeParam = searchParams.get("type");
+    if (typeParam === "fbs") {
+      setDeliveryTypeId(1); // FBS has id 1
+    } else if (typeParam === "fbo") {
+      setDeliveryTypeId(2); // FBO has id 2
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (cityId) {
@@ -127,6 +137,7 @@ export default function NewRequest() {
         deliveryDate: deliveryDate || new Date().toISOString(),
         packagingType: mainPkg,
         ...(mainBoxTypeId ? { boxTypeId: mainBoxTypeId } : {}),
+        ...(deliveryTypeId ? { deliveryTypeId } : {}),
         boxCount: totalQty,
         comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)

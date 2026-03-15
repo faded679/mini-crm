@@ -75,6 +75,7 @@ interface CreateRequestPayload {
   deliveryDate: string;
   packagingType: "pallets" | "boxes";
   boxTypeId?: number;
+  deliveryTypeId?: number;
   weight?: number;
   boxCount: number;
   comment?: string;
