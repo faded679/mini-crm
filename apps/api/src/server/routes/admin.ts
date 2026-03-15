@@ -1874,6 +1874,100 @@ router.delete("/schedule/:id", async (req: Request, res: Response, next: NextFun
   }
 });
 
+// --------------- Schedule FBS ---------------
+
+// GET /admin/schedule-fbs
+router.get("/schedule-fbs", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const schedules = await (prisma as any).deliveryScheduleFbs.findMany({
+      orderBy: [{ deliveryDate: "asc" }, { destination: "asc" }],
+    });
+    res.json(schedules);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/schedule-fbs
+router.post("/schedule-fbs", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { cityId, destination, deliveryDate, acceptDays } = req.body as {
+      cityId?: number;
+      destination?: string;
+      deliveryDate?: string;
+      acceptDays?: string;
+    };
+
+    if (!deliveryDate) throw new ApiError(400, "deliveryDate is required");
+    if (!acceptDays?.trim()) throw new ApiError(400, "acceptDays is required");
+
+    const data: any = {
+      deliveryDate: new Date(deliveryDate),
+      acceptDays: acceptDays.trim(),
+    };
+
+    if (cityId !== undefined) {
+      if (!Number.isFinite(cityId)) throw new ApiError(400, "Invalid cityId");
+      data.cityId = cityId;
+      data.destination = destination?.trim() || "";
+    } else {
+      if (!destination?.trim()) throw new ApiError(400, "destination is required");
+      data.destination = destination.trim();
+    }
+
+    const created = await (prisma as any).deliveryScheduleFbs.create({ data });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/schedule-fbs/:id
+router.patch("/schedule-fbs/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { cityId, destination, deliveryDate, acceptDays } = req.body as {
+      cityId?: number;
+      destination?: string;
+      deliveryDate?: string;
+      acceptDays?: string;
+    };
+
+    const data: any = {};
+    if (deliveryDate !== undefined) data.deliveryDate = new Date(deliveryDate);
+    if (acceptDays !== undefined) {
+      if (!acceptDays?.trim()) throw new ApiError(400, "acceptDays is required");
+      data.acceptDays = acceptDays.trim();
+    }
+    if (cityId !== undefined) {
+      if (!Number.isFinite(cityId)) throw new ApiError(400, "Invalid cityId");
+      data.cityId = cityId;
+    }
+    if (destination !== undefined) data.destination = destination.trim();
+    if (Object.keys(data).length === 0) throw new ApiError(400, "Nothing to update");
+
+    const updated = await (prisma as any).deliveryScheduleFbs.update({ where: { id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/schedule-fbs/:id
+router.delete("/schedule-fbs/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    await (prisma as any).deliveryScheduleFbs.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // --------------- Broadcast ---------------
 
 // POST /admin/broadcast — send message to all clients (or selected)

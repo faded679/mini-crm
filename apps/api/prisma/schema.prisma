@@ -239,6 +239,19 @@ model DeliverySchedule {
   @@map("delivery_schedules")
 }
 
+model DeliveryScheduleFbs {
+  id            Int      @id @default(autoincrement())
+  cityId        Int      @map("city_id")
+  destination   String   @default("")
+  deliveryDate  DateTime @map("delivery_date")
+  acceptDays    String   @map("accept_days")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  cityRef       City     @relation(fields: [cityId], references: [id])
+
+  @@map("delivery_schedules_fbs")
+}
+
 model RequestStatusHistory {
   id        Int           @id @default(autoincrement())
   requestId Int           @map("request_id")

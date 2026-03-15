@@ -437,6 +437,48 @@ export function deleteScheduleEntry(id: number) {
   });
 }
 
+// --------------- Schedule FBS ---------------
+
+export interface ScheduleEntryFbs {
+  id: number;
+  destination: string;
+  deliveryDate: string;
+  acceptDays: string;
+}
+
+export type ScheduleEntryFbsPayload = {
+  cityId?: number;
+  destination?: string;
+  deliveryDate: string;
+  acceptDays: string;
+};
+
+export function getAdminScheduleFbs() {
+  return request<ScheduleEntryFbs[]>("/admin/schedule-fbs");
+}
+
+export function createScheduleEntryFbs(payload: ScheduleEntryFbsPayload) {
+  return request<ScheduleEntryFbs>("/admin/schedule-fbs", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateScheduleEntryFbs(id: number, payload: Partial<ScheduleEntryFbsPayload>) {
+  return request<ScheduleEntryFbs>(`/admin/schedule-fbs/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function deleteScheduleEntryFbs(id: number) {
+  return request<void>(`/admin/schedule-fbs/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export function getCounterparties() {
   return request<Counterparty[]>("/admin/counterparties");
 }
