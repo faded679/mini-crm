@@ -317,6 +317,35 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
     });
     if (!client) throw new ApiError(404, "Client not found");
 
+    // Validate INN through DaData API
+    const dadataToken = process.env.DADATA_TOKEN;
+    if (dadataToken) {
+      try {
+        const dadataRes = await fetch(
+          "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Token ${dadataToken}`,
+            },
+            body: JSON.stringify({ query: String(inn) }),
+          },
+        );
+
+        if (dadataRes.ok) {
+          const json = (await dadataRes.json()) as { suggestions: any[] };
+          if (!json.suggestions || json.suggestions.length === 0) {
+            throw new ApiError(400, "ИНН не найден в базе данных. Проверьте правильность ввода.");
+          }
+        }
+      } catch (err) {
+        if (err instanceof ApiError) throw err;
+        // If DaData fails, continue without validation (fallback)
+      }
+    }
+
     // Upsert counterparty by INN
     let counterparty = await (prisma as any).counterparty.findUnique({
       where: { inn: String(inn) },
