@@ -511,8 +511,17 @@ export default function Requests() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.weight ?? "—"} кг</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.boxCount}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {r.client.firstName} {r.client.lastName || ""}
+                  <td className="px-4 py-3 text-sm" onClick={(e) => e.stopPropagation()}>
+                    <a
+                      href={`/clients/${r.client.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.location.href = `/clients/${r.client.id}`;
+                      }}
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                    >
+                      {r.client.firstName} {r.client.lastName || ""}
+                    </a>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
                     {(() => {

@@ -8,7 +8,7 @@ import {
   type ScheduleEntry,
   updateScheduleEntry,
 } from "../api";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, X, ChevronDown, ChevronRight } from "lucide-react";
 
 export default function Schedule() {
   const [cities, setCities] = useState<City[]>([]);
@@ -26,6 +26,20 @@ export default function Schedule() {
   const [editDeliveryDate, setEditDeliveryDate] = useState("");
   const [editAcceptDays, setEditAcceptDays] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [expandedCities, setExpandedCities] = useState<Set<string>>(new Set());
+
+  const toggleCity = (city: string) => {
+    setExpandedCities(prev => {
+      const next = new Set(prev);
+      if (next.has(city)) {
+        next.delete(city);
+      } else {
+        next.add(city);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     Promise.all([getCities(), getAdminSchedule()])
@@ -179,12 +193,20 @@ export default function Schedule() {
       {Object.keys(grouped).length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Нет данных</div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {Object.entries(grouped).map(([dest, items]) => (
             <div key={dest} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="font-semibold text-gray-900 dark:text-white">📍 {dest}</h2>
-              </div>
+              <button
+                onClick={() => toggleCity(dest)}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  {expandedCities.has(dest) ? <ChevronDown size={18} className="text-gray-500" /> : <ChevronRight size={18} className="text-gray-500" />}
+                  <h2 className="font-semibold text-gray-900 dark:text-white">📍 {dest}</h2>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">({items.length} {items.length === 1 ? 'дата' : items.length < 5 ? 'даты' : 'дат'})</span>
+                </div>
+              </button>
+              {expandedCities.has(dest) && (
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-700">
@@ -277,6 +299,7 @@ export default function Schedule() {
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
           ))}
         </div>
