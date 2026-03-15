@@ -164,7 +164,7 @@ export default function NewRequest() {
       )}
 
       {/* Direction & Date */}
-      <div className={`flex gap-2 mb-2.5`}>
+      <div className={`flex gap-3 mb-3`}>
         <select
           value={cityId ?? ""}
           onChange={(e) => {
@@ -175,9 +175,10 @@ export default function NewRequest() {
             setQty("");
             setItems([]);
           }}
-          className={`h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none ${cityId ? "w-3/5" : "w-3/5"}`}
+          className={`h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none shadow-lg transition-all ${cityId ? "w-3/5" : "w-3/5"}`}
+          style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
         >
-          <option value="">Направление</option>
+          <option value="">📍 Направление</option>
           {cities.map((c) => (
             <option key={c.id} value={c.id}>{c.shortName}</option>
           ))}
@@ -192,9 +193,10 @@ export default function NewRequest() {
               setTypeId(null);
               setQty("");
             }}
-            className="h-10 px-2 rounded-lg bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none"
+            className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none shadow-lg transition-all"
+            style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
           >
-            <option value="">Дата</option>
+            <option value="">📅 Дата</option>
             {schedule.map((s) => (
               <option key={s.id} value={s.deliveryDate}>
                 {new Date(s.deliveryDate).toLocaleDateString("ru-RU", {
@@ -213,8 +215,8 @@ export default function NewRequest() {
 
       {/* Packaging type */}
       {deliveryDate && (
-        <div className="mb-2.5 slide-up">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="mb-3 slide-up">
+          <div className="grid grid-cols-2 gap-3">
           {(["pallets", "boxes"] as const).map((p) => (
             <button
               key={p}
@@ -226,11 +228,12 @@ export default function NewRequest() {
                 setTypeId(opts.length > 0 ? opts[0].id : null);
                 setQty("");
               }}
-              className={`py-2.5 rounded-xl text-sm font-medium transition-all ${
+              className={`py-3.5 rounded-2xl text-sm font-semibold transition-all transform active:scale-95 ${
                 packaging === p
-                  ? "bg-tg-button text-tg-button-text shadow-sm"
-                  : "bg-tg-secondary-bg text-tg-text"
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+                  : "bg-tg-secondary-bg text-tg-text shadow-md"
               }`}
+              style={packaging === p ? { boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)' } : { boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}
             >
               {p === "pallets" ? "📦 Палеты" : "📋 Коробки"}
             </button>
@@ -241,11 +244,12 @@ export default function NewRequest() {
 
       {/* Type */}
       {packaging && typeOptions.length > 0 && (
-        <div className="mb-2.5 slide-up">
+        <div className="mb-3 slide-up">
           <select
             value={typeId ?? ""}
             onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm"
+            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
+            style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
           >
             {typeOptions.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -262,16 +266,18 @@ export default function NewRequest() {
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             min="1"
-            placeholder="Кол-во"
-            className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-2"
+            placeholder="✏️ Кол-во"
+            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-3 shadow-lg transition-all"
+            style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
           />
           {qty && Number(qty) > 0 && (
             <button
               type="button"
               onClick={handleAddItem}
-              className="w-full h-11 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold transition active:scale-[0.97]"
+              className="w-full h-12 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold transition-all transform active:scale-95 shadow-lg"
+              style={{ boxShadow: '0 6px 20px rgba(34, 197, 94, 0.4)' }}
             >
-              + Добавить
+              ✨ Добавить
             </button>
           )}
         </div>
