@@ -215,15 +215,19 @@ export default function FbsRequest() {
           />
 
           <p className="text-[11px] text-tg-hint mt-1 mb-1">📅 Дата поставки на маркетплейс в ЛК</p>
-          <div
-            className="rounded-xl px-3 py-2 mt-1"
-            style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
-          >
-            <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
-              ⚠️ Важно! Плановая дата поставки на МП должна совпадать с датой выгрузки нашего автомобиля
-              согласно графика. Машина может отгружаться ± 24 часа от даты в графике без предупреждения.
-            </p>
-          </div>
+       {!mpDate && (
+        <div
+          className="rounded-xl px-3 py-2 mt-1"
+          style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
+        >
+          <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
+            ⚠️ Важно! Плановая дата поставки на МП должна совпадать с датой выгрузки нашего автомобиля
+            согласно графика. Машина может отгружаться ± 24 часа от даты в графике без предупреждения.
+          </p>
+        </div>
+  )}
+
+
         </div>
       )}
 
