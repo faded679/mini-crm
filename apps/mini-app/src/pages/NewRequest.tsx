@@ -149,7 +149,7 @@ export default function NewRequest() {
 
   return (
     <div className="px-3 pt-3 pb-28 fade-in">
-      <div className="mb-3 text-center">
+      <div className="mb-6 text-center">
         <p className="text-base font-semibold text-white" style={{ textShadow: '0 0 10px rgba(255, 255, 255, 0.6)' }}>
           {!cityId ? "Выберите направление" :
            !deliveryDate ? "Выберите дату" :
