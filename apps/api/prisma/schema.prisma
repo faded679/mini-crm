@@ -143,9 +143,10 @@ model City {
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
 
-  rates     PriceRate[]
-  requests  ShipmentRequest[]
-  schedules DeliverySchedule[]
+  rates        PriceRate[]
+  requests     ShipmentRequest[]
+  schedules    DeliverySchedule[]
+  schedulesFbs DeliveryScheduleFbs[]
 
   @@map("cities")
 }
