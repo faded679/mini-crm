@@ -1968,6 +1968,88 @@ router.delete("/schedule-fbs/:id", async (req: Request, res: Response, next: Nex
   }
 });
 
+// --------------- Price FBS ---------------
+
+// GET /admin/price-fbs
+router.get("/price-fbs", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const items = await (prisma as any).priceFbs.findMany({
+      orderBy: [{ destination: "asc" }, { volume: "asc" }],
+    });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/price-fbs
+router.post("/price-fbs", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { destination, volume, price, comment } = req.body as {
+      destination?: string;
+      volume?: string;
+      price?: string;
+      comment?: string;
+    };
+
+    if (!destination?.trim()) throw new ApiError(400, "destination is required");
+    if (!volume?.trim()) throw new ApiError(400, "volume is required");
+    if (!price?.trim()) throw new ApiError(400, "price is required");
+
+    const created = await (prisma as any).priceFbs.create({
+      data: {
+        destination: destination.trim(),
+        volume: volume.trim(),
+        price: price.trim(),
+        comment: comment?.trim() || null,
+      },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/price-fbs/:id
+router.patch("/price-fbs/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { destination, volume, price, comment } = req.body as {
+      destination?: string;
+      volume?: string;
+      price?: string;
+      comment?: string;
+    };
+
+    const data: any = {};
+    if (destination !== undefined) data.destination = destination.trim();
+    if (volume !== undefined) data.volume = volume.trim();
+    if (price !== undefined) data.price = price.trim();
+    if (comment !== undefined) data.comment = comment?.trim() || null;
+    if (Object.keys(data).length === 0) throw new ApiError(400, "Nothing to update");
+
+    const updated = await (prisma as any).priceFbs.update({ where: { id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/price-fbs/:id
+router.delete("/price-fbs/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    await (prisma as any).priceFbs.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // --------------- Broadcast ---------------
 
 // POST /admin/broadcast — send message to all clients (or selected)

@@ -254,6 +254,17 @@ model DeliveryScheduleFbs {
   @@map("delivery_schedules_fbs")
 }
 
+model PriceFbs {
+  id          Int      @id @default(autoincrement())
+  destination String
+  volume      String
+  price       String
+  comment     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("prices_fbs")
+}
+
 model RequestStatusHistory {
   id        Int           @id @default(autoincrement())
   requestId Int           @map("request_id")

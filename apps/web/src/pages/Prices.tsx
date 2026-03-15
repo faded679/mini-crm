@@ -24,6 +24,10 @@ import {
   createServicePrice,
   updateServicePrice,
   deleteServicePrice,
+  getPriceFbs,
+  createPriceFbs,
+  updatePriceFbs,
+  deletePriceFbs,
   type City,
   type CityFbs,
   type BoxType,
@@ -31,6 +35,7 @@ import {
   type PriceRate,
   type RateUnit,
   type ServicePrice,
+  type PriceFbsEntry,
 } from "../api";
 import { cn } from "../lib/utils";
 import { Plus, Trash2, Pencil, X, Check } from "lucide-react";
@@ -47,6 +52,7 @@ export default function Prices() {
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
+  const [priceFbsList, setPriceFbsList] = useState<PriceFbsEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCity, setFilterCity] = useState<number | "all">("all");
 
@@ -114,6 +120,19 @@ export default function Prices() {
   const [cityFbsEditFullName, setCityFbsEditFullName] = useState("");
   const [savingCityFbs, setSavingCityFbs] = useState(false);
 
+  // price fbs management
+  const [pfbsAddDest, setPfbsAddDest] = useState("");
+  const [pfbsAddVol, setPfbsAddVol] = useState("");
+  const [pfbsAddPrice, setPfbsAddPrice] = useState("");
+  const [pfbsAddComment, setPfbsAddComment] = useState("");
+  const [pfbsAdding, setPfbsAdding] = useState(false);
+  const [pfbsEditId, setPfbsEditId] = useState<number | null>(null);
+  const [pfbsEditDest, setPfbsEditDest] = useState("");
+  const [pfbsEditVol, setPfbsEditVol] = useState("");
+  const [pfbsEditPrice, setPfbsEditPrice] = useState("");
+  const [pfbsEditComment, setPfbsEditComment] = useState("");
+  const [pfbsSaving, setPfbsSaving] = useState(false);
+
   // inline edit
   const [editId, setEditId] = useState<number | null>(null);
   const [editBoxTypeId, setEditBoxTypeId] = useState<number | "">("");
@@ -123,13 +142,14 @@ export default function Prices() {
   const [saving, setSaving] = useState(false);
 
   const reload = async () => {
-    const [c, cfbs, r, bt, pt, sp] = await Promise.all([getCities(), getCitiesFbs(), getRates(), getBoxTypes(), getPalletTypes(), getServicePrices()]);
+    const [c, cfbs, r, bt, pt, sp, pfbs] = await Promise.all([getCities(), getCitiesFbs(), getRates(), getBoxTypes(), getPalletTypes(), getServicePrices(), getPriceFbs()]);
     setCities(c);
     setCitiesFbs(cfbs);
     setRates(r);
     setBoxTypes(bt);
     setPalletTypes(pt);
     setServicePrices(sp);
+    setPriceFbsList(pfbs);
   };
 
   useEffect(() => {
@@ -355,6 +375,59 @@ export default function Prices() {
     if (!confirm("Удалить город FBS?")) return;
     try {
       await deleteCityFbs(id);
+      await reload();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
+  // price fbs handlers
+  const handleAddPriceFbs = async () => {
+    if (pfbsAdding || !pfbsAddDest.trim() || !pfbsAddVol.trim() || !pfbsAddPrice.trim()) return;
+    setPfbsAdding(true);
+    try {
+      await createPriceFbs({
+        destination: pfbsAddDest.trim(),
+        volume: pfbsAddVol.trim(),
+        price: pfbsAddPrice.trim(),
+        comment: pfbsAddComment.trim() || undefined,
+      });
+      setPfbsAddDest("");
+      setPfbsAddVol("");
+      setPfbsAddPrice("");
+      setPfbsAddComment("");
+      await reload();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setPfbsAdding(false);
+    }
+  };
+
+  const handleSavePriceFbs = async () => {
+    if (pfbsSaving || pfbsEditId === null) return;
+    if (!pfbsEditDest.trim() || !pfbsEditVol.trim() || !pfbsEditPrice.trim()) return;
+    setPfbsSaving(true);
+    try {
+      await updatePriceFbs(pfbsEditId, {
+        destination: pfbsEditDest.trim(),
+        volume: pfbsEditVol.trim(),
+        price: pfbsEditPrice.trim(),
+        comment: pfbsEditComment.trim() || undefined,
+      });
+      setPfbsEditId(null);
+      await reload();
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setPfbsSaving(false);
+    }
+  };
+
+  const handleDeletePriceFbs = async (id: number) => {
+    if (!confirm("Удалить запись прайса FBS?")) return;
+    try {
+      await deletePriceFbs(id);
       await reload();
     } catch (e) {
       alert((e as Error).message);
@@ -1027,6 +1100,138 @@ export default function Prices() {
                             onClick={() => handleDeleteCityFbs(c.id)}
                             className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
                           >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Price FBS */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Прайс FBS</h2>
+
+        {/* Add price FBS form */}
+        <div className="mb-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Добавить запись</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Направление</label>
+              <input
+                value={pfbsAddDest}
+                onChange={(e) => setPfbsAddDest(e.target.value)}
+                placeholder="Например: WB Курск"
+                className="w-48 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Объём</label>
+              <input
+                value={pfbsAddVol}
+                onChange={(e) => setPfbsAddVol(e.target.value)}
+                placeholder="Например: 1-5 м³"
+                className="w-36 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Цена</label>
+              <input
+                value={pfbsAddPrice}
+                onChange={(e) => setPfbsAddPrice(e.target.value)}
+                placeholder="Например: 5000 ₽"
+                className="w-36 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Комментарий</label>
+              <input
+                value={pfbsAddComment}
+                onChange={(e) => setPfbsAddComment(e.target.value)}
+                placeholder="Необязательно"
+                className="w-48 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleAddPriceFbs}
+              disabled={pfbsAdding || !pfbsAddDest.trim() || !pfbsAddVol.trim() || !pfbsAddPrice.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+            >
+              <Plus size={16} />
+              Добавить
+            </button>
+          </div>
+        </div>
+
+        {priceFbsList.length === 0 ? (
+          <div className="text-center py-12 text-gray-400 dark:text-gray-500">Нет данных</div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-700">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Направление</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Объём</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Цена</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Комментарий</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                {priceFbsList.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      {pfbsEditId === item.id ? (
+                        <input value={pfbsEditDest} onChange={(e) => setPfbsEditDest(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : item.destination}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      {pfbsEditId === item.id ? (
+                        <input value={pfbsEditVol} onChange={(e) => setPfbsEditVol(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : item.volume}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      {pfbsEditId === item.id ? (
+                        <input value={pfbsEditPrice} onChange={(e) => setPfbsEditPrice(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : item.price}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {pfbsEditId === item.id ? (
+                        <input value={pfbsEditComment} onChange={(e) => setPfbsEditComment(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : (item.comment || "—")}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {pfbsEditId === item.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button type="button" onClick={handleSavePriceFbs} disabled={pfbsSaving} className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400">
+                            <Check size={16} />
+                          </button>
+                          <button type="button" onClick={() => setPfbsEditId(null)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPfbsEditId(item.id);
+                              setPfbsEditDest(item.destination);
+                              setPfbsEditVol(item.volume);
+                              setPfbsEditPrice(item.price);
+                              setPfbsEditComment(item.comment || "");
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button type="button" onClick={() => handleDeletePriceFbs(item.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400">
                             <Trash2 size={16} />
                           </button>
                         </div>

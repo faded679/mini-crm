@@ -479,6 +479,47 @@ export function deleteScheduleEntryFbs(id: number) {
   });
 }
 
+// --------------- Price FBS ---------------
+
+export interface PriceFbsEntry {
+  id: number;
+  destination: string;
+  volume: string;
+  price: string;
+  comment: string | null;
+}
+
+export type PriceFbsPayload = {
+  destination: string;
+  volume: string;
+  price: string;
+  comment?: string;
+};
+
+export function getPriceFbs() {
+  return request<PriceFbsEntry[]>("/admin/price-fbs");
+}
+
+export function createPriceFbs(payload: PriceFbsPayload) {
+  return request<PriceFbsEntry>("/admin/price-fbs", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updatePriceFbs(id: number, payload: Partial<PriceFbsPayload>) {
+  return request<PriceFbsEntry>(`/admin/price-fbs/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deletePriceFbs(id: number) {
+  return request<void>(`/admin/price-fbs/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export function getCounterparties() {
   return request<Counterparty[]>("/admin/counterparties");
 }
