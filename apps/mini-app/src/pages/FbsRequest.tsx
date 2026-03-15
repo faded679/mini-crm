@@ -236,7 +236,7 @@ export default function FbsRequest() {
             className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
             style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
           >
-            <option value="">📦 Объём и цена</option>
+
             {prices.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.volume} — {p.price}{p.comment ? ` (${p.comment})` : ""}
@@ -257,7 +257,7 @@ export default function FbsRequest() {
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             min="1"
-            placeholder={selectedPrice ? `✏️ Кол-во м³ (${selectedPrice.volume} — ${selectedPrice.price})` : "✏️ Кол-во м³"}
+            placeholder={selectedPrice ? `✏️ ` : "✏️ Кол-во м³"}
             className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-6 shadow-lg transition-all"
             style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
           />
