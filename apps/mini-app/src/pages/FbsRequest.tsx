@@ -160,7 +160,6 @@ export default function FbsRequest() {
             setCityId(e.target.value ? Number(e.target.value) : null);
             setDeliveryDate("");
             setMpDate("");
-            setSelectedPriceId(null);
             setQty("");
             setItems([]);
           }}
@@ -181,7 +180,6 @@ export default function FbsRequest() {
             onChange={(e) => {
               setDeliveryDate(e.target.value);
               setMpDate("");
-              setSelectedPriceId(null);
               setQty("");
             }}
             className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none shadow-lg transition-all"
