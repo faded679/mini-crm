@@ -142,10 +142,8 @@ export default function FbsRequest() {
             ? "Выберите дату"
             : !mpDate
             ? "Укажите дату поставки на МП"
-            : !selectedPriceId
-            ? "Выберите объём"
             : items.length === 0
-            ? "Добавьте товары"
+            ? "Укажите кол-во кубов"
             : "Отправьте заявку"}
         </p>
       </div>
@@ -232,37 +230,15 @@ export default function FbsRequest() {
         </div>
       )}
 
-      {/* Volume (from price-fbs) */}
-      {deliveryDate && mpDate && prices.length > 0 && (
-        <div className="mb-3 slide-up">
-          <select
-            value={selectedPriceId ?? ""}
-            onChange={(e) => setSelectedPriceId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
-            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
-          >
-            <option value="">📦 Объём и цена</option>
-            {prices.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.volume} — {p.price}{p.comment ? ` (${p.comment})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {deliveryDate && mpDate && prices.length === 0 && (
-        <p className="text-[11px] text-tg-hint mb-2">Нет доступных тарифов</p>
-      )}
-
       {/* Quantity + Add */}
-      {selectedPriceId && (
+      {deliveryDate && mpDate && selectedPriceId && (
         <div className="mb-3 slide-up">
           <input
             type="number"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             min="1"
-            placeholder="✏️ Кол-во м³"
+            placeholder={selectedPrice ? `✏️ Кол-во м³ (${selectedPrice.volume} — ${selectedPrice.price})` : "✏️ Кол-во м³"}
             className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-6 shadow-lg transition-all"
             style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
           />
