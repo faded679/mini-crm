@@ -261,7 +261,7 @@ export default function FbsRequest() {
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             min="1"
-            placeholder={selectedPrice ? `✏️ ` : "✏️ Кол-во м³"}
+            placeholder={selectedPrice ? `Укажите свой объем ` : "✏️ Кол-во м³"}
             className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-6 shadow-lg transition-all"
             style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
           />
