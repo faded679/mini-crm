@@ -92,13 +92,20 @@ export default function ClientDetail() {
                 @{client.username}
               </a>
             ) : (
-              <a
-                href={`tg://user?id=${client.telegramId}`}
-                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Открыть в Telegram
-              </a>
+              <span className="inline-flex items-center gap-2">
+                <span className="text-gray-500 dark:text-gray-400">нет username</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(client.telegramId.toString());
+                    alert(`ID ${client.telegramId} скопирован. Откройте Telegram и используйте поиск по ID`);
+                  }}
+                  className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition"
+                  title="Скопировать ID"
+                >
+                  Скопировать ID
+                </button>
+              </span>
             )}
           </div>
           <div className="text-gray-600 dark:text-gray-400">

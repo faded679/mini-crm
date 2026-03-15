@@ -149,14 +149,16 @@ export default function NewRequest() {
 
   return (
     <div className="px-3 pt-3 pb-28 fade-in">
-      <div className="mb-3 text-center">
-        <p className="text-sm font-medium text-tg-button">
-          {!cityId ? "Выберите направление" :
-           !deliveryDate ? "Выберите дату доставки" :
-           !packaging ? "Выберите тип упаковки" :
-           items.length === 0 ? "Добавьте товары в заявку" :
-           "Проверьте данные и отправьте заявку"}
-        </p>
+      <div className="mb-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 text-center">
+          <p className="text-base font-semibold text-blue-600 dark:text-blue-400">
+            {!cityId ? "Выберите направление" :
+             !deliveryDate ? "Выберите дату" :
+             !packaging ? "Выберите упаковку" :
+             items.length === 0 ? "Добавьте товары" :
+             "Отправьте заявку"}
+          </p>
+        </div>
       </div>
 
       {error && (
