@@ -222,7 +222,7 @@ export default function FbsRequest() {
         </div>
       )}
 
-      {/* Voume (from price-fbs) */}
+      {/* Voume (from prise-fbs) */}
       {deliveryDate && mpDate && prices.length > 0 && (
         <div className="mb-3 slide-up">
           <select
