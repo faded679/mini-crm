@@ -1123,12 +1123,16 @@ export default function Prices() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Направление</label>
-              <input
+              <select
                 value={pfbsAddDest}
                 onChange={(e) => setPfbsAddDest(e.target.value)}
-                placeholder="Например: WB Курск"
                 className="w-48 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-              />
+              >
+                <option value="">Выберите...</option>
+                {citiesFbs.map((c) => (
+                  <option key={c.id} value={c.shortName}>{c.shortName}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Объём</label>
