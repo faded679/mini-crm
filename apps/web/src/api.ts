@@ -113,6 +113,7 @@ export type UpdateShipmentRequestPayload = {
   weight?: number | null;
   comment?: string | null;
   deliveryTypeId?: number | null;
+  mpAccountDate?: string | null;
 };
 
 export interface ShipmentRequest {
@@ -130,6 +131,7 @@ export interface ShipmentRequest {
   isRead: boolean;
   deliveryTypeId?: number | null;
   deliveryType?: DeliveryType | null;
+  mpAccountDate?: string | null;
   createdAt: string;
   client: Client;
   services?: RequestService[];
@@ -520,6 +522,40 @@ export function deleteCity(id: number) {
 // Legacy aliases
 export type Direction = City;
 export const getDirections = getCities;
+
+// --------------- Cities FBS ---------------
+
+export interface CityFbs {
+  id: number;
+  shortName: string;
+  fullName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function getCitiesFbs() {
+  return request<CityFbs[]>("/admin/cities-fbs");
+}
+
+export function createCityFbs(shortName: string, fullName?: string) {
+  return request<CityFbs>("/admin/cities-fbs", {
+    method: "POST",
+    body: JSON.stringify({ shortName, fullName }),
+  });
+}
+
+export function updateCityFbs(id: number, data: { shortName?: string; fullName?: string }) {
+  return request<CityFbs>(`/admin/cities-fbs/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteCityFbs(id: number) {
+  return request<void>(`/admin/cities-fbs/${id}`, {
+    method: "DELETE",
+  });
+}
 
 // --------------- Rates ---------------
 

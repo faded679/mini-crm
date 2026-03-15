@@ -107,6 +107,7 @@ model ShipmentRequest {
   status      RequestStatus          @default(new)
   isRead      Boolean                @default(false) @map("is_read")
   deliveryTypeId Int?                @map("delivery_type_id")
+  mpAccountDate DateTime?            @map("mp_account_date")
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
 
@@ -147,6 +148,16 @@ model City {
   schedules DeliverySchedule[]
 
   @@map("cities")
+}
+
+model CityFbs {
+  id        Int      @id @default(autoincrement())
+  shortName String   @unique @map("short_name")
+  fullName  String   @map("full_name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("cities_fbs")
 }
 
 model PalletType {

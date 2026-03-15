@@ -66,6 +66,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
   const [editWeight, setEditWeight] = useState<string>("");
   const [editComment, setEditComment] = useState<string>("");
   const [editDeliveryTypeId, setEditDeliveryTypeId] = useState<string>("");
+  const [editMpAccountDate, setEditMpAccountDate] = useState<string>("");
   const [deliveryTypes, setDeliveryTypes] = useState<DeliveryType[]>([]);
   const [confirmStatus, setConfirmStatus] = useState<RequestStatus | null>(null);
   const [confirmInvoice, setConfirmInvoice] = useState(false);
@@ -136,6 +137,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         setEditWeight(r.weight == null ? "" : String(r.weight));
         setEditComment(r.comment ?? "");
         setEditDeliveryTypeId(r.deliveryTypeId == null ? "" : String(r.deliveryTypeId));
+        setEditMpAccountDate(r.mpAccountDate ? new Date(r.mpAccountDate).toISOString().slice(0, 10) : "");
       })
       .finally(() => setLoading(false));
   }, [resolvedRequestId]);
@@ -255,6 +257,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
         weight,
         comment: editComment.trim() ? editComment.trim() : null,
         deliveryTypeId: editDeliveryTypeId === "" ? null : Number(editDeliveryTypeId),
+        mpAccountDate: editMpAccountDate === "" ? null : editMpAccountDate,
       });
       const updated = await getRequestById(request.id);
       setRequest(updated);
@@ -276,6 +279,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
     setEditWeight(request.weight == null ? "" : String(request.weight));
     setEditComment(request.comment ?? "");
     setEditDeliveryTypeId(request.deliveryTypeId == null ? "" : String(request.deliveryTypeId));
+    setEditMpAccountDate(request.mpAccountDate ? new Date(request.mpAccountDate).toISOString().slice(0, 10) : "");
   };
 
   if (loading) {
@@ -489,6 +493,21 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 <p className="text-sm text-gray-900 dark:text-gray-100">
                   {request.deliveryType?.name || "—"}
                   {request.deliveryType?.note ? <span className="text-gray-400 ml-1">({request.deliveryType.note})</span> : ""}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Дата МП ЛК</p>
+              {editing ? (
+                <input
+                  type="date"
+                  value={editMpAccountDate}
+                  onChange={(e) => setEditMpAccountDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {request.mpAccountDate ? new Date(request.mpAccountDate).toLocaleDateString("ru-RU") : "—"}
                 </p>
               )}
             </div>

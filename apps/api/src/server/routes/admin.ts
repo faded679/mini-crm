@@ -791,6 +791,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       weight?: number | null;
       comment?: string | null;
       deliveryTypeId?: number | null;
+      mpAccountDate?: string | null;
     };
 
     const existing = await prisma.shipmentRequest.findUnique({
@@ -864,6 +865,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         weight: body.weight === undefined ? undefined : (body.weight as any),
         comment: nextComment,
         deliveryTypeId: body.deliveryTypeId === undefined ? undefined : body.deliveryTypeId,
+        mpAccountDate: body.mpAccountDate === undefined ? undefined : body.mpAccountDate === null ? null : new Date(body.mpAccountDate),
       } as any,
       include: { client: true },
     });
@@ -1313,6 +1315,70 @@ router.get("/directions", async (_req: Request, res: Response, next: NextFunctio
   try {
     const cities = await (prisma as any).city.findMany({ orderBy: { shortName: "asc" } });
     res.json(cities.map((c: any) => ({ id: c.id, name: c.shortName, createdAt: c.createdAt, updatedAt: c.updatedAt })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --------------- Cities FBS ---------------
+
+// GET /admin/cities-fbs
+router.get("/cities-fbs", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const cities = await (prisma as any).cityFbs.findMany({
+      orderBy: { shortName: "asc" },
+    });
+    res.json(cities);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/cities-fbs
+router.post("/cities-fbs", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { shortName, fullName } = req.body as { shortName?: string; fullName?: string };
+    if (!shortName?.trim()) throw new ApiError(400, "shortName is required");
+
+    const created = await (prisma as any).cityFbs.create({
+      data: { shortName: shortName.trim(), fullName: (fullName?.trim() || shortName.trim()) },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/cities-fbs/:id
+router.patch("/cities-fbs/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { shortName, fullName } = req.body as { shortName?: string; fullName?: string };
+    const data: any = {};
+    if (shortName?.trim()) data.shortName = shortName.trim();
+    if (fullName?.trim()) data.fullName = fullName.trim();
+    if (Object.keys(data).length === 0) throw new ApiError(400, "Nothing to update");
+
+    const updated = await (prisma as any).cityFbs.update({
+      where: { id },
+      data,
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/cities-fbs/:id
+router.delete("/cities-fbs/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    await (prisma as any).cityFbs.delete({ where: { id } });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

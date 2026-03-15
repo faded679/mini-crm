@@ -4,6 +4,10 @@ import {
   createCity,
   updateCity,
   deleteCity,
+  getCitiesFbs,
+  createCityFbs,
+  updateCityFbs,
+  deleteCityFbs,
   getBoxTypes,
   createBoxType,
   updateBoxType,
@@ -21,6 +25,7 @@ import {
   updateServicePrice,
   deleteServicePrice,
   type City,
+  type CityFbs,
   type BoxType,
   type PalletType,
   type PriceRate,
@@ -37,6 +42,7 @@ const unitLabels: Record<RateUnit, string> = {
 
 export default function Prices() {
   const [cities, setCities] = useState<City[]>([]);
+  const [citiesFbs, setCitiesFbs] = useState<CityFbs[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
@@ -99,6 +105,15 @@ export default function Prices() {
   const [cityEditFullName, setCityEditFullName] = useState("");
   const [savingCity, setSavingCity] = useState(false);
 
+  // city fbs management
+  const [newCityFbsName, setNewCityFbsName] = useState("");
+  const [newCityFbsFullName, setNewCityFbsFullName] = useState("");
+  const [creatingCityFbs, setCreatingCityFbs] = useState(false);
+  const [cityFbsEditId, setCityFbsEditId] = useState<number | null>(null);
+  const [cityFbsEditShortName, setCityFbsEditShortName] = useState("");
+  const [cityFbsEditFullName, setCityFbsEditFullName] = useState("");
+  const [savingCityFbs, setSavingCityFbs] = useState(false);
+
   // inline edit
   const [editId, setEditId] = useState<number | null>(null);
   const [editBoxTypeId, setEditBoxTypeId] = useState<number | "">("");
@@ -108,8 +123,9 @@ export default function Prices() {
   const [saving, setSaving] = useState(false);
 
   const reload = async () => {
-    const [c, r, bt, pt, sp] = await Promise.all([getCities(), getRates(), getBoxTypes(), getPalletTypes(), getServicePrices()]);
+    const [c, cfbs, r, bt, pt, sp] = await Promise.all([getCities(), getCitiesFbs(), getRates(), getBoxTypes(), getPalletTypes(), getServicePrices()]);
     setCities(c);
+    setCitiesFbs(cfbs);
     setRates(r);
     setBoxTypes(bt);
     setPalletTypes(pt);
@@ -303,6 +319,46 @@ export default function Prices() {
   const handleDeleteSp = async (id: number) => {
     if (!confirm("Удалить услугу?")) return;
     try { await deleteServicePrice(id); await reload(); } catch (e) { alert((e as Error).message); }
+  };
+
+  // city fbs handlers
+  const handleAddCityFbs = async () => {
+    if (creatingCityFbs || !newCityFbsName.trim()) return;
+    setCreatingCityFbs(true);
+    try {
+      const c = await createCityFbs(newCityFbsName.trim(), newCityFbsFullName.trim() || undefined);
+      setCitiesFbs((prev) => [...prev, c].sort((a, b) => a.shortName.localeCompare(b.shortName, "ru")));
+      setNewCityFbsName("");
+      setNewCityFbsFullName("");
+    } finally {
+      setCreatingCityFbs(false);
+    }
+  };
+
+  const handleSaveCityFbsEdit = async () => {
+    if (savingCityFbs || cityFbsEditId === null) return;
+    if (!cityFbsEditShortName.trim()) return;
+    setSavingCityFbs(true);
+    try {
+      await updateCityFbs(cityFbsEditId, {
+        shortName: cityFbsEditShortName.trim(),
+        fullName: cityFbsEditFullName.trim() || cityFbsEditShortName.trim(),
+      });
+      setCityFbsEditId(null);
+      await reload();
+    } finally {
+      setSavingCityFbs(false);
+    }
+  };
+
+  const handleDeleteCityFbs = async (id: number) => {
+    if (!confirm("Удалить город FBS?")) return;
+    try {
+      await deleteCityFbs(id);
+      await reload();
+    } catch (e) {
+      alert((e as Error).message);
+    }
   };
 
   if (loading) {
@@ -849,6 +905,126 @@ export default function Prices() {
                           <button
                             type="button"
                             onClick={() => handleDeleteCity(c.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Cities FBS management */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Города / направления FBS</p>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Короткое название</label>
+            <input
+              value={newCityFbsName}
+              onChange={(e) => setNewCityFbsName(e.target.value)}
+              placeholder="Например: ВБ Воронеж FBS"
+              className="w-56 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Полное название</label>
+            <input
+              value={newCityFbsFullName}
+              onChange={(e) => setNewCityFbsFullName(e.target.value)}
+              placeholder="(опционально)"
+              className="w-72 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+
+          <button
+            onClick={handleAddCityFbs}
+            disabled={creatingCityFbs || !newCityFbsName.trim()}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition"
+          >
+            <Plus size={16} />
+            Добавить город FBS
+          </button>
+        </div>
+
+        {citiesFbs.length > 0 && (
+          <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Короткое</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Полное</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {citiesFbs.map((c) => (
+                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {cityFbsEditId === c.id ? (
+                        <input
+                          value={cityFbsEditShortName}
+                          onChange={(e) => setCityFbsEditShortName(e.target.value)}
+                          className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        />
+                      ) : (
+                        c.shortName
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {cityFbsEditId === c.id ? (
+                        <input
+                          value={cityFbsEditFullName}
+                          onChange={(e) => setCityFbsEditFullName(e.target.value)}
+                          className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        />
+                      ) : (
+                        c.fullName
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {cityFbsEditId === c.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={handleSaveCityFbsEdit}
+                            disabled={savingCityFbs}
+                            className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCityFbsEditId(null)}
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCityFbsEditId(c.id);
+                              setCityFbsEditShortName(c.shortName);
+                              setCityFbsEditFullName(c.fullName);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCityFbs(c.id)}
                             className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
                           >
                             <Trash2 size={16} />

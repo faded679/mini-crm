@@ -472,6 +472,9 @@ export default function Requests() {
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   Тип поставки
                 </th>
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  Дата МП ЛК
+                </th>
                 <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400">
                   <button onClick={() => toggleSort("total")} className="hover:text-gray-900 dark:hover:text-white">
                     Сумма {sortIndicator("total")}
@@ -528,6 +531,9 @@ export default function Requests() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.deliveryType?.name || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {r.mpAccountDate ? new Date(r.mpAccountDate).toLocaleDateString("ru-RU") : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
                     {(() => {
