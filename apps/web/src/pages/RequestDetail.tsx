@@ -294,11 +294,20 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
               {(request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
                 (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
                 "—"}
-              <span className="text-gray-400 dark:text-gray-100 ml-1">({
-                [request.client.firstName, request.client.lastName].filter(Boolean).join(" ")
-                || request.client.username
-                || "—"
-              })</span>
+              <span className="text-gray-400 dark:text-gray-100 ml-1">(
+                <a
+                  href={`/clients/${request.client.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = `/clients/${request.client.id}`;
+                  }}
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                >
+                  {[request.client.firstName, request.client.lastName].filter(Boolean).join(" ")
+                    || request.client.username
+                    || "—"}
+                </a>
+              )</span>
             </p>
 
             <div className="flex items-center gap-2">
