@@ -68,7 +68,10 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       create: { telegramId: String(telegramId), username, firstName, lastName },
     });
 
-    const cityRecord = await (prisma as any).city.findUnique({ where: { shortName: city } });
+    const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
+    const cityRecord = isFbs
+      ? await (prisma as any).cityFbs.findUnique({ where: { shortName: city } })
+      : await (prisma as any).city.findUnique({ where: { shortName: city } });
     if (!cityRecord) throw new ApiError(400, `City not found: ${city}`);
 
     const parsedWeight =
@@ -80,7 +83,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
     const parsedBoxTypeId =
       boxTypeId !== undefined && boxTypeId !== null && boxTypeId !== "" ? Number(boxTypeId) : undefined;
 
-    if (packagingType === "boxes") {
+    if (packagingType === "boxes" && !isFbs) {
       if (parsedBoxTypeId === undefined || !Number.isFinite(parsedBoxTypeId)) {
         throw new ApiError(400, "boxTypeId is required for boxes");
       }
