@@ -296,10 +296,10 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                 "—"}
               <span className="text-gray-400 dark:text-gray-100 ml-1">(
                 <a
-                  href={`/clients/${request.client.id}`}
+                  href={`/admin/clients/${request.client.id}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    window.location.href = `/clients/${request.client.id}`;
+                    window.location.href = `/admin/clients/${request.client.id}`;
                   }}
                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
                 >
