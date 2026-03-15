@@ -149,7 +149,15 @@ export default function NewRequest() {
 
   return (
     <div className="px-3 pt-3 pb-28 fade-in">
-      <h1 className="text-lg font-bold text-tg-text mb-3">Новая заявка</h1>
+      <div className="mb-3 text-center">
+        <p className="text-sm font-medium text-tg-button">
+          {!cityId ? "Выберите направление" :
+           !deliveryDate ? "Выберите дату доставки" :
+           !packaging ? "Выберите тип упаковки" :
+           items.length === 0 ? "Добавьте товары в заявку" :
+           "Проверьте данные и отправьте заявку"}
+        </p>
+      </div>
 
       {error && (
         <div className="bg-red-100 text-red-700 px-3 py-2 rounded-lg mb-3 text-xs">{error}</div>
@@ -206,7 +214,6 @@ export default function NewRequest() {
       {/* Packaging type */}
       {deliveryDate && (
         <div className="mb-2.5 slide-up">
-          <p className="text-xs text-tg-hint mb-1.5">Выберите тип упаковки</p>
           <div className="grid grid-cols-2 gap-2">
           {(["pallets", "boxes"] as const).map((p) => (
             <button
@@ -258,14 +265,15 @@ export default function NewRequest() {
             placeholder="Кол-во"
             className="w-full h-11 px-3 rounded-xl bg-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-2"
           />
-          <button
-            type="button"
-            onClick={handleAddItem}
-            disabled={!qty || Number(qty) <= 0}
-            className="w-full h-11 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold disabled:opacity-40 transition active:scale-[0.97]"
-          >
-            + Добавить
-          </button>
+          {qty && Number(qty) > 0 && (
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="w-full h-11 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold transition active:scale-[0.97]"
+            >
+              + Добавить
+            </button>
+          )}
         </div>
       )}
 
