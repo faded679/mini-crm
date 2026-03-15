@@ -3,12 +3,14 @@ import {
   createScheduleEntry,
   deleteScheduleEntry,
   getCities,
+  getCitiesFbs,
   getAdminSchedule,
   getAdminScheduleFbs,
   createScheduleEntryFbs,
   updateScheduleEntryFbs,
   deleteScheduleEntryFbs,
   type City,
+  type CityFbs,
   type ScheduleEntry,
   type ScheduleEntryFbs,
   updateScheduleEntry,
@@ -17,6 +19,7 @@ import { Check, Pencil, Plus, Trash2, X, ChevronDown, ChevronRight } from "lucid
 
 export default function Schedule() {
   const [cities, setCities] = useState<City[]>([]);
+  const [citiesFbs, setCitiesFbs] = useState<CityFbs[]>([]);
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
   const [entriesFbs, setEntriesFbs] = useState<ScheduleEntryFbs[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,9 +75,10 @@ export default function Schedule() {
   };
 
   useEffect(() => {
-    Promise.all([getCities(), getAdminSchedule(), getAdminScheduleFbs()])
-      .then(([c, e, efbs]) => {
+    Promise.all([getCities(), getCitiesFbs(), getAdminSchedule(), getAdminScheduleFbs()])
+      .then(([c, cfbs, e, efbs]) => {
         setCities(c);
+        setCitiesFbs(cfbs);
         setEntries(e);
         setEntriesFbs(efbs);
       })
@@ -84,8 +88,9 @@ export default function Schedule() {
   async function reload() {
     setLoading(true);
     try {
-      const [c, e, efbs] = await Promise.all([getCities(), getAdminSchedule(), getAdminScheduleFbs()]);
+      const [c, cfbs, e, efbs] = await Promise.all([getCities(), getCitiesFbs(), getAdminSchedule(), getAdminScheduleFbs()]);
       setCities(c);
+      setCitiesFbs(cfbs);
       setEntries(e);
       setEntriesFbs(efbs);
     } finally {
@@ -163,7 +168,12 @@ export default function Schedule() {
     }
   }
 
-  const addCityFbs = useMemo(() => cities.find((c) => c.shortName === addDestinationFbs) ?? null, [cities, addDestinationFbs]);
+  const destinationsFbs = useMemo(
+    () => [...new Set(citiesFbs.map((c) => c.shortName))].sort((a, b) => a.localeCompare(b, "ru")),
+    [citiesFbs],
+  );
+
+  const addCityFbs = useMemo(() => citiesFbs.find((c) => c.shortName === addDestinationFbs) ?? null, [citiesFbs, addDestinationFbs]);
 
   async function onAddFbs() {
     if (addingFbs) return;
@@ -419,7 +429,7 @@ export default function Schedule() {
                   className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 >
                   <option value="" className="text-gray-900/60 dark:text-gray-100/60">Выберите...</option>
-                  {destinations.map((d) => (
+                  {destinationsFbs.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>

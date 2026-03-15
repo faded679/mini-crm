@@ -143,10 +143,9 @@ model City {
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
 
-  rates        PriceRate[]
-  requests     ShipmentRequest[]
-  schedules    DeliverySchedule[]
-  schedulesFbs DeliveryScheduleFbs[]
+  rates     PriceRate[]
+  requests  ShipmentRequest[]
+  schedules DeliverySchedule[]
 
   @@map("cities")
 }
@@ -157,6 +156,8 @@ model CityFbs {
   fullName  String   @map("full_name")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  schedules DeliveryScheduleFbs[]
 
   @@map("cities_fbs")
 }
@@ -248,7 +249,7 @@ model DeliveryScheduleFbs {
   acceptDays    String   @map("accept_days")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  cityRef       City     @relation(fields: [cityId], references: [id])
+  cityRef       CityFbs  @relation(fields: [cityId], references: [id])
 
   @@map("delivery_schedules_fbs")
 }
