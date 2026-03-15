@@ -150,7 +150,7 @@ export default function NewRequest() {
   return (
     <div className="px-3 pt-3 pb-28 fade-in">
       <div className="mb-3 text-center">
-        <p className="text-base font-semibold text-blue-500 dark:text-blue-400" style={{ textShadow: '0 0 8px rgba(59, 130, 246, 0.5)' }}>
+        <p className="text-base font-semibold text-white" style={{ textShadow: '0 0 10px rgba(255, 255, 255, 0.6)' }}>
           {!cityId ? "Выберите направление" :
            !deliveryDate ? "Выберите дату" :
            !packaging ? "Выберите упаковку" :
