@@ -538,7 +538,15 @@ export default function Requests() {
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewModal(false); }}
         >
           <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Новая заявка</h2>
+            <div className="mb-4 text-center">
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {!newReq.clientId ? "Выберите клиента" :
+                 !newReq.cityId ? "Выберите направление" :
+                 !newReq.deliveryDate ? "Выберите дату доставки" :
+                 !newReq.boxCount ? "Укажите количество мест" :
+                 "Проверьте данные и создайте заявку"}
+              </p>
+            </div>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
@@ -559,7 +567,6 @@ export default function Requests() {
                 <input type="date" value={newReq.deliveryDate} onChange={(e) => setNewReq({ ...newReq, deliveryDate: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Упаковка</label>
                 <div className="flex gap-2">
                   {(["pallets", "boxes"] as PackagingType[]).map((p) => (
                     <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p })} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReq.packagingType === p ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
@@ -585,9 +592,10 @@ export default function Requests() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
-              <button
-                disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
-                onClick={async () => {
+              {newReq.boxCount && (
+                <button
+                  disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
+                  onClick={async () => {
                   setCreating(true);
                   try {
                     await createAdminRequest({
@@ -605,10 +613,11 @@ export default function Requests() {
                   } catch { alert("Ошибка при создании заявки"); }
                   finally { setCreating(false); }
                 }}
-                className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
-              >
-                {creating ? "Создание..." : "Создать"}
-              </button>
+                  className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                >
+                  {creating ? "Создание..." : "Создать"}
+                </button>
+              )}
             </div>
           </div>
         </div>
