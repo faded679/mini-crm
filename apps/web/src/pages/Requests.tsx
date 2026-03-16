@@ -686,7 +686,7 @@ export default function Requests() {
               </button>
             </div>
             <div className="p-4">
-              <RequestDetail embedded requestId={selectedRequestId} />
+              <RequestDetail embedded requestId={selectedRequestId} onArchived={() => { setSelectedRequestId(null); getRequests().then(setRequests); }} />
             </div>
           </div>
         </div>

@@ -50,7 +50,7 @@ const statusColors: Record<RequestStatus, string> = {
   archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
 
-export default function RequestDetail({ embedded = false, requestId }: { embedded?: boolean; requestId?: number }) {
+export default function RequestDetail({ embedded = false, requestId, onArchived }: { embedded?: boolean; requestId?: number; onArchived?: () => void }) {
   const { id } = useParams<{ id: string }>();
   const resolvedRequestId = requestId ?? (id ? Number(id) : null);
   const [request, setRequest] = useState<ShipmentRequestDetail | null>(null);
@@ -362,7 +362,9 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                       if (!request) return;
                       if (!confirm("Переместить заявку в архив? Вы больше не увидите её в списке заявок.")) return;
                       await handleStatusChange("archived");
-                      if (!embedded) {
+                      if (embedded && onArchived) {
+                        onArchived();
+                      } else if (!embedded) {
                         window.location.href = "/admin/requests";
                       }
                     }}
