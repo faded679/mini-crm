@@ -168,21 +168,21 @@ export default function Counterparties() {
     }
   }
 
-  async function onDelete(id: number) {
-    const ok = confirm("Удалить организацию?");
-    if (!ok) return;
+  // async function onDelete(id: number) {
+  //   const ok = confirm("Удалить организацию?");
+  //   if (!ok) return;
 
-    setSaving(true);
-    setError("");
-    try {
-      await deleteCounterparty(id);
-      await reload();
-    } catch (e: any) {
-      setError(e?.message || "Ошибка удаления");
-    } finally {
-      setSaving(false);
-    }
-  }
+  //   setSaving(true);
+  //   setError("");
+  //   try {
+  //     await deleteCounterparty(id);
+  //     await reload();
+  //   } catch (e: any) {
+  //     setError(e?.message || "Ошибка удаления");
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // }
 
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
@@ -242,13 +242,13 @@ export default function Counterparties() {
                     >
                       Изменить
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => onDelete(c.id)}
                       className="ml-2 px-3 py-1.5 rounded-lg text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/40 dark:text-red-200"
                       disabled={saving}
                     >
                       Удалить
-                    </button>
+                    </button> */}
                   </td>
                 </tr>
               ))}
