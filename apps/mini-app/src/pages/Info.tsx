@@ -15,9 +15,9 @@ export default function Info() {
       <h1 className="text-lg font-bold text-tg-text mb-3">Информация</h1>
 
       {/* Warehouse Location */}
-      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-4 mb-4 border border-blue-500/20">
+      <div className="bg-tg-secondary-bg rounded-2xl p-4 mb-4 border border-gray-700/30">
         <div className="flex items-center gap-2 mb-3">
-          <MapPin className="text-blue-500" size={20} />
+          <MapPin className="text-gray-400" size={20} />
           <h2 className="text-base font-bold text-tg-text">Местоположение склада</h2>
         </div>
         

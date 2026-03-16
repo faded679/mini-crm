@@ -12,7 +12,7 @@ export default function Home() {
           <p className="text-xs text-tg-hint mt-1">Белгород → склады WB и OZON</p>
         </div>
 
-        <div className="bg-tg-secondary-bg rounded-xl p-3 mb-5 space-y-2.5" style={{ borderLeft: "3px solid #dc2626" }}>
+        <div className="bg-tg-secondary-bg rounded-xl p-3 mb-5 space-y-2.5">
           {[
             { icon: "📦", text: "Приём товара на складе в Белгороде" },
             { icon: "📊", text: "Работаем с FBS и FBO" },
@@ -26,25 +26,25 @@ export default function Home() {
         </div>
 
         <div className="flex items-center justify-center gap-3 mb-6">
-          <span className="inline-flex items-center px-5 py-2 rounded-full bg-purple-600 text-white text-base font-bold">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-500/70 text-white text-sm font-semibold">
             Wildberries
           </span>
-          <span className="inline-flex items-center px-5 py-2 rounded-full bg-blue-600 text-white text-base font-bold">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/70 text-white text-sm font-semibold">
             OZON
           </span>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate("/fbs")}
-            className="w-full py-3.5 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:scale-[0.97] transition-transform"
+            className="py-3 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:opacity-70 transition shadow-sm"
           >
             FBS
           </button>
           
           <button
             onClick={() => navigate("/new?type=fbo")}
-            className="w-full py-3.5 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:scale-[0.97] transition-transform"
+            className="py-3 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:opacity-70 transition shadow-sm"
           >
             FBO
           </button>

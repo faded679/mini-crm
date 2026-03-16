@@ -189,8 +189,7 @@ export default function NewRequest() {
             setQty("");
             setItems([]);
           }}
-          className={`h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none shadow-lg transition-all ${cityId ? "w-3/5" : "w-3/5"}`}
-          style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
+          className={`h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm appearance-none transition-all ${cityId ? "w-3/5" : "w-3/5"}`}
         >
           <option value="">📍 Направление</option>
           {cities.map((c) => (
@@ -208,8 +207,7 @@ export default function NewRequest() {
               setTypeId(null);
               setQty("");
             }}
-            className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none shadow-lg transition-all"
-            style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
+            className="h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none transition-all"
           >
             <option value="">📅 Дата</option>
             {schedule.map((s) => (
@@ -235,8 +233,7 @@ export default function NewRequest() {
             type="date"
             value={mpDate}
             onChange={(e) => setMpDate(e.target.value)}
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
-            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+            className="w-full h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm transition-all"
             placeholder="Дата поставки на МП"
           />
 
@@ -270,12 +267,11 @@ export default function NewRequest() {
                 setTypeId(opts.length > 0 ? opts[0].id : null);
                 setQty("");
               }}
-              className={`py-3.5 rounded-2xl text-sm font-semibold transition-all transform active:scale-95 ${
+              className={`py-3.5 rounded-2xl text-sm font-semibold transition-all active:opacity-70 ${
                 packaging === p
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
-                  : "bg-tg-secondary-bg text-tg-text shadow-md"
+                  ? "bg-tg-button text-tg-button-text border-2 border-gray-600"
+                  : "bg-tg-secondary-bg text-tg-text border border-gray-700/20"
               }`}
-              style={packaging === p ? { boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)' } : { boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}
             >
               {p === "pallets" ? "📦 Палеты" : "📋 Коробки"}
             </button>
@@ -290,8 +286,7 @@ export default function NewRequest() {
           <select
             value={typeId ?? ""}
             onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
-            style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
+            className="w-full h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm transition-all"
           >
             {typeOptions.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -315,15 +310,13 @@ export default function NewRequest() {
             onChange={(e) => setQty(e.target.value)}
             min="1"
             placeholder="✏️ Кол-во"
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-6 shadow-lg transition-all"
-            style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
+            className="w-full h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm mb-6 transition-all"
           />
           {qty && Number(qty) > 0 && (
             <button
               type="button"
               onClick={handleAddItem}
-              className="w-full h-12 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold transition-all transform active:scale-95 shadow-lg"
-              style={{ boxShadow: '0 6px 20px rgba(34, 197, 94, 0.4)' }}
+              className="w-full h-12 rounded-2xl bg-green-600/80 text-white text-sm font-bold transition-all active:opacity-80"
             >
               ✨ Добавить
             </button>

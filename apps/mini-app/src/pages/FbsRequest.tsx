@@ -157,8 +157,7 @@ export default function FbsRequest() {
             setQty("");
             setItems([]);
           }}
-          className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm appearance-none shadow-lg transition-all w-3/5"
-          style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+          className="h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm appearance-none transition-all w-3/5"
         >
 
           {cities.map((c) => (
@@ -175,8 +174,7 @@ export default function FbsRequest() {
               setDeliveryDate(e.target.value);
               setQty("");
             }}
-            className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none shadow-lg transition-all"
-            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+            className="h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none transition-all"
           >
             <option value="">📅 Дата</option>
             {schedule.map((s) => (
@@ -201,7 +199,7 @@ export default function FbsRequest() {
           <select
             value={selectedPriceId ?? ""}
             onChange={(e) => setSelectedPriceId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
+            className="w-full h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm transition-all"
           >
 
             {prices.map((p) => (
@@ -225,15 +223,13 @@ export default function FbsRequest() {
             onChange={(e) => setQty(e.target.value)}
             min="1"
             placeholder={selectedPrice ? `Укажите свой объем ` : "✏️ Кол-во м³"}
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm mb-6 shadow-lg transition-all"
-            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+            className="w-full h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm mb-6 transition-all"
           />
           {qty && Number(qty) > 0 && (
             <button
               type="button"
               onClick={handleAddItem}
-              className="w-full h-12 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold transition-all transform active:scale-95 shadow-lg"
-              style={{ boxShadow: "0 6px 20px rgba(34, 197, 94, 0.4)" }}
+              className="w-full h-12 rounded-2xl bg-green-600/80 text-white text-sm font-bold transition-all active:opacity-80"
             >
               ✨ Добавить
             </button>
