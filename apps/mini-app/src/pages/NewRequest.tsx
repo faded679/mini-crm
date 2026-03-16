@@ -74,9 +74,9 @@ export default function NewRequest() {
   const selectedCity = cities.find((c) => c.id === cityId);
 
   const typeOptions = packaging === "boxes"
-    ? boxTypes.map((t) => ({ id: t.id, name: t.name }))
+    ? boxTypes.map((t) => ({ id: t.id, name: t.name, maxVolumeM3: t.maxVolumeM3 }))
     : packaging === "pallets"
-    ? palletTypes.map((t) => ({ id: t.id, name: t.name }))
+    ? palletTypes.map((t) => ({ id: t.id, name: t.name, maxVolumeM3: null as number | null }))
     : [];
 
   const findPrice = useCallback(
@@ -297,6 +297,12 @@ export default function NewRequest() {
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+          {typeId && (() => {
+            const sel = typeOptions.find((t) => t.id === typeId);
+            return sel?.maxVolumeM3 ? (
+              <p className="text-[11px] text-tg-hint mt-1">📐 До {sel.maxVolumeM3} м³</p>
+            ) : null;
+          })()}
         </div>
       )}
 
