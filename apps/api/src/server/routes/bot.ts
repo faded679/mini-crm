@@ -473,8 +473,10 @@ router.get("/schedule-fbs", async (req: Request, res: Response, next: NextFuncti
     const cityId = Number(req.query.cityId);
     if (!Number.isFinite(cityId)) throw new ApiError(400, "cityId is required");
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const schedules = await (prisma as any).deliveryScheduleFbs.findMany({
-      where: { cityId, deliveryDate: { gte: new Date() } },
+      where: { cityId, deliveryDate: { gte: today } },
       orderBy: { deliveryDate: "asc" },
     });
     res.json(schedules);
