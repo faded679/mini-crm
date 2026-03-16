@@ -4,6 +4,7 @@ import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getClients, g
 import { cn } from "../lib/utils";
 import RequestDetail from "./RequestDetail";
 
+// Requests page with filtering and sorting
 const statusLabels: Record<RequestStatus, string> = {
   new: "Новый",
   warehouse: "Склад",
@@ -309,7 +310,7 @@ export default function Requests() {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-6 mb-6">
         <div className="flex gap-1.5">
           {(["all", "fbs", "fbo"] as const).map((t) => (
             <button
