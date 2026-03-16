@@ -13,7 +13,8 @@ export async function handleMyRequests(ctx: Context): Promise<void> {
   if (!userId) return;
 
   try {
-    const requests = await getRequests(String(userId));
+    const allRequests = await getRequests(String(userId));
+    const requests = allRequests.filter((r) => r.status !== "archived");
 
     if (requests.length === 0) {
       await ctx.reply("У вас пока нет заявок. Создайте первую через мини-приложение.");

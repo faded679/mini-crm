@@ -154,7 +154,7 @@ export default function ClientDetail() {
         </div>
       </div>
 
-      {client.requests.length === 0 ? (
+      {client.requests.filter((r) => r.status !== "archived").length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Заявок нет</div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -169,7 +169,7 @@ export default function ClientDetail() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {client.requests.map((r) => (
+              {client.requests.filter((r) => r.status !== "archived").map((r) => (
                 <tr
                   key={r.id}
                   onClick={() => navigate(`/requests/${r.id}`)}

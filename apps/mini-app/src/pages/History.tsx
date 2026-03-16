@@ -26,7 +26,7 @@ export default function History() {
     const user = getTelegramUser();
     if (!user) { setLoading(false); return; }
     getRequests(user.id)
-      .then(setRequests)
+      .then((all) => setRequests(all.filter((r) => r.status !== "archived")))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
