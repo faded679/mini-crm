@@ -93,7 +93,7 @@ export interface CounterpartyPayload {
   contactClientIds?: number[];
 }
 
-export type RequestStatus = "new" | "warehouse" | "shipped" | "done";
+export type RequestStatus = "new" | "warehouse" | "shipped" | "done" | "archived";
 
 export type PackagingType = "pallets" | "boxes";
 

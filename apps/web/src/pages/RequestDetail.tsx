@@ -39,6 +39,7 @@ const statusLabels: Record<RequestStatus, string> = {
   warehouse: "Склад",
   shipped: "Отгружен",
   done: "Выполнена",
+  archived: "Архив",
 };
 
 const statusColors: Record<RequestStatus, string> = {
@@ -46,6 +47,7 @@ const statusColors: Record<RequestStatus, string> = {
   warehouse: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   shipped: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
 
 export default function RequestDetail({ embedded = false, requestId }: { embedded?: boolean; requestId?: number }) {
@@ -346,13 +348,30 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                   </button>
                 </>
               ) : (
-                <button
-                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                  onClick={() => setEditing(true)}
-                  type="button"
-                >
-                  Редактировать
-                </button>
+                <>
+                  <button
+                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                    onClick={() => setEditing(true)}
+                    type="button"
+                  >
+                    Редактировать
+                  </button>
+                  <button
+                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-red-600 hover:bg-red-700 text-white flex items-center gap-1"
+                    onClick={async () => {
+                      if (!request) return;
+                      if (!confirm("Переместить заявку в архив? Вы больше не увидите её в списке заявок.")) return;
+                      await handleStatusChange("archived");
+                      if (!embedded) {
+                        window.location.href = "/admin/requests";
+                      }
+                    }}
+                    type="button"
+                  >
+                    <Trash2 size={14} />
+                    В архив
+                  </button>
+                </>
               )}
 
             </div>

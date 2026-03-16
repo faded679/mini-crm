@@ -168,6 +168,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 router.get("/requests", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const requests = await (prisma as any).shipmentRequest.findMany({
+      where: { status: { not: "archived" } },
       include: { client: true, boxType: true, services: true, deliveryType: true },
       orderBy: { createdAt: "desc" },
     });
@@ -712,12 +713,16 @@ router.patch("/requests/:id/status", async (req: Request, res: Response, next: N
       warehouse: "Склад",
       shipped: "Отгружен",
       done: "Выполнена",
+      archived: "Архив",
     };
 
-    await notifyClient(
-      existing.client.telegramId,
-      `Статус вашей заявки #${id} изменён: <b>${statusLabels[status]}</b>`,
-    );
+    // Don't notify client when archiving
+    if (status !== "archived") {
+      await notifyClient(
+        existing.client.telegramId,
+        `Статус вашей заявки #${id} изменён: <b>${statusLabels[status]}</b>`,
+      );
+    }
 
     res.json(updated);
   } catch (err) {

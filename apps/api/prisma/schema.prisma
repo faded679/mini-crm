@@ -12,6 +12,7 @@ enum RequestStatus {
   warehouse
   shipped
   done
+  archived
 }
 
 enum PackagingType {
