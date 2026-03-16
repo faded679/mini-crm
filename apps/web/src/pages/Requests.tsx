@@ -20,7 +20,7 @@ const statusColors: Record<RequestStatus, string> = {
   archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
 
-type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "total" | "status";
+type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "total" | "status" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const SORT_KEYS: SortKey[] = [
@@ -33,6 +33,7 @@ const SORT_KEYS: SortKey[] = [
   "client",
   "total",
   "status",
+  "createdAt",
 ];
 
 function isSortKey(v: string | null): v is SortKey {
@@ -255,6 +256,9 @@ export default function Requests() {
       }
       case "status":
         res = compareStr(statusLabels[a.status], statusLabels[b.status]);
+        break;
+      case "createdAt":
+        res = compareNum(new Date(a.createdAt).getTime(), new Date(b.createdAt).getTime());
         break;
     }
 
@@ -500,6 +504,11 @@ export default function Requests() {
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   Дата МП ЛК
                 </th>
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  <button onClick={() => toggleSort("createdAt")} className="hover:text-gray-900 dark:hover:text-white">
+                    Создана {sortIndicator("createdAt")}
+                  </button>
+                </th>
                 <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400">
                   <button onClick={() => toggleSort("total")} className="hover:text-gray-900 dark:hover:text-white">
                     Сумма {sortIndicator("total")}
@@ -559,6 +568,9 @@ export default function Requests() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.mpAccountDate ? new Date(r.mpAccountDate).toLocaleDateString("ru-RU") : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {new Date(r.createdAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" })}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
                     {(() => {
