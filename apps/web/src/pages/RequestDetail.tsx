@@ -304,7 +304,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
         {/* Main inf */}
         <div className="lg:col-span-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
 
             <p className="text-sm text-gray-900 dark:text-gray-100">
