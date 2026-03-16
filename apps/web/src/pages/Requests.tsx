@@ -74,6 +74,7 @@ export default function Requests() {
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
   const filterDate = searchParams.get("date") || "all";
+  const filterType = searchParams.get("type") || "all";
   const sortParam = searchParams.get("sort");
   const sortKey = isSortKey(sortParam) ? sortParam : "id";
   const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
@@ -93,6 +94,7 @@ export default function Requests() {
   const setFilterStatus = (v: RequestStatus | "all") => setParam("status", v);
   const setFilterCity = (v: string) => setParam("city", v);
   const setFilterDate = (v: string) => setParam("date", v);
+  const setFilterType = (v: string) => setParam("type", v);
 
   useEffect(() => {
     let alive = true;
@@ -141,13 +143,17 @@ export default function Requests() {
     if (filterStatus !== "all" && r.status !== filterStatus) return false;
     if (filterCity !== "all" && r.city !== filterCity) return false;
     if (filterDate !== "all" && !r.deliveryDate.startsWith(filterDate)) return false;
+    if (filterType !== "all") {
+      if (filterType === "fbs" && r.deliveryTypeId !== 1) return false;
+      if (filterType === "fbo" && r.deliveryTypeId !== 2) return false;
+    }
     return true;
   });
 
   // Reset selection when filters change
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [filterStatus, filterCity, filterDate]);
+  }, [filterStatus, filterCity, filterDate, filterType]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -281,7 +287,7 @@ export default function Requests() {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
 
-  const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || filterDate !== "all";
+  const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || filterDate !== "all" || filterType !== "all";
 
   return (
     <div>
@@ -298,6 +304,23 @@ export default function Requests() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex gap-1.5">
+          {(["all", "fbs", "fbo"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setFilterType(t)}
+              className={cn(
+                "px-3 py-1.5 text-sm rounded-lg font-medium transition",
+                filterType === t
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+              )}
+            >
+              {t === "all" ? "Все" : t.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-1.5">
           {(["all", "new", "warehouse", "shipped", "done"] as const).map((s) => (
             <button
