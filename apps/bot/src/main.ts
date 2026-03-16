@@ -1,7 +1,7 @@
 import { Bot } from "grammy";
 import { env } from "./env.js";
 import { handleStart } from "./handlers/start.js";
-import { handleNewRequest, handleNewRequestStep, getSession, clearSession } from "./handlers/new-request.js";
+import { getSession, clearSession } from "./handlers/new-request.js";
 import { handleMyRequests } from "./handlers/my-requests.js";
 import { acceptConsent, checkConsent, savePhone, linkInn } from "./api.js";
 
@@ -11,25 +11,15 @@ const bot = new Bot(env.BOT_TOKEN);
 const waitingForInn = new Set<number>();
 
 bot.command("start", handleStart);
-bot.command("new", async (ctx) => {
-  const userId = ctx.from?.id;
-  if (!userId) return;
-  const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
-  if (!consentGiven || !hasPhone || !hasInn) {
-    await ctx.reply("Сначала необходимо завершить регистрацию. Введите /start");
-    return;
-  }
-  await handleNewRequest(ctx);
-});
 
-// Handle packaging type selection in /new flow
+// Handle packaging type selection (legacy)
 bot.callbackQuery(/^packaging:(pallets|boxes)$/, async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
   const session = getSession(userId);
   if (!session) {
-    await ctx.answerCallbackQuery({ text: "Сессия не найдена. Введите /new" });
+    await ctx.answerCallbackQuery({ text: "Сессия не найдена" });
     return;
   }
 
@@ -56,7 +46,7 @@ bot.command("my", async (ctx) => {
 bot.command("cancel", async (ctx) => {
   const userId = ctx.from?.id;
   if (userId) clearSession(userId);
-  await ctx.reply("Действие отменено. Введите /new для новой заявки.");
+  await ctx.reply("Действие отменено.");
 });
 
 // Handle consent callback
@@ -143,8 +133,7 @@ bot.on("message:text", async (ctx) => {
       await ctx.reply(
         `✅ Организация привязана: ${result.name} (ИНН: ${result.inn})\n\n` +
         "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
-        "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команды:\n" +
-        "/new — Создать новую заявку\n" +
+        "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команду:\n" +
         "/my — Мои заявки",
         {
           reply_markup: {
@@ -165,9 +154,10 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  // Handle /new flow
+  // Legacy flow handling
   if (getSession(userId)) {
-    await handleNewRequestStep(ctx);
+    clearSession(userId);
+    await ctx.reply("Сессия очищена. Используйте мини-приложение для создания заявок.");
   }
 });
 
