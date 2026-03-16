@@ -56,5 +56,5 @@ select option:checked {
 }
 
 .accent-gradient {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.12) 0%, rgba(37, 99, 235, 0.12) 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
 }
