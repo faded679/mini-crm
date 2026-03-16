@@ -25,13 +25,17 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="flex items-center justify-center gap-3 mb-6">
+        {/* <div className="flex items-center justify-center gap-3 mb-6">
           <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-500/70 text-white text-sm font-semibold">
             Wildberries
           </span>
           <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/70 text-white text-sm font-semibold">
             OZON
           </span>
+        </div> */}
+
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-bold text-tg-text">Что бы оставить заявку, выберите тип доставки</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
