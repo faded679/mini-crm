@@ -37,6 +37,7 @@ export default function NewRequest() {
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
+  const [mpDate, setMpDate] = useState("");
   const [packaging, setPackaging] = useState<"pallets" | "boxes" | "">("");
   const [typeId, setTypeId] = useState<number | null>(null);
   const [qty, setQty] = useState("");
@@ -138,6 +139,7 @@ export default function NewRequest() {
         packagingType: mainPkg,
         ...(mainBoxTypeId ? { boxTypeId: mainBoxTypeId } : {}),
         ...(deliveryTypeId ? { deliveryTypeId } : {}),
+        ...(mpDate ? { mpAccountDate: mpDate } : {}),
         boxCount: totalQty,
         comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
@@ -181,6 +183,7 @@ export default function NewRequest() {
           onChange={(e) => {
             setCityId(e.target.value ? Number(e.target.value) : null);
             setDeliveryDate("");
+            setMpDate("");
             setPackaging("");
             setTypeId(null);
             setQty("");
@@ -200,6 +203,7 @@ export default function NewRequest() {
             value={deliveryDate}
             onChange={(e) => {
               setDeliveryDate(e.target.value);
+              setMpDate("");
               setPackaging("");
               setTypeId(null);
               setQty("");
@@ -224,8 +228,35 @@ export default function NewRequest() {
         <p className="text-[11px] text-tg-hint mb-2">Нет доступных дат</p>
       )}
 
-      {/* Packaging type */}
+      {/* MP delivery date */}
       {deliveryDate && (
+        <div className="mb-3 slide-up">
+          <input
+            type="date"
+            value={mpDate}
+            onChange={(e) => setMpDate(e.target.value)}
+            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
+            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+            placeholder="Дата поставки на МП"
+          />
+
+          <p className="text-[11px] text-tg-hint mt-1 mb-1">📅 Дата поставки на маркетплейс в ЛК</p>
+          {!mpDate && (
+            <div
+              className="rounded-xl px-3 py-2 mt-1"
+              style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
+            >
+              <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
+                ⚠️ Важно! Плановая дата поставки на МП должна совпадать с датой выгрузки нашего автомобиля
+                согласно графика. Машина может отгружаться ± 24 часа от даты в графике без предупреждения.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Packaging type */}
+      {deliveryDate && mpDate && (
         <div className="mb-3 slide-up">
           <div className="grid grid-cols-2 gap-3">
           {(["pallets", "boxes"] as const).map((p) => (

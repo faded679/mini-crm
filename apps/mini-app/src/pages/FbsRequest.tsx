@@ -27,8 +27,7 @@ export default function FbsRequest() {
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
-  const [mpDate, setMpDate] = useState("");
-  const [selectedPriceId, setSelectedPriceId] = useState<number | null>(null);
+    const [selectedPriceId, setSelectedPriceId] = useState<number | null>(null);
   const [qty, setQty] = useState("");
 
   const [items, setItems] = useState<LineItem[]>([]);
@@ -105,7 +104,6 @@ export default function FbsRequest() {
         lastName: user.lastName,
         city: selectedCity.shortName,
         deliveryDate: deliveryDate || new Date().toISOString(),
-        mpAccountDate: mpDate || undefined,
         packagingType: "boxes",
         boxCount: totalQty,
         deliveryTypeId: 1, // FBS
@@ -140,8 +138,6 @@ export default function FbsRequest() {
             ? "Выберите направление"
             : !deliveryDate
             ? "Выберите дату"
-            : !mpDate
-            ? "Укажите дату поставки на МП"
             : items.length === 0
             ? "Укажите кол-во кубов"
             : "Отправьте заявку"}
@@ -159,7 +155,6 @@ export default function FbsRequest() {
           onChange={(e) => {
             setCityId(e.target.value ? Number(e.target.value) : null);
             setDeliveryDate("");
-            setMpDate("");
             setQty("");
             setItems([]);
           }}
@@ -179,7 +174,6 @@ export default function FbsRequest() {
             value={deliveryDate}
             onChange={(e) => {
               setDeliveryDate(e.target.value);
-              setMpDate("");
               setQty("");
             }}
             className="h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none shadow-lg transition-all"
@@ -202,43 +196,13 @@ export default function FbsRequest() {
         <p className="text-[11px] text-tg-hint mb-2">Нет доступных дат</p>
       )}
 
-      {/* MP delivery date */}
-      {deliveryDate && (
-        <div className="mb-3 slide-up">
-          <input
-            type="date"
-            value={mpDate}
-            onChange={(e) => setMpDate(e.target.value)}
-            className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
-            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
-            placeholder="Дата поставки на МП"
-          />
-
-          <p className="text-[11px] text-tg-hint mt-1 mb-1">📅 Дата поставки на маркетплейс в ЛК</p>
-       {!mpDate && (
-        <div
-          className="rounded-xl px-3 py-2 mt-1"
-          style={{ backgroundColor: "rgba(255, 170, 0, 0.12)" }}
-        >
-          <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
-            ⚠️ Важно! Плановая дата поставки на МП должна совпадать с датой выгрузки нашего автомобиля
-            согласно графика. Машина может отгружаться ± 24 часа от даты в графике без предупреждения.
-          </p>
-        </div>
-  )}
-
-
-        </div>
-      )}
-
       {/* Voume (from prise-fbs) */}
-      {deliveryDate && mpDate && prices.length > 0 && (
+      {deliveryDate && prices.length > 0 && (
         <div className="mb-3 slide-up">
           <select
             value={selectedPriceId ?? ""}
             onChange={(e) => setSelectedPriceId(e.target.value ? Number(e.target.value) : null)}
             className="w-full h-12 px-4 rounded-2xl bg-gradient-to-br from-tg-secondary-bg to-tg-secondary-bg border-0 outline-none text-tg-text text-sm shadow-lg transition-all"
-            style={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
           >
 
             {prices.map((p) => (
@@ -249,12 +213,12 @@ export default function FbsRequest() {
           </select>
         </div>
       )}
-      {deliveryDate && mpDate && prices.length === 0 && (
+      {deliveryDate && prices.length === 0 && (
         <p className="text-[11px] text-tg-hint mb-2">Нет доступных тарифов</p>
       )}
 
       {/* Quantity + Add */}
-      {deliveryDate && mpDate && selectedPriceId && (
+      {deliveryDate && selectedPriceId && (
         <div className="mb-3 slide-up">
           <input
             type="number"
