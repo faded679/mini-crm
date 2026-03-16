@@ -178,17 +178,17 @@ bot.catch((err) => {
 bot.start({
   onStart: async (botInfo) => {
     console.log("Bot started");
-    try {
-      await bot.api.setChatMenuButton({
-        menu_button: {
-          type: "web_app",
-          text: "📦 Открыть",
-          web_app: { url: env.MINI_APP_URL },
-        },
-      });
-      console.log("Menu button set");
-    } catch (e) {
-      console.error("Failed to set menu button:", e);
-    }
+    // try {
+    //   await bot.api.setChatMenuButton({
+    //     menu_button: {
+    //       type: "web_app",
+    //       text: "📦 Открыть",
+    //       web_app: { url: env.MINI_APP_URL },
+    //     },
+    //   });
+    //   console.log("Menu button set");
+    // } catch (e) {
+    //   console.error("Failed to set menu button:", e);
+    // }
   },
 });
