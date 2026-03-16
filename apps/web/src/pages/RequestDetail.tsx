@@ -653,9 +653,10 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                         setAddingService(true);
                         try {
                           const selectedTypeName2 = typeOptions.find((t) => String(t.id) === addTypeId)?.name ?? "";
-                        {/*   const desc = `${cityName}${addPkgType === "boxes" ? "Коробки" : "Палеты"} — ${selectedTypeName2}`;
-                         */}
-                          const description = `${cityName}${matched.unit === "boxes" && boxTypeName ? ` - ${boxTypeName}` : ""}`.trim();
+                          const requestCity = cities.find((c) => c.shortName === request.city);
+                          const cityFullName = requestCity?.fullName || request.city;
+                          const pkgLabel = addPkgType === "boxes" ? "Коробка" : "Палета";
+                          const desc = `${cityFullName} ${pkgLabel}${selectedTypeName2 ? ` - ${selectedTypeName2}` : ""}`.trim();
                           const svc = await createRequestService(request.id, {
                             description: desc,
                             unit: "шт",
