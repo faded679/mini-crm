@@ -310,7 +310,7 @@ export default function Requests() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex gap-3">
+        <div className="flex gap-1.5">
           {(["all", "fbs", "fbo"] as const).map((t) => (
             <button
               key={t}
@@ -327,7 +327,7 @@ export default function Requests() {
           ))}
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-1.5">
           {(["all", "new", "warehouse", "shipped", "done"] as const).map((s) => (
             <button
               key={s}
