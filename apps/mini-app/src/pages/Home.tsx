@@ -37,14 +37,14 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate("/fbs")}
-            className="py-3 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:opacity-70 transition shadow-sm"
+            className="py-3 rounded-full bg-blue-600 text-white text-base font-bold active:opacity-80 transition"
           >
             FBS
           </button>
           
           <button
             onClick={() => navigate("/new?type=fbo")}
-            className="py-3 rounded-xl bg-tg-button text-tg-button-text text-base font-semibold active:opacity-70 transition shadow-sm"
+            className="py-3 rounded-full bg-white text-blue-600 text-base font-bold border-2 border-blue-600 active:opacity-80 transition"
           >
             FBO
           </button>
