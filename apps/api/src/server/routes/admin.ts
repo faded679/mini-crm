@@ -748,6 +748,7 @@ router.post("/requests/bulk-status", async (req: Request, res: Response, next: N
       warehouse: "Склад",
       shipped: "Отгружен",
       done: "Выполнена",
+      archived: "Архив",
     };
 
     await prisma.$transaction(async (tx) => {
@@ -761,15 +762,17 @@ router.post("/requests/bulk-status", async (req: Request, res: Response, next: N
       }
     });
 
-    // Notify clients outside transaction
-    for (const r of requests) {
-      if (r.status === status) continue;
-      try {
-        await notifyClient(
-          r.client.telegramId,
-          `Статус вашей заявки #${r.id} изменён: <b>${statusLabels[status]}</b>`,
-        );
-      } catch { /* ignore notification errors */ }
+    // Notify clients outside transaction (skip for archived)
+    if (status !== "archived") {
+      for (const r of requests) {
+        if (r.status === status) continue;
+        try {
+          await notifyClient(
+            r.client.telegramId,
+            `Статус вашей заявки #${r.id} изменён: <b>${statusLabels[status]}</b>`,
+          );
+        } catch { /* ignore notification errors */ }
+      }
     }
 
     res.json({ updated: requests.filter((r) => r.status !== status).length });
