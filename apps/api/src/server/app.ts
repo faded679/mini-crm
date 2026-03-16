@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { env } from "./env.js";
 import { requestId } from "./middleware/request-id.js";
 import { errorHandler } from "./middleware/error-handler.js";
@@ -8,6 +10,9 @@ import adminRouter from "./routes/admin.js";
 import botRouter from "./routes/bot.js";
 import scheduleRouter from "./routes/schedule.js";
 import { prisma } from "./db/prisma.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function seedBoxTypes() {
   await (prisma as any).boxType.upsert({
@@ -39,6 +44,9 @@ export function createApp() {
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
+
+  // Serve static assets
+  app.use("/assets", express.static(path.join(__dirname, "../../assets")));
 
   app.use("/auth", authRouter);
   app.use("/admin", adminRouter);
