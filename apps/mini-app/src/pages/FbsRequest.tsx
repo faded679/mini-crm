@@ -76,7 +76,6 @@ export default function FbsRequest() {
       },
     ]);
     setQty("");
-    setSelectedPriceId(null);
   };
 
   const handleRemoveItem = (idx: number) => {
