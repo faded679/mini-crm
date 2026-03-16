@@ -53,9 +53,9 @@ export default function Info() {
         {/* Video Guide */}
         <button
           onClick={() => setShowVideo(!showVideo)}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl py-3 px-4 font-semibold text-sm active:opacity-80 transition shadow-lg"
+          className="w-full flex items-center justify-center gap-2 bg-tg-button text-tg-button-text rounded-xl py-3 px-4 font-semibold text-sm active:opacity-70 transition"
         >
-          <Play size={16} fill="white" />
+          <Play size={16} />
           {showVideo ? "Скрыть видео-инструкцию" : "Как пройти к складу"}
         </button>
 
@@ -89,8 +89,8 @@ export default function Info() {
       <div className="bg-tg-secondary-bg rounded-xl px-3 py-2.5">
         <div className="text-sm font-semibold text-tg-text mb-1.5">📞 Контакты</div>
         <div className="flex flex-col gap-1 text-xs">
-          <a href="tel:+74722000000" className="text-tg-link font-medium">+7 (4722) 00-00-00</a>
-          <a href="mailto:info@ved31.ru" className="text-tg-link font-medium">info@ved31.ru</a>
+          <a href="tel:+79092048554" className="text-tg-link font-medium">+7 (909) 204-85-54</a>
+          <a href="https://t.me/SolovyovEx" target="_blank" rel="noopener noreferrer" className="text-tg-link font-medium">@SolovyovEx (Telegram)</a>
         </div>
       </div>
     </div>
