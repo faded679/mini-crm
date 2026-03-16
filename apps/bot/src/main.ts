@@ -190,5 +190,17 @@ bot.start({
     // } catch (e) {
     //   console.error("Failed to set menu button:", e);
     // }
+
+    // Принудительно удаляем меню кнопку
+    try {
+      await bot.api.setChatMenuButton({
+        menu_button: {
+          type: "commands",
+        },
+      });
+      console.log("Menu button removed");
+    } catch (e) {
+      console.error("Failed to remove menu button:", e);
+    }
   },
 });
