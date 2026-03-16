@@ -2,7 +2,6 @@ import { Bot } from "grammy";
 import { env } from "./env.js";
 import { handleStart } from "./handlers/start.js";
 import { getSession, clearSession } from "./handlers/new-request.js";
-import { handleMyRequests } from "./handlers/my-requests.js";
 import { acceptConsent, checkConsent, savePhone, linkInn } from "./api.js";
 
 const bot = new Bot(env.BOT_TOKEN);
@@ -31,16 +30,6 @@ bot.callbackQuery(/^packaging:(pallets|boxes)$/, async (ctx) => {
 
   await ctx.answerCallbackQuery({ text: packagingType === "pallets" ? "Палеты" : "Коробки" });
   await ctx.reply(`📦 Укажите количество (${packagingType === "pallets" ? "палет" : "коробок"}):`);
-});
-bot.command("my", async (ctx) => {
-  const userId = ctx.from?.id;
-  if (!userId) return;
-  const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
-  if (!consentGiven || !hasPhone || !hasInn) {
-    await ctx.reply("Сначала необходимо завершить регистрацию. Введите /start");
-    return;
-  }
-  await handleMyRequests(ctx);
 });
 
 bot.command("cancel", async (ctx) => {
@@ -133,8 +122,7 @@ bot.on("message:text", async (ctx) => {
       await ctx.reply(
         `✅ Организация привязана: ${result.name} (ИНН: ${result.inn})\n\n` +
         "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
-        "Нажмите кнопку ниже, чтобы открыть приложение, или используйте команду:\n" +
-        "/my — Мои заявки",
+        "Нажмите кнопку ниже, чтобы открыть приложение:",
         {
           reply_markup: {
             inline_keyboard: [
