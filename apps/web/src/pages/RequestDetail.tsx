@@ -656,7 +656,7 @@ export default function RequestDetail({ embedded = false, requestId }: { embedde
                           const requestCity = cities.find((c) => c.shortName === request.city);
                           const cityFullName = requestCity?.fullName || request.city;
                           const pkgLabel = addPkgType === "boxes" ? "Коробка" : "Палета";
-                          const desc = `${cityFullName} ${pkgLabel}${selectedTypeName2 ? ` - ${selectedTypeName2}` : ""}`.trim();
+                          const desc = `${cityFullName} - ${pkgLabel}${selectedTypeName2 ? `  ${selectedTypeName2}` : ""}`.trim();
                           const svc = await createRequestService(request.id, {
                             description: desc,
                             unit: "шт",
