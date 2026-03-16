@@ -310,7 +310,7 @@ export default function Requests() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex gap-1.5">
+        <div className="flex gap-3">
           {(["all", "fbs", "fbo"] as const).map((t) => (
             <button
               key={t}
@@ -327,7 +327,7 @@ export default function Requests() {
           ))}
         </div>
 
-        <div className="flex gap-1.5">
+        <div className="flex gap-3">
           {(["all", "new", "warehouse", "shipped", "done"] as const).map((s) => (
             <button
               key={s}
@@ -474,6 +474,11 @@ export default function Requests() {
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  <button onClick={() => toggleSort("createdAt")} className="hover:text-gray-900 dark:hover:text-white">
+                    Создана {sortIndicator("createdAt")}
+                  </button>
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("deliveryDate")} className="hover:text-gray-900 dark:hover:text-white">
                     Дата доставки {sortIndicator("deliveryDate")}
                   </button>
@@ -503,11 +508,6 @@ export default function Requests() {
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   Дата МП ЛК
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  <button onClick={() => toggleSort("createdAt")} className="hover:text-gray-900 dark:hover:text-white">
-                    Создана {sortIndicator("createdAt")}
-                  </button>
                 </th>
                 <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400">
                   <button onClick={() => toggleSort("total")} className="hover:text-gray-900 dark:hover:text-white">
@@ -546,6 +546,9 @@ export default function Requests() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">#{r.id}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.city}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {new Date(r.createdAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {formatDateRu(r.deliveryDate)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
@@ -568,9 +571,6 @@ export default function Requests() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.mpAccountDate ? new Date(r.mpAccountDate).toLocaleDateString("ru-RU") : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(r.createdAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" })}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
                     {(() => {
