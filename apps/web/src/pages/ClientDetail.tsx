@@ -96,14 +96,14 @@ export default function ClientDetail() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
-          <button
+          {/* <button
             onClick={handleDelete}
             disabled={deleting}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg font-medium bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition"
           >
             <Trash2 size={16} />
             {deleting ? "Удаление..." : "Удалить клиента"}
-          </button>
+          </button> */}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="text-gray-600 dark:text-gray-400">
