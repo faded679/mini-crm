@@ -21,6 +21,7 @@ export interface BoxType {
   id: number;
   name: string;
   maxVolumeM3: number;
+  hint?: string | null;
 }
 
 export interface PalletType {

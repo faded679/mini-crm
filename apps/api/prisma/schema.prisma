@@ -128,6 +128,7 @@ model BoxType {
   name        String   @unique
   minVolumeM3 Float    @default(0) @map("min_volume_m3")
   maxVolumeM3 Float    @map("max_volume_m3")
+  hint        String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

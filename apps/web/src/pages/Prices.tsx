@@ -74,11 +74,13 @@ export default function Prices() {
   const [newBoxName, setNewBoxName] = useState("");
   const [newBoxMinVol, setNewBoxMinVol] = useState("");
   const [newBoxMaxVol, setNewBoxMaxVol] = useState("");
+  const [newBoxHint, setNewBoxHint] = useState("");
   const [addingBox, setAddingBox] = useState(false);
   const [boxEditId, setBoxEditId] = useState<number | null>(null);
   const [boxEditName, setBoxEditName] = useState("");
   const [boxEditMinVol, setBoxEditMinVol] = useState("");
   const [boxEditMaxVol, setBoxEditMaxVol] = useState("");
+  const [boxEditHint, setBoxEditHint] = useState("");
   const [savingBox, setSavingBox] = useState(false);
 
   // service price management
@@ -254,10 +256,11 @@ export default function Prices() {
     if (addingBox || !newBoxName.trim() || !newBoxMaxVol) return;
     setAddingBox(true);
     try {
-      await createBoxType({ name: newBoxName.trim(), minVolumeM3: newBoxMinVol ? Number(newBoxMinVol) : 0, maxVolumeM3: Number(newBoxMaxVol) });
+      await createBoxType({ name: newBoxName.trim(), minVolumeM3: newBoxMinVol ? Number(newBoxMinVol) : 0, maxVolumeM3: Number(newBoxMaxVol), hint: newBoxHint.trim() || undefined });
       setNewBoxName("");
       setNewBoxMinVol("");
       setNewBoxMaxVol("");
+      setNewBoxHint("");
       await reload();
     } catch (e) { alert((e as Error).message); } finally { setAddingBox(false); }
   };
@@ -265,7 +268,7 @@ export default function Prices() {
     if (savingBox || boxEditId === null || !boxEditName.trim() || !boxEditMaxVol) return;
     setSavingBox(true);
     try {
-      await updateBoxType(boxEditId, { name: boxEditName.trim(), minVolumeM3: Number(boxEditMinVol) || 0, maxVolumeM3: Number(boxEditMaxVol) });
+      await updateBoxType(boxEditId, { name: boxEditName.trim(), minVolumeM3: Number(boxEditMinVol) || 0, maxVolumeM3: Number(boxEditMaxVol), hint: boxEditHint.trim() || undefined });
       setBoxEditId(null);
       await reload();
     } catch (e) { alert((e as Error).message); } finally { setSavingBox(false); }
@@ -690,6 +693,7 @@ export default function Prices() {
           <input value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} placeholder="Название" className="w-40 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
           <input value={newBoxMinVol} onChange={(e) => setNewBoxMinVol(e.target.value)} placeholder="От (м³)" inputMode="decimal" className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
           <input value={newBoxMaxVol} onChange={(e) => setNewBoxMaxVol(e.target.value)} placeholder="До (м³)" inputMode="decimal" className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newBoxHint} onChange={(e) => setNewBoxHint(e.target.value)} placeholder="Подсказка" className="w-48 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
           <button onClick={handleAddBoxType} disabled={addingBox || !newBoxName.trim() || !newBoxMaxVol} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
             <Plus size={14} /> Добавить
           </button>
@@ -702,6 +706,7 @@ export default function Prices() {
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">От (м³)</th>
                   <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">До (м³)</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Подсказка</th>
                   <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
                 </tr>
               </thead>
@@ -723,6 +728,11 @@ export default function Prices() {
                         <input value={boxEditMaxVol} onChange={(e) => setBoxEditMaxVol(e.target.value)} inputMode="decimal" className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
                       ) : bt.maxVolumeM3}
                     </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {boxEditId === bt.id ? (
+                        <input value={boxEditHint} onChange={(e) => setBoxEditHint(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : (bt.hint || "—")}
+                    </td>
                     <td className="px-3 py-2 text-right">
                       {boxEditId === bt.id ? (
                         <div className="flex items-center justify-end gap-1">
@@ -731,7 +741,7 @@ export default function Prices() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => { setBoxEditId(bt.id); setBoxEditName(bt.name); setBoxEditMinVol(String(bt.minVolumeM3)); setBoxEditMaxVol(String(bt.maxVolumeM3)); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => { setBoxEditId(bt.id); setBoxEditName(bt.name); setBoxEditMinVol(String(bt.minVolumeM3)); setBoxEditMaxVol(String(bt.maxVolumeM3)); setBoxEditHint(bt.hint || ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
                           <button onClick={() => handleDeleteBoxType(bt.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
                         </div>
                       )}

@@ -649,6 +649,7 @@ export interface BoxType {
   name: string;
   minVolumeM3: number;
   maxVolumeM3: number;
+  hint?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -691,14 +692,14 @@ export function getBoxTypes() {
   return request<BoxType[]>("/admin/box-types");
 }
 
-export function createBoxType(data: { name: string; minVolumeM3?: number; maxVolumeM3: number }) {
+export function createBoxType(data: { name: string; minVolumeM3?: number; maxVolumeM3: number; hint?: string }) {
   return request<BoxType>("/admin/box-types", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export function updateBoxType(id: number, data: { name?: string; minVolumeM3?: number; maxVolumeM3?: number }) {
+export function updateBoxType(id: number, data: { name?: string; minVolumeM3?: number; maxVolumeM3?: number; hint?: string }) {
   return request<BoxType>(`/admin/box-types/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),
