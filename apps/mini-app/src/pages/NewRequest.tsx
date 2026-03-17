@@ -221,12 +221,15 @@ export default function NewRequest() {
             ))}
           </select>
         )}
-      </div>
+           </div>
       {cityId && schedule.length === 0 && (
         <p className="text-[11px] text-tg-hint mb-2">Нет доступных дат</p>
       )}
-
+      {cityId && !deliveryDate && schedule.length > 0 && (
+        <p className="text-[11px] text-amber-600 dark:text-amber-500 mb-2 slide-up">⚠️ Дата доставки на маркетплейс.</p>
+      )}
       {/* MP delivery date */}
+
       {deliveryDate && (
         <div className="mb-3 slide-up">
           <input
