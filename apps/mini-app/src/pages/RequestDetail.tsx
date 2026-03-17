@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getRequestDetail, type ShipmentRequestDetail } from "../api";
+import { getRequestDetail, updateRequest, type ShipmentRequestDetail } from "../api";
 
 const statusConfig: Record<string, { label: string; bg: string }> = {
   new:       { label: "Новая",     bg: "bg-blue-50 text-blue-700" },
@@ -23,14 +23,55 @@ export default function RequestDetail() {
   const [request, setRequest] = useState<ShipmentRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    deliveryDate: "",
+    packagingType: "pallets" as "pallets" | "boxes",
+    boxCount: 1,
+    mpAccountDate: "",
+  });
 
   useEffect(() => {
     if (!id) return;
+    loadRequest();
+  }, [id]);
+
+  const loadRequest = () => {
+    if (!id) return;
+    setLoading(true);
     getRequestDetail(Number(id))
-      .then(setRequest)
+      .then((req) => {
+        setRequest(req);
+        setEditData({
+          deliveryDate: req.deliveryDate.split("T")[0],
+          packagingType: req.packagingType,
+          boxCount: req.boxCount,
+          mpAccountDate: req.mpAccountDate?.split("T")[0] || "",
+        });
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Ошибка"))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
+
+  const handleSave = async () => {
+    if (!id || !request) return;
+    setSaving(true);
+    try {
+      await updateRequest(Number(id), {
+        deliveryDate: editData.deliveryDate,
+        packagingType: editData.packagingType,
+        boxCount: editData.boxCount,
+        mpAccountDate: editData.mpAccountDate || undefined,
+      });
+      await loadRequest();
+      setEditing(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Ошибка сохранения");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-[60vh] text-tg-hint text-sm">Загрузка...</div>;
@@ -67,16 +108,93 @@ export default function RequestDetail() {
       {/* Info card */}
       <div className="bg-tg-secondary-bg rounded-xl px-3 py-3 mb-3 space-y-2">
         <Row label="Направление" value={request.city} />
-        <Row label="Упаковка" value={request.packagingType === "pallets" ? "Палеты" : "Коробки"} />
-        <Row label="Кол-во" value={String(request.boxCount)} />
-        {request.boxType && <Row label="Тип" value={request.boxType.name} />}
-        {request.weight && <Row label="Вес" value={`${request.weight} кг`} />}
-        <Row label="Дата доставки" value={formatDate(request.deliveryDate)} />
-        <Row label="Создана" value={formatDate(request.createdAt)} />
+        
+        {editing ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-tg-hint">Упаковка</span>
+              <select
+                value={editData.packagingType}
+                onChange={(e) => setEditData({ ...editData, packagingType: e.target.value as "pallets" | "boxes" })}
+                className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint"
+              >
+                <option value="pallets">Палеты</option>
+                <option value="boxes">Коробки</option>
+              </select>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-tg-hint">Кол-во</span>
+              <input
+                type="number"
+                min="1"
+                value={editData.boxCount}
+                onChange={(e) => setEditData({ ...editData, boxCount: Number(e.target.value) })}
+                className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint w-20 text-right"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-tg-hint">Дата доставки</span>
+              <input
+                type="date"
+                value={editData.deliveryDate}
+                onChange={(e) => setEditData({ ...editData, deliveryDate: e.target.value })}
+                className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-tg-hint">Дата МП ЛК</span>
+              <input
+                type="date"
+                value={editData.mpAccountDate}
+                onChange={(e) => setEditData({ ...editData, mpAccountDate: e.target.value })}
+                className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <Row label="Упаковка" value={request.packagingType === "pallets" ? "Палеты" : "Коробки"} />
+            <Row label="Кол-во" value={String(request.boxCount)} />
+            {request.boxType && <Row label="Тип" value={request.boxType.name} />}
+            {request.weight && <Row label="Вес" value={`${request.weight} кг`} />}
+            <Row label="Дата доставки" value={formatDate(request.deliveryDate)} />
+            {request.mpAccountDate && <Row label="Дата МП ЛК" value={formatDate(request.mpAccountDate)} />}
+            <Row label="Создана" value={formatDate(request.createdAt)} />
+          </>
+        )}
       </div>
 
+      {/* Edit buttons */}
+      {!editing && request.status === "new" && (
+        <button
+          onClick={() => setEditing(true)}
+          className="w-full mb-3 py-2.5 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold active:opacity-70 transition"
+        >
+          Редактировать
+        </button>
+      )}
+
+      {editing && (
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setEditing(false)}
+            disabled={saving}
+            className="flex-1 py-2.5 rounded-xl bg-tg-secondary-bg text-tg-text text-sm font-semibold active:opacity-70 transition disabled:opacity-50"
+          >
+            Отмена
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 py-2.5 rounded-xl bg-tg-button text-tg-button-text text-sm font-semibold active:opacity-70 transition disabled:opacity-50"
+          >
+            {saving ? "Сохранение..." : "Сохранить"}
+          </button>
+        </div>
+      )}
+
       {/* Services */}
-      {request.services.length > 0 && (
+      {!editing && request.services.length > 0 && (
         <div>
           <h2 className="text-sm font-bold text-tg-text mb-2">Услуги</h2>
           <div className="bg-tg-secondary-bg rounded-xl overflow-hidden">

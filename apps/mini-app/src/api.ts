@@ -65,6 +65,7 @@ export interface ShipmentRequest {
   comment: string | null;
   status: string;
   createdAt: string;
+  mpAccountDate?: string | null;
 }
 
 interface CreateRequestPayload {
@@ -131,6 +132,21 @@ export function getRequestDetail(id: number) {
 export function createRequest(data: CreateRequestPayload) {
   return api<ShipmentRequest>("/bot/requests", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export interface UpdateRequestPayload {
+  deliveryDate?: string;
+  packagingType?: "pallets" | "boxes";
+  boxCount?: number;
+  mpAccountDate?: string;
+}
+
+export function updateRequest(id: number, data: UpdateRequestPayload) {
+  return api<ShipmentRequest>(`/bot/requests/${id}`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });

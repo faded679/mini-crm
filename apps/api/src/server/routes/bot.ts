@@ -231,6 +231,63 @@ router.get("/request-detail/:id", async (req: Request, res: Response, next: Next
   }
 });
 
+// PATCH /bot/requests/:id — update shipment request (client can only edit if status is "new")
+router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const { deliveryDate, packagingType, boxCount, mpAccountDate } = req.body;
+
+    // Check if request exists and is editable
+    const existing = await prisma.shipmentRequest.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new ApiError(404, "Request not found");
+    }
+
+    if (existing.status !== "new") {
+      throw new ApiError(403, "Can only edit requests with 'new' status");
+    }
+
+    // Build update data
+    const updateData: any = {};
+    
+    if (deliveryDate !== undefined) {
+      updateData.deliveryDate = new Date(deliveryDate);
+    }
+    
+    if (packagingType !== undefined) {
+      if (packagingType !== "pallets" && packagingType !== "boxes") {
+        throw new ApiError(400, "Invalid packagingType");
+      }
+      updateData.packagingType = packagingType;
+    }
+    
+    if (boxCount !== undefined) {
+      const count = Number(boxCount);
+      if (!Number.isInteger(count) || count < 1) {
+        throw new ApiError(400, "Invalid boxCount");
+      }
+      updateData.boxCount = count;
+    }
+    
+    if (mpAccountDate !== undefined) {
+      updateData.mpAccountDate = mpAccountDate ? new Date(mpAccountDate) : null;
+    }
+
+    // Update the request
+    const updated = await prisma.shipmentRequest.update({
+      where: { id },
+      data: updateData,
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /bot/consent/:telegramId — check consent status
 router.get("/consent/:telegramId", async (req: Request, res: Response, next: NextFunction) => {
   try {
