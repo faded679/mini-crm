@@ -270,13 +270,7 @@ export default function Invoices() {
                         >
                           {downloadingId === inv.id ? "PDF..." : "PDF"}
                         </button>
-                        <button
-                          onClick={() => handleDelete(inv.id)}
-                          disabled={deletingId === inv.id}
-                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition"
-                        >
-                          {deletingId === inv.id ? "Удаление..." : "Удалить"}
-                        </button>
+
                       </div>
                     </td>
                   </tr>
