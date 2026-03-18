@@ -57,11 +57,11 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
     console.log(`Webhook: OrderId=${OrderId}, Status=${Status}, PaymentId=${PaymentId}, Success=${Success}`);
 
     // Обновляем статус счета в зависимости от статуса платежа
-    if (Success && (Status === "CONFIRMED" || Status === "AUTHORIZED")) {
+    if (Success && Status === "CONFIRMED") {
       // Проверяем, не был ли счет уже оплачен
       const wasAlreadyPaid = invoice.status === "paid";
 
-      // Платеж успешно подтвержден или авторизован
+      // Платеж успешно подтвержден
       await (prisma as any).invoice.update({
         where: { id: invoice.id },
         data: {
@@ -74,8 +74,8 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
 
       console.log(`Invoice ${invoice.number} marked as paid (wasAlreadyPaid: ${wasAlreadyPaid})`);
 
-      // Отправляем уведомление клиенту ТОЛЬКО на CONFIRMED и ТОЛЬКО если счет не был оплачен ранее
-      if (Status === "CONFIRMED" && !wasAlreadyPaid) {
+      // Отправляем уведомление клиенту ТОЛЬКО если счет не был оплачен ранее
+      if (!wasAlreadyPaid) {
         try {
           const client = invoice.counterparty.contacts[0]?.client;
           if (client?.telegramId) {
@@ -86,6 +86,17 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
           console.error("Failed to send payment confirmation notification:", notifErr);
         }
       }
+    } else if (Success && Status === "AUTHORIZED") {
+      // Платеж авторизован (деньги заблокированы), но еще не подтвержден
+      // Просто сохраняем PaymentId, не меняем статус счета
+      await (prisma as any).invoice.update({
+        where: { id: invoice.id },
+        data: {
+          tbankPaymentId: PaymentId,
+        },
+      });
+
+      console.log(`Invoice ${invoice.number} payment authorized (PaymentId: ${PaymentId})`);
     } else if (Status === "REJECTED" || Status === "CANCELED") {
       // Платеж отклонен или отменен
       await (prisma as any).invoice.update({
