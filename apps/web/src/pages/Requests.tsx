@@ -836,7 +836,7 @@ export default function Requests() {
                   )}
                   {fbsDate && fbsPriceId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Количество м³</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Кoличество м³</label>
                       <input
                         type="number"
                         min="0.1"
@@ -850,7 +850,7 @@ export default function Requests() {
                   )}
                   {fbsQty && Number(fbsQty) > 0 && selectedFbsPrice && (
                     
-                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Сумма: </label>                    
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Сумма: </label>                    
                     <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
                     
                   )}
