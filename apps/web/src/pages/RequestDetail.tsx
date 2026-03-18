@@ -519,6 +519,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               )}
             </div>
             <div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Дата МП ЛК</p>
               {editing ? (
                 <input
@@ -1016,7 +1017,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   >
                     Отмена
                   </button>
-                                    <button
+                  <button
                     className={cn(
                       "px-4 py-2 rounded-lg text-sm font-medium",
                       canCreateInvoice
@@ -1180,6 +1181,29 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     </div>
                   </div>
                   <div className="flex justify-end pt-2">
+                    <button
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-sm font-medium",
+                        canCreateInvoice
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
+                      )}
+                      disabled={!canCreateInvoice || invoiceCreating}
+                      onClick={async () => {
+                        if (!canCreateInvoice || invoiceCreating) return;
+                        setInvoiceCreating(true);
+                        try {
+                         await sendRequestPaymentLink(request.id);
+                          alert("Ссылка на оплату отправлена клиенту!");
+                        } catch (err) {
+                          alert(err instanceof Error ? err.message : "Ошибка отправки ссылки");
+                        } finally {
+                        setInvoiceCreating(false);
+                      }
+                    }}
+                  >
+                      {invoiceCreating ? "Отправка..." : "QR код"}
+                    </button>
                     <button
                       className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
                       onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
