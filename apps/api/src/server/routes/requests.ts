@@ -38,11 +38,18 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       throw new ApiError(400, "Client telegram ID not found");
     }
 
+    // Считаем сумму из позиций счета
+    const totalAmount = invoice.items.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
+
+    if (totalAmount <= 0) {
+      throw new ApiError(400, "Invoice amount is zero or negative");
+    }
+
     // Если ссылка уже создана и счет ожидает оплату, просто отправляем существующую
     if (invoice.status === "awaiting_payment" && invoice.tbankPaymentUrl) {
       const message = 
         `💳 <b>Ссылка на оплату счета №${invoice.number}</b>\n\n` +
-        `Сумма: ${invoice.amount.toLocaleString("ru-RU")} ₽\n\n` +
+        `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
         `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}`;
 
       await notifyClient(client.telegramId, message);
@@ -51,7 +58,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
         success: true,
         paymentUrl: invoice.tbankPaymentUrl,
         paymentId: invoice.tbankPaymentId,
-        amount: invoice.amount,
+        amount: totalAmount,
         message: "Existing payment link sent",
       });
     }
@@ -62,7 +69,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     }
 
     // Создаем новый платеж в T-Bank
-    const amountInKopecks = Math.round(invoice.amount * 100);
+    const amountInKopecks = Math.round(totalAmount * 100);
     // OrderId: только латиница, цифры и дефис, макс 36 символов
     const orderId = `INV-${invoice.id}-${Date.now()}`.slice(0, 36);
     const description = `Оплата счета №${invoice.number}`;
@@ -74,12 +81,8 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       description,
       customerKey: client.telegramId,
       notificationURL,
-      invoiceAmount: invoice.amount,
+      totalAmount,
     });
-
-    if (amountInKopecks <= 0) {
-      throw new ApiError(400, "Invoice amount is zero or negative");
-    }
 
     const paymentResult = await tbankPayment.initPayment({
       amount: amountInKopecks,
@@ -103,7 +106,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     // Отправляем ссылку клиенту
     const message = 
       `💳 <b>Ссылка на оплату счета №${invoice.number}</b>\n\n` +
-      `Сумма: ${invoice.amount.toLocaleString("ru-RU")} ₽\n\n` +
+      `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
       `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}`;
 
     await notifyClient(client.telegramId, message);
@@ -112,7 +115,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       success: true,
       paymentUrl: paymentResult.PaymentURL,
       paymentId: paymentResult.PaymentId,
-      amount: invoice.amount,
+      amount: totalAmount,
     });
   } catch (err) {
     console.error("send-payment-link error:", err);

@@ -31,6 +31,10 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-https://test.ved31.ru}
       PORT: "3000"
       DADATA_TOKEN: ${DADATA_TOKEN}
+      TBANK_TERMINAL_KEY: ${TBANK_TERMINAL_KEY:-}
+      TBANK_SECRET_KEY: ${TBANK_SECRET_KEY:-}
+      TBANK_API_URL: ${TBANK_API_URL:-https://securepay.tinkoff.ru/v2}
+      API_BASE_URL: ${API_BASE_URL:-https://test.ved31.ru/api}
 
   bot:
     build:
