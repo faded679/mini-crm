@@ -4,7 +4,32 @@ import { handleStart } from "./handlers/start.js";
 import { getSession, clearSession } from "./handlers/new-request.js";
 import { acceptConsent, checkConsent, savePhone, linkInn } from "./api.js";
 
-const bot = new Bot(env.BOT_TOKEN);
+export const bot = new Bot(env.BOT_TOKEN);
+
+// Helper function to set menu button for specific user
+export async function setMenuButton(chatId: number, show: boolean) {
+  try {
+    if (show) {
+      await bot.api.setChatMenuButton({
+        chat_id: chatId,
+        menu_button: {
+          type: "web_app",
+          text: "📦 Открыть",
+          web_app: { url: env.MINI_APP_URL },
+        },
+      });
+    } else {
+      await bot.api.setChatMenuButton({
+        chat_id: chatId,
+        menu_button: {
+          type: "commands",
+        },
+      });
+    }
+  } catch (e) {
+    console.error("Failed to set menu button:", e);
+  }
+}
 
 // Track users waiting for INN input
 const waitingForInn = new Set<number>();
@@ -119,10 +144,13 @@ bot.on("message:text", async (ctx) => {
       const result = await linkInn(String(userId), text);
       waitingForInn.delete(userId);
 
+      // Set menu button for this user
+      await setMenuButton(userId, true);
+
       await ctx.reply(
         `✅ Организация привязана: ${result.name} (ИНН: ${result.inn})\n\n` +
         "Добро пожаловать в Mini-CRM бот! 📦\n\n" +
-        "Нажмите кнопку ниже, чтобы открыть приложение:",
+        "Теперь вы можете открыть приложение через кнопку меню.",
         {
           reply_markup: {
             inline_keyboard: [
@@ -156,17 +184,5 @@ bot.catch((err) => {
 bot.start({
   onStart: async (botInfo) => {
     console.log("Bot started");
-    try {
-      await bot.api.setChatMenuButton({
-        menu_button: {
-          type: "web_app",
-          text: "📦 Открыть",
-          web_app: { url: env.MINI_APP_URL },
-        },
-      });
-      console.log("Menu button set");
-    } catch (e) {
-      console.error("Failed to set menu button:", e);
-    }
   },
 });

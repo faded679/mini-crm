@@ -1,6 +1,7 @@
 import type { Context } from "grammy";
 import { env } from "../env.js";
 import { checkConsent } from "../api.js";
+import { setMenuButton } from "../main.js";
 
 const CONSENT_TEXT =
   "📋 <b>Согласие на обработку персональных данных</b>\n\n" +
@@ -24,6 +25,7 @@ export async function handleStart(ctx: Context): Promise<void> {
 
     // Step 1: Check consent
     if (!consentGiven) {
+      await setMenuButton(userId, false);
       await ctx.reply(CONSENT_TEXT, {
         parse_mode: "HTML",
         reply_markup: {
@@ -42,6 +44,7 @@ export async function handleStart(ctx: Context): Promise<void> {
 
     // Step 2: Check phone
     if (!hasPhone) {
+      await setMenuButton(userId, false);
       await ctx.reply(
         "📱 Пожалуйста, отправьте ваш номер телефона, нажав кнопку ниже:",
         {
@@ -59,11 +62,13 @@ export async function handleStart(ctx: Context): Promise<void> {
 
     // Step 3: Check INN
     if (!hasInn) {
+      await setMenuButton(userId, false);
       await ctx.reply("🏢 Введите ИНН вашей организации (10 или 12 цифр):");
       return;
     }
 
-    // All steps completed - show welcome
+    // All steps completed - show welcome and enable menu button
+    await setMenuButton(userId, true);
     await ctx.reply(WELCOME_TEXT, {
       reply_markup: {
         inline_keyboard: [
@@ -76,7 +81,8 @@ export async function handleStart(ctx: Context): Promise<void> {
         ],
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("Error in /start handler:", err);
     await ctx.reply("Произошла ошибка. Попробуйте позже.");
   }
 }
