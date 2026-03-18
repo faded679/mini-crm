@@ -58,28 +58,33 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
 
     // Обновляем статус счета в зависимости от статуса платежа
     if (Success && (Status === "CONFIRMED" || Status === "AUTHORIZED")) {
+      // Проверяем, не был ли счет уже оплачен
+      const wasAlreadyPaid = invoice.status === "paid";
+
       // Платеж успешно подтвержден или авторизован
       await (prisma as any).invoice.update({
         where: { id: invoice.id },
         data: {
           status: "paid",
           isPaid: true,
-          paidAt: new Date(),
+          paidAt: invoice.paidAt || new Date(),
           tbankPaymentId: PaymentId,
         },
       });
 
-      console.log(`Invoice ${invoice.number} marked as paid`);
+      console.log(`Invoice ${invoice.number} marked as paid (wasAlreadyPaid: ${wasAlreadyPaid})`);
 
-      // Отправляем уведомление клиенту
-      try {
-        const client = invoice.counterparty.contacts[0]?.client;
-        if (client?.telegramId) {
-          const message = `✅ <b>Оплата получена!</b>\n\nСчет №${invoice.number} успешно оплачен.\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\nСпасибо за оплату!`;
-          await notifyClient(client.telegramId, message);
+      // Отправляем уведомление клиенту ТОЛЬКО на CONFIRMED и ТОЛЬКО если счет не был оплачен ранее
+      if (Status === "CONFIRMED" && !wasAlreadyPaid) {
+        try {
+          const client = invoice.counterparty.contacts[0]?.client;
+          if (client?.telegramId) {
+            const message = `✅ <b>Оплата получена!</b>\n\nСчет №${invoice.number} успешно оплачен.\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\nСпасибо за оплату!`;
+            await notifyClient(client.telegramId, message);
+          }
+        } catch (notifErr) {
+          console.error("Failed to send payment confirmation notification:", notifErr);
         }
-      } catch (notifErr) {
-        console.error("Failed to send payment confirmation notification:", notifErr);
       }
     } else if (Status === "REJECTED" || Status === "CANCELED") {
       // Платеж отклонен или отменен
