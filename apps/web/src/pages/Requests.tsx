@@ -731,7 +731,10 @@ export default function Requests() {
                         setShowNewModal(false);
                         const data = await getRequests();
                         setRequests(data);
-                      } catch { alert("Ошибка при создании заявки"); }
+                      } catch (err) { 
+                        console.error("FBO request creation error:", err);
+                        alert("Ошибка при создании заявки: " + (err instanceof Error ? err.message : String(err))); 
+                      }
                       finally { setCreating(false); }
                     }}
                       className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
@@ -881,7 +884,10 @@ export default function Requests() {
                         setShowNewModal(false);
                         const data = await getRequests();
                         setRequests(data);
-                      } catch { alert("Ошибка при создании заявки"); }
+                      } catch (err) { 
+                        console.error("FBS request creation error:", err);
+                        alert("Ошибка при создании заявки: " + (err instanceof Error ? err.message : String(err))); 
+                      }
                       finally { setCreating(false); }
                     }}
                     className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
