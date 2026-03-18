@@ -836,7 +836,7 @@ export default function Requests() {
                   )}
                   {fbsDate && fbsPriceId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Кoличество м³</label>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Количество м³</label>
                       <input
                         type="number"
                         min="0.1"
@@ -849,11 +849,11 @@ export default function Requests() {
                     </div>
                   )}
                   {fbsQty && Number(fbsQty) > 0 && selectedFbsPrice && (
-                    
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Сумма: </label>                    
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
-                    
-                  )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Сумма: </label>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
+                      </div>
+                    )}
                 </div>
                 <div className="flex justify-end gap-3 mt-5">
                   <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
