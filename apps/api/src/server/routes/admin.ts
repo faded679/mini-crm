@@ -366,10 +366,18 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-// GET /admin/invoices
-router.get("/invoices", async (_req: Request, res: Response, next: NextFunction) => {
+// GET /admin/invoices?requestId=123
+router.get("/invoices", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const requestId = req.query.requestId ? Number(req.query.requestId) : undefined;
+    
+    const where: any = {};
+    if (requestId !== undefined && Number.isFinite(requestId)) {
+      where.requestId = requestId;
+    }
+
     const invoices = await (prisma as any).invoice.findMany({
+      where,
       include: { items: true, counterparty: true },
       orderBy: { id: "desc" },
     });

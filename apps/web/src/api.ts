@@ -335,8 +335,9 @@ export function createInvoice(payload: CreateInvoicePayload) {
   });
 }
 
-export function getInvoices() {
-  return request<Invoice[]>("/admin/invoices");
+export function getInvoices(requestId?: number) {
+  const params = requestId ? `?requestId=${requestId}` : "";
+  return request<Invoice[]>(`/admin/invoices${params}`);
 }
 
 export function getInvoiceById(id: number) {

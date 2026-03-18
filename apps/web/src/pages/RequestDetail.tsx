@@ -20,6 +20,7 @@ import {
   deleteRequestService,
   suggestRequestService,
   getDeliveryTypes,
+  getInvoices,
   type City,
   type PackagingType,
   type ShipmentRequestDetail,
@@ -803,21 +804,59 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <button
-                    onClick={() => {
-                      const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
-                      setInvoiceCounterpartyId(cp?.id ?? "");
-                      if (services.length > 0) {
-                        setInvoiceItems(services.map((s) => ({
-                          description: s.description,
-                          quantity: s.quantity,
-                          unit: s.unit,
-                          price: s.price,
-                          amount: s.amount,
-                        })));
-                      } else {
-                        setInvoiceItems([emptyItem()]);
+                    onClick={async () => {
+                      // Check if invoice already exists for this request
+                      try {
+                        const existingInvoices = await getInvoices(request.id);
+                        if (existingInvoices.length > 0) {
+                          // Show existing invoice
+                          setCreatedInvoice(existingInvoices[0]);
+                          setInvoiceCounterpartyId(existingInvoices[0].counterpartyId);
+                          setInvoiceItems(existingInvoices[0].items.map((item) => ({
+                            description: item.description,
+                            quantity: item.quantity,
+                            unit: item.unit,
+                            price: item.price,
+                            amount: item.amount,
+                          })));
+                          setConfirmInvoice(true);
+                        } else {
+                          // No existing invoice, prepare to create new one
+                          const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
+                          setInvoiceCounterpartyId(cp?.id ?? "");
+                          if (services.length > 0) {
+                            setInvoiceItems(services.map((s) => ({
+                              description: s.description,
+                              quantity: s.quantity,
+                              unit: s.unit,
+                              price: s.price,
+                              amount: s.amount,
+                            })));
+                          } else {
+                            setInvoiceItems([emptyItem()]);
+                          }
+                          setCreatedInvoice(null);
+                          setConfirmInvoice(true);
+                        }
+                      } catch (err) {
+                        console.error("Failed to check existing invoices:", err);
+                        // Fallback to creating new invoice
+                        const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
+                        setInvoiceCounterpartyId(cp?.id ?? "");
+                        if (services.length > 0) {
+                          setInvoiceItems(services.map((s) => ({
+                            description: s.description,
+                            quantity: s.quantity,
+                            unit: s.unit,
+                            price: s.price,
+                            amount: s.amount,
+                          })));
+                        } else {
+                          setInvoiceItems([emptyItem()]);
+                        }
+                        setCreatedInvoice(null);
+                        setConfirmInvoice(true);
                       }
-                      setConfirmInvoice(true);
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
                     type="button"
@@ -935,7 +974,178 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               </button>
             </div>
 
-            {!createdInvoice ? (
+            {createdInvoice ? (
+              <>
+                <div className="p-5 space-y-4">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <strong>По данной заявке уже существует счёт {createdInvoice.number}.</strong>
+                    </p>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+                      Чтобы создать новый счёт, необходимо удалить существующий во вкладке <strong>Счета</strong>.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент</label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                      {createdInvoice.counterparty?.shortName || createdInvoice.counterparty?.name || "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Услуги</label>
+                    <div className="space-y-2">
+                      {createdInvoice.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+                          <div className="flex-1">{item.description}</div>
+                          <div className="w-16 text-center">{item.quantity}</div>
+                          <div className="w-16 text-center">{item.unit}</div>
+                          <div className="w-24 text-right">{item.price.toLocaleString("ru-RU")}</div>
+                          <div className="w-24 text-right font-medium">{item.amount.toLocaleString("ru-RU")}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-right">
+                      <span className="text-sm font-semibold">
+                        Итого: {createdInvoice.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString("ru-RU")} руб.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Счёт</span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (invoiceDownloading) return;
+                          setInvoiceDownloading(true);
+                          try {
+                            const token = getToken();
+                            if (!token) throw new Error("Not authenticated");
+                            const url = getInvoicePdfUrlById(createdInvoice.id);
+                            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            const blob = await res.blob();
+                            const objectUrl = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = objectUrl;
+                            a.download = `Счет_${createdInvoice.number}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(objectUrl);
+                          } finally {
+                            setInvoiceDownloading(false);
+                          }
+                        }}
+                      >
+                        {invoiceDownloading ? "Скачивание..." : "Скачать счёт"}
+                      </a>
+                      <button
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={invoiceSending}
+                        onClick={async () => {
+                          if (!request || invoiceSending) return;
+                          setInvoiceSending(true);
+                          try {
+                            await sendInvoicePdf(createdInvoice.id, request.client.telegramId);
+                            alert("Счёт отправлен клиенту!");
+                          } catch (err) {
+                            alert(err instanceof Error ? err.message : "Ошибка отправки");
+                          } finally {
+                            setInvoiceSending(false);
+                          }
+                        }}
+                      >
+                        {invoiceSending ? "Отправка..." : "Отправить счёт"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Акт</span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (actDownloading) return;
+                          setActDownloading(true);
+                          try {
+                            const token = getToken();
+                            if (!token) throw new Error("Not authenticated");
+                            const url = getActPdfUrlById(createdInvoice.id);
+                            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            const blob = await res.blob();
+                            const objectUrl = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = objectUrl;
+                            a.download = `Акт_${createdInvoice.number}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(objectUrl);
+                          } finally {
+                            setActDownloading(false);
+                          }
+                        }}
+                      >
+                        {actDownloading ? "Скачивание..." : "Скачать акт"}
+                      </a>
+                      <button
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={actSending}
+                        onClick={async () => {
+                          if (!request || actSending) return;
+                          setActSending(true);
+                          try {
+                            await sendActPdf(createdInvoice.id, request.client.telegramId);
+                            alert("Акт отправлен клиенту!");
+                          } catch (err) {
+                            alert(err instanceof Error ? err.message : "Ошибка отправки");
+                          } finally {
+                            setActSending(false);
+                          }
+                        }}
+                      >
+                        {actSending ? "Отправка..." : "Отправить акт"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2 gap-2">
+                    <button
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={invoiceCreating}
+                      onClick={async () => {
+                        if (invoiceCreating) return;
+                        setInvoiceCreating(true);
+                        try {
+                          await sendRequestPaymentLink(request.id);
+                          alert("Ссылка на оплату отправлена клиенту!");
+                        } catch (err) {
+                          alert(err instanceof Error ? err.message : "Ошибка отправки ссылки");
+                        } finally {
+                          setInvoiceCreating(false);
+                        }
+                      }}
+                    >
+                      {invoiceCreating ? "Отправка..." : "QR код"}
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
+                      onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
+                    >
+                      Закрыть
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
               <>
                 <div className="p-5 space-y-4">
                   <div>
@@ -1017,29 +1227,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   >
                     Отмена
                   </button>
-                  <button
-                    className={cn(
-                      "px-4 py-2 rounded-lg text-sm font-medium",
-                      canCreateInvoice
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
-                    )}
-                    disabled={!canCreateInvoice || invoiceCreating}
-                    onClick={async () => {
-                      if (!canCreateInvoice || invoiceCreating) return;
-                      setInvoiceCreating(true);
-                      try {
-                        await sendRequestPaymentLink(request.id);
-                        alert("Ссылка на оплату отправлена клиенту!");
-                      } catch (err) {
-                        alert(err instanceof Error ? err.message : "Ошибка отправки ссылки");
-                      } finally {
-                        setInvoiceCreating(false);
-                      }
-                    }}
-                  >
-                    {invoiceCreating ? "Отправка..." : "QR код"}
-                  </button>
+
                   <button
                     className={cn(
                       "px-4 py-2 rounded-lg text-sm font-medium",
@@ -1065,152 +1253,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   >
                     {invoiceCreating ? "Создание..." : "Счёт/Акт"}
                   </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="p-5 space-y-3">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Счёт <b>{createdInvoice.number}</b> создан. Заказчик: <b>{createdInvoice.counterparty.name}</b>.
-                  </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Итого: <b>{createdInvoice.items.reduce((s, it) => s + it.amount, 0).toLocaleString("ru-RU")} руб.</b>
-                  </p>
-                </div>
-                <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Счёт</span>
-                    <div className="flex items-center gap-2">
-                      <a
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          if (invoiceDownloading || !createdInvoice) return;
-                          setInvoiceDownloading(true);
-                          try {
-                            const token = getToken();
-                            if (!token) throw new Error("Not authenticated");
-                            const url = getInvoicePdfUrlById(createdInvoice.id);
-                            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            const blob = await res.blob();
-                            const objectUrl = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = objectUrl;
-                            a.download = `Счет_${createdInvoice.number}.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            URL.revokeObjectURL(objectUrl);
-                          } finally {
-                            setInvoiceDownloading(false);
-                          }
-                        }}
-                      >
-                        {invoiceDownloading ? "Скачивание..." : "Скачать счёт"}
-                      </a>
-                      <button
-                        className={cn(
-                          "px-4 py-2 rounded-lg text-sm font-medium",
-                          "bg-emerald-600 hover:bg-emerald-700 text-white",
-                        )}
-                        disabled={invoiceSending}
-                        onClick={async () => {
-                          if (!createdInvoice || !request || invoiceSending) return;
-                          setInvoiceSending(true);
-                          try {
-                            await sendInvoicePdf(createdInvoice.id, request.client.telegramId);
-                          } finally {
-                            setInvoiceSending(false);
-                          }
-                        }}
-                      >
-                        {invoiceSending ? "Отправка..." : "Отправить счёт"}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Акт</span>
-                    <div className="flex items-center gap-2">
-                      <a
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          if (actDownloading || !createdInvoice) return;
-                          setActDownloading(true);
-                          try {
-                            const token = getToken();
-                            if (!token) throw new Error("Not authenticated");
-                            const url = getActPdfUrlById(createdInvoice.id);
-                            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            const blob = await res.blob();
-                            const objectUrl = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = objectUrl;
-                            a.download = `Акт_${createdInvoice.number}.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            URL.revokeObjectURL(objectUrl);
-                          } finally {
-                            setActDownloading(false);
-                          }
-                        }}
-                      >
-                        {actDownloading ? "Скачивание..." : "Скачать акт"}
-                      </a>
-                      <button
-                        className={cn(
-                          "px-4 py-2 rounded-lg text-sm font-medium",
-                          "bg-emerald-600 hover:bg-emerald-700 text-white",
-                        )}
-                        disabled={actSending}
-                        onClick={async () => {
-                          if (!createdInvoice || !request || actSending) return;
-                          setActSending(true);
-                          try {
-                            await sendActPdf(createdInvoice.id, request.client.telegramId);
-                          } finally {
-                            setActSending(false);
-                          }
-                        }}
-                      >
-                        {actSending ? "Отправка..." : "Отправить акт"}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-2">
-                    <button
-                      className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-medium",
-                        canCreateInvoice
-                          ? "bg-blue-600 hover:bg-blue-700 text-white"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
-                      )}
-                      disabled={!canCreateInvoice || invoiceCreating}
-                      onClick={async () => {
-                        if (!canCreateInvoice || invoiceCreating) return;
-                        setInvoiceCreating(true);
-                        try {
-                         await sendRequestPaymentLink(request.id);
-                          alert("Ссылка на оплату отправлена клиенту!");
-                        } catch (err) {
-                          alert(err instanceof Error ? err.message : "Ошибка отправки ссылки");
-                        } finally {
-                        setInvoiceCreating(false);
-                      }
-                    }}
-                  >
-                      {invoiceCreating ? "Отправка..." : "QR код"}
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
-                      onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
-                    >
-                      Закрыть
-                    </button>
-                  </div>
                 </div>
               </>
             )}
