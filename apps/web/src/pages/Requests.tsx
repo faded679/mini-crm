@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getClients, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, type ShipmentRequest, type RequestStatus, type PackagingType, type Client, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry } from "../api";
+import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getCounterparties, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, type ShipmentRequest, type RequestStatus, type PackagingType, type Counterparty, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry } from "../api";
 import { cn } from "../lib/utils";
 import RequestDetail from "./RequestDetail";
 
@@ -72,7 +72,7 @@ export default function Requests() {
 
   // New request modal
   const [showNewModal, setShowNewModal] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [citiesList, setCitiesList] = useState<City[]>([]);
   const [newReq, setNewReq] = useState({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "" });
   const [creating, setCreating] = useState(false);
@@ -394,7 +394,7 @@ export default function Requests() {
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <button
             onClick={() => {
-              getClients().then(setClients).catch(() => {});
+              getCounterparties().then(setCounterparties).catch(() => {});
               getCities().then(setCitiesList).catch(() => {});
               getCitiesFbs().then(setCitiesFbs).catch(() => {});
               setNewReq({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets", boxCount: "1", weight: "", comment: "" });
@@ -656,7 +656,7 @@ export default function Requests() {
               <>
                 <div className="mb-4 text-center">
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                    {!newReq.clientId ? "Выберите клиента" :
+                    {!newReq.clientId ? "Выберите организацию" :
                      !newReq.cityId ? "Выберите направление" :
                      !newReq.deliveryDate ? "Выберите дату доставки" :
                      !newReq.boxCount ? "Укажите количество мест" :
@@ -665,10 +665,14 @@ export default function Requests() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Организация</label>
                     <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
-                      <option value="">Выберите клиента</option>
-                      {clients.map((c) => <option key={c.id} value={c.id}>{c.firstName ?? ""} {c.lastName ?? ""} {c.phone ? `(${c.phone})` : `(@${c.username ?? c.telegramId})`}</option>)}
+                      <option value="">Выберите организацию</option>
+                      {counterparties.map((cp) => cp.contacts.map((contact) => (
+                        <option key={`${cp.id}-${contact.client.id}`} value={contact.client.id}>
+                          {cp.shortName || cp.name} ({contact.client.firstName ?? contact.client.username ?? contact.client.telegramId})
+                        </option>
+                      )))}
                     </select>
                   </div>
                   <div>
@@ -742,7 +746,7 @@ export default function Requests() {
               <>
                 <div className="mb-4 text-center">
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                    {!newReq.clientId ? "Выберите клиента" :
+                    {!newReq.clientId ? "Выберите организацию" :
                      !fbsCityId ? "Выберите направление ФБС" :
                      !fbsDate ? "Выберите дату доставки" :
                      !fbsPriceId ? "Выберите объём товара" :
@@ -752,10 +756,14 @@ export default function Requests() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Организация</label>
                     <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
-                      <option value="">Выберите клиента</option>
-                      {clients.map((c) => <option key={c.id} value={c.id}>{c.firstName ?? ""} {c.lastName ?? ""} {c.phone ? `(${c.phone})` : `(@${c.username ?? c.telegramId})`}</option>)}
+                      <option value="">Выберите организацию</option>
+                      {counterparties.map((cp) => cp.contacts.map((contact) => (
+                        <option key={`${cp.id}-${contact.client.id}`} value={contact.client.id}>
+                          {cp.shortName || cp.name} ({contact.client.firstName ?? contact.client.username ?? contact.client.telegramId})
+                        </option>
+                      )))}
                     </select>
                   </div>
                   <div>
