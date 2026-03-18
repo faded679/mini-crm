@@ -97,7 +97,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       where: { id: invoice.id },
       data: {
         status: "awaiting_payment",
-        tbankPaymentId: paymentResult.PaymentId,
+        tbankPaymentId: String(paymentResult.PaymentId),
         tbankPaymentUrl: paymentResult.PaymentURL,
         tbankOrderId: paymentResult.OrderId,
       },

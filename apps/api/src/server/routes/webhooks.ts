@@ -20,7 +20,8 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    const { OrderId, Status, PaymentId, Success } = notification;
+    const { OrderId, Status, Success } = notification;
+    const PaymentId = String(notification.PaymentId);
 
     // Находим счет по OrderId (это наш invoice.id или invoice.number)
     const invoice = await (prisma as any).invoice.findFirst({
@@ -49,9 +50,15 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
+    // Считаем сумму из позиций счета
+    const items = await (prisma as any).invoiceItem.findMany({ where: { invoiceId: invoice.id } });
+    const totalAmount = items.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
+
+    console.log(`Webhook: OrderId=${OrderId}, Status=${Status}, PaymentId=${PaymentId}, Success=${Success}`);
+
     // Обновляем статус счета в зависимости от статуса платежа
-    if (Success && Status === "CONFIRMED") {
-      // Платеж успешно подтвержден
+    if (Success && (Status === "CONFIRMED" || Status === "AUTHORIZED")) {
+      // Платеж успешно подтвержден или авторизован
       await (prisma as any).invoice.update({
         where: { id: invoice.id },
         data: {
@@ -68,7 +75,7 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
       try {
         const client = invoice.counterparty.contacts[0]?.client;
         if (client?.telegramId) {
-          const message = `✅ <b>Оплата получена!</b>\n\nСчет №${invoice.number} успешно оплачен.\nСумма: ${(invoice.amount / 100).toLocaleString("ru-RU")} ₽\n\nСпасибо за оплату!`;
+          const message = `✅ <b>Оплата получена!</b>\n\nСчет №${invoice.number} успешно оплачен.\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\nСпасибо за оплату!`;
           await notifyClient(client.telegramId, message);
         }
       } catch (notifErr) {
