@@ -89,7 +89,7 @@ export default function Info() {
       <div className="bg-tg-secondary-bg rounded-xl px-3 py-2.5">
         <div className="text-sm font-semibold text-tg-text mb-1.5">📞 Контакты</div>
         <div className="flex flex-col gap-3 text-xs">
-          <a href="tel:+79092048554" className="text-tg-link font-medium"> +7 (909) 204-85-54</a> 
+          <a href="tel:+79586606096" className="text-tg-link font-medium"> +7 (958) 660-60-96</a> 
           <a href="https://t.me/SolovyovEx" target="_blank" rel="noopener noreferrer" className="text-tg-link font-medium"> @SolovyovEx (Telegram)</a>
         </div>
       </div>
