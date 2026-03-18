@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getClients, getCities, type ShipmentRequest, type RequestStatus, type PackagingType, type Client, type City } from "../api";
+import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getClients, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, type ShipmentRequest, type RequestStatus, type PackagingType, type Client, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry } from "../api";
 import { cn } from "../lib/utils";
 import RequestDetail from "./RequestDetail";
 
@@ -76,6 +76,16 @@ export default function Requests() {
   const [citiesList, setCitiesList] = useState<City[]>([]);
   const [newReq, setNewReq] = useState({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "" });
   const [creating, setCreating] = useState(false);
+
+  // FBS new request state
+  const [newReqType, setNewReqType] = useState<"fbo" | "fbs">("fbo");
+  const [citiesFbs, setCitiesFbs] = useState<CityFbs[]>([]);
+  const [scheduleFbs, setScheduleFbs] = useState<ScheduleEntryFbs[]>([]);
+  const [pricesFbs, setPricesFbs] = useState<PriceFbsEntry[]>([]);
+  const [fbsCityId, setFbsCityId] = useState<number | null>(null);
+  const [fbsDate, setFbsDate] = useState("");
+  const [fbsPriceId, setFbsPriceId] = useState<number | null>(null);
+  const [fbsQty, setFbsQty] = useState("");
 
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
@@ -386,7 +396,15 @@ export default function Requests() {
             onClick={() => {
               getClients().then(setClients).catch(() => {});
               getCities().then(setCitiesList).catch(() => {});
+              getCitiesFbs().then(setCitiesFbs).catch(() => {});
               setNewReq({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets", boxCount: "1", weight: "", comment: "" });
+              setNewReqType("fbo");
+              setFbsCityId(null);
+              setFbsDate("");
+              setFbsPriceId(null);
+              setFbsQty("");
+              setScheduleFbs([]);
+              setPricesFbs([]);
               setShowNewModal(true);
             }}
             className="px-3 py-1 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition"
@@ -512,12 +530,12 @@ export default function Requests() {
                     Клиент {sortIndicator("client")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("isFbs")} className="hover:text-gray-900 dark:hover:text-white">
                     Тип поставки {sortIndicator("isFbs")}
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("mpDate")} className="hover:text-gray-900 dark:hover:text-white">
                     Дата МП ЛК {sortIndicator("mpDate")}
                   </button>
@@ -604,96 +622,271 @@ export default function Requests() {
         </div>
       )}
 
-      {showNewModal && (
+      {showNewModal && (() => {
+        const selectedFbsCity = citiesFbs.find((c) => c.id === fbsCityId);
+        const selectedFbsPrice = pricesFbs.find((p) => p.id === fbsPriceId);
+        const fbsAmount = (() => {
+          if (!selectedFbsPrice || !fbsQty || Number(fbsQty) <= 0) return 0;
+          const priceNum = parseFloat(selectedFbsPrice.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+          const volNum = parseFloat(selectedFbsPrice.volume.replace(/[^\d.,]/g, "").replace(",", ".")) || 1;
+          const units = Number(fbsQty) / volNum;
+          return Math.round(priceNum * units * 100) / 100;
+        })();
+        const canCreateFbs = !!newReq.clientId && !!fbsCityId && !!fbsDate && !!fbsPriceId && !!fbsQty && Number(fbsQty) > 0;
+
+        return (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewModal(false); }}
         >
           <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="mb-4 text-center">
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                {!newReq.clientId ? "Выберите клиента" :
-                 !newReq.cityId ? "Выберите направление" :
-                 !newReq.deliveryDate ? "Выберите дату доставки" :
-                 !newReq.boxCount ? "Укажите количество мест" :
-                 "Проверьте данные и создайте заявку"}
-              </p>
+            {/* Step 1: Delivery type toggle */}
+            <div className="mb-4">
+              <div className="flex gap-2">
+                {(["fbo", "fbs"] as const).map((t) => (
+                  <button key={t} type="button" onClick={() => setNewReqType(t)} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReqType === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
+                    {t.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
-                <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
-                  <option value="">Выберите клиента</option>
-                  {clients.map((c) => <option key={c.id} value={c.id}>{c.firstName ?? ""} {c.lastName ?? ""} {c.phone ? `(${c.phone})` : `(@${c.username ?? c.telegramId})`}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Направление</label>
-                <select value={newReq.cityId} onChange={(e) => setNewReq({ ...newReq, cityId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
-                  <option value="">Выберите город</option>
-                  {citiesList.map((c) => <option key={c.id} value={c.id}>{c.shortName}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Дата доставки</label>
-                <input type="date" value={newReq.deliveryDate} onChange={(e) => setNewReq({ ...newReq, deliveryDate: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
-              </div>
-              <div>
-                <div className="flex gap-2">
-                  {(["pallets", "boxes"] as PackagingType[]).map((p) => (
-                    <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p })} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReq.packagingType === p ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
-                      {p === "pallets" ? "Палеты" : "Коробки"}
+
+            {newReqType === "fbo" ? (
+              /* ──── FBO FORM ──── */
+              <>
+                <div className="mb-4 text-center">
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    {!newReq.clientId ? "Выберите клиента" :
+                     !newReq.cityId ? "Выберите направление" :
+                     !newReq.deliveryDate ? "Выберите дату доставки" :
+                     !newReq.boxCount ? "Укажите количество мест" :
+                     "Проверьте данные и создайте заявку"}
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
+                    <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                      <option value="">Выберите клиента</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.firstName ?? ""} {c.lastName ?? ""} {c.phone ? `(${c.phone})` : `(@${c.username ?? c.telegramId})`}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Направление</label>
+                    <select value={newReq.cityId} onChange={(e) => setNewReq({ ...newReq, cityId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                      <option value="">Выберите город</option>
+                      {citiesList.map((c) => <option key={c.id} value={c.id}>{c.shortName}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Дата доставки</label>
+                    <input type="date" value={newReq.deliveryDate} onChange={(e) => setNewReq({ ...newReq, deliveryDate: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
+                  </div>
+                  <div>
+                    <div className="flex gap-2">
+                      {(["pallets", "boxes"] as PackagingType[]).map((p) => (
+                        <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p })} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReq.packagingType === p ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
+                          {p === "pallets" ? "Палеты" : "Коробки"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Кол-во мест</label>
+                      <input type="number" min="1" value={newReq.boxCount} onChange={(e) => setNewReq({ ...newReq, boxCount: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Вес (кг)</label>
+                      <input type="number" min="0" step="0.1" value={newReq.weight} onChange={(e) => setNewReq({ ...newReq, weight: e.target.value })} placeholder="необяз." className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Комментарий</label>
+                    <textarea value={newReq.comment} onChange={(e) => setNewReq({ ...newReq, comment: e.target.value })} rows={2} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 resize-none" />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-5">
+                  <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
+                  {newReq.boxCount && (
+                    <button
+                      disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
+                      onClick={async () => {
+                      setCreating(true);
+                      try {
+                        await createAdminRequest({
+                          clientId: Number(newReq.clientId),
+                          cityId: Number(newReq.cityId),
+                          deliveryDate: new Date(newReq.deliveryDate).toISOString(),
+                          packagingType: newReq.packagingType,
+                          boxCount: Number(newReq.boxCount),
+                          deliveryTypeId: 2,
+                          ...(newReq.weight ? { weight: Number(newReq.weight) } : {}),
+                          ...(newReq.comment ? { comment: newReq.comment } : {}),
+                        });
+                        setShowNewModal(false);
+                        const data = await getRequests();
+                        setRequests(data);
+                      } catch { alert("Ошибка при создании заявки"); }
+                      finally { setCreating(false); }
+                    }}
+                      className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                    >
+                      {creating ? "Создание..." : "Создать"}
                     </button>
-                  ))}
+                  )}
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Кол-во мест</label>
-                  <input type="number" min="1" value={newReq.boxCount} onChange={(e) => setNewReq({ ...newReq, boxCount: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
+              </>
+            ) : (
+              /* ──── FBS FORM ──── */
+              <>
+                <div className="mb-4 text-center">
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    {!newReq.clientId ? "Выберите клиента" :
+                     !fbsCityId ? "Выберите направление ФБС" :
+                     !fbsDate ? "Выберите дату доставки" :
+                     !fbsPriceId ? "Выберите объём товара" :
+                     !fbsQty || Number(fbsQty) <= 0 ? "Укажите количество м³" :
+                     "Проверьте данные и создайте заявку"}
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Вес (кг)</label>
-                  <input type="number" min="0" step="0.1" value={newReq.weight} onChange={(e) => setNewReq({ ...newReq, weight: e.target.value })} placeholder="необяз." className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Клиент</label>
+                    <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                      <option value="">Выберите клиента</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.firstName ?? ""} {c.lastName ?? ""} {c.phone ? `(${c.phone})` : `(@${c.username ?? c.telegramId})`}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Направление ФБС</label>
+                    <select
+                      value={fbsCityId ?? ""}
+                      onChange={(e) => {
+                        const id = e.target.value ? Number(e.target.value) : null;
+                        setFbsCityId(id);
+                        setFbsDate("");
+                        setFbsPriceId(null);
+                        setFbsQty("");
+                        setScheduleFbs([]);
+                        setPricesFbs([]);
+                        if (id) {
+                          const city = citiesFbs.find((c) => c.id === id);
+                          getAdminScheduleFbs().then((all) => {
+                            setScheduleFbs(all.filter((s) => s.destination === (city?.shortName ?? "")));
+                          }).catch(() => setScheduleFbs([]));
+                          if (city) {
+                            getPriceFbs().then((all) => {
+                              const filtered = all.filter((p) => p.destination === city.shortName);
+                              setPricesFbs(filtered);
+                              if (filtered.length > 0) setFbsPriceId(filtered[0].id);
+                            }).catch(() => setPricesFbs([]));
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                    >
+                      <option value="">Выберите направление</option>
+                      {citiesFbs.map((c) => <option key={c.id} value={c.id}>{c.shortName}</option>)}
+                    </select>
+                  </div>
+                  {fbsCityId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Дата доставки (расписание ФБС)</label>
+                      <select
+                        value={fbsDate}
+                        onChange={(e) => { setFbsDate(e.target.value); setFbsQty(""); }}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                      >
+                        <option value="">Выберите дату</option>
+                        {scheduleFbs.map((s) => (
+                          <option key={s.id} value={s.deliveryDate}>
+                            {new Date(s.deliveryDate).toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" })}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {fbsDate && pricesFbs.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Объём товара</label>
+                      <select
+                        value={fbsPriceId ?? ""}
+                        onChange={(e) => setFbsPriceId(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                      >
+                        {pricesFbs.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.volume} — {p.price}{p.comment ? ` (${p.comment})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {fbsDate && fbsPriceId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Количество м³</label>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={fbsQty}
+                        onChange={(e) => setFbsQty(e.target.value)}
+                        placeholder="Укажите объём"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                      />
+                    </div>
+                  )}
+                  {fbsQty && Number(fbsQty) > 0 && selectedFbsPrice && (
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm">
+                      <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                        <span>{selectedFbsPrice.volume} × {fbsQty} м³</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Комментарий</label>
-                <textarea value={newReq.comment} onChange={(e) => setNewReq({ ...newReq, comment: e.target.value })} rows={2} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 resize-none" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-5">
-              <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
-              {newReq.boxCount && (
-                <button
-                  disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
-                  onClick={async () => {
-                  setCreating(true);
-                  try {
-                    await createAdminRequest({
-                      clientId: Number(newReq.clientId),
-                      cityId: Number(newReq.cityId),
-                      deliveryDate: new Date(newReq.deliveryDate).toISOString(),
-                      packagingType: newReq.packagingType,
-                      boxCount: Number(newReq.boxCount),
-                      ...(newReq.weight ? { weight: Number(newReq.weight) } : {}),
-                      ...(newReq.comment ? { comment: newReq.comment } : {}),
-                    });
-                    setShowNewModal(false);
-                    const data = await getRequests();
-                    setRequests(data);
-                  } catch { alert("Ошибка при создании заявки"); }
-                  finally { setCreating(false); }
-                }}
-                  className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
-                >
-                  {creating ? "Создание..." : "Создать"}
-                </button>
-              )}
-            </div>
+                <div className="flex justify-end gap-3 mt-5">
+                  <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
+                  <button
+                    disabled={creating || !canCreateFbs}
+                    onClick={async () => {
+                      if (!canCreateFbs || !selectedFbsCity || !selectedFbsPrice) return;
+                      setCreating(true);
+                      try {
+                        const priceNum = parseFloat(selectedFbsPrice.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+                        await createAdminRequest({
+                          clientId: Number(newReq.clientId),
+                          cityId: fbsCityId!,
+                          deliveryDate: new Date(fbsDate).toISOString(),
+                          packagingType: "boxes",
+                          boxCount: Number(fbsQty),
+                          deliveryTypeId: 1,
+                          items: [{
+                            description: `${selectedFbsCity.shortName} FBS — ${selectedFbsPrice.volume}`,
+                            unit: "м³",
+                            quantity: Number(fbsQty),
+                            price: priceNum,
+                            amount: fbsAmount,
+                          }],
+                        });
+                        setShowNewModal(false);
+                        const data = await getRequests();
+                        setRequests(data);
+                      } catch { alert("Ошибка при создании заявки"); }
+                      finally { setCreating(false); }
+                    }}
+                    className="px-4 py-2 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                  >
+                    {creating ? "Создание..." : "Создать"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {selectedRequestId !== null && (
         <div

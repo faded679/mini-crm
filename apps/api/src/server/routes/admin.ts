@@ -117,7 +117,7 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
 // POST /admin/requests — create request from admin panel
 router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, weight, comment } = req.body as {
+    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, weight, comment, deliveryTypeId, items } = req.body as {
       clientId: number;
       cityId: number;
       deliveryDate: string;
@@ -126,6 +126,8 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       boxCount: number;
       weight?: number;
       comment?: string;
+      deliveryTypeId?: number;
+      items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];
     };
 
     if (!clientId) throw new ApiError(400, "clientId is required");
@@ -137,14 +139,24 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
     const client = await (prisma as any).client.findUnique({ where: { id: clientId } });
     if (!client) throw new ApiError(404, "Client not found");
 
-    const city = await (prisma as any).city.findUnique({ where: { id: cityId } });
-    if (!city) throw new ApiError(404, "City not found");
+    const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
+
+    let cityName: string;
+    if (isFbs) {
+      const cityFbs = await (prisma as any).cityFbs.findUnique({ where: { id: cityId } });
+      if (!cityFbs) throw new ApiError(404, "CityFbs not found");
+      cityName = cityFbs.shortName;
+    } else {
+      const city = await (prisma as any).city.findUnique({ where: { id: cityId } });
+      if (!city) throw new ApiError(404, "City not found");
+      cityName = city.shortName;
+    }
 
     const created = await (prisma as any).shipmentRequest.create({
       data: {
         clientId,
         cityId,
-        city: city.shortName,
+        city: cityName,
         deliveryDate: new Date(deliveryDate),
         packagingType,
         boxCount,
@@ -152,13 +164,33 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         ...(boxTypeId ? { boxTypeId } : {}),
         ...(weight != null ? { weight } : {}),
         ...(comment ? { comment } : {}),
+        ...(deliveryTypeId != null ? { deliveryTypeId: Number(deliveryTypeId) } : {}),
         status: "new",
         isRead: true,
       },
       include: { client: true, boxType: true, services: true },
     });
 
-    res.status(201).json(created);
+    // Create service lines from items
+    if (Array.isArray(items) && items.length > 0) {
+      await (prisma as any).requestService.createMany({
+        data: items.map((it) => ({
+          requestId: created.id,
+          description: String(it.description ?? ""),
+          unit: String(it.unit ?? "шт"),
+          quantity: Number(it.quantity) || 0,
+          price: Number(it.price) || 0,
+          amount: Number(it.amount) || 0,
+        })),
+      });
+    }
+
+    const full = await (prisma as any).shipmentRequest.findUnique({
+      where: { id: created.id },
+      include: { client: true, boxType: true, services: true, deliveryType: true },
+    });
+
+    res.status(201).json(full);
   } catch (err) {
     next(err);
   }

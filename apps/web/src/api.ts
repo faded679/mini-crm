@@ -199,6 +199,8 @@ export interface CreateAdminRequestPayload {
   boxCount: number;
   weight?: number;
   comment?: string;
+  deliveryTypeId?: number;
+  items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];
 }
 
 export function createAdminRequest(payload: CreateAdminRequestPayload) {
