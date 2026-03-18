@@ -94,9 +94,11 @@ export class TBankPaymentService {
       Token: token,
     };
 
+    const url = `${this.apiUrl}/Init`;
+    console.log("T-Bank Init URL:", url);
     console.log("T-Bank Init request:", JSON.stringify(body, null, 2));
 
-    const response = await fetch(`${this.apiUrl}/Init`, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
