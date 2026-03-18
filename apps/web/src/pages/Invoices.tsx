@@ -273,7 +273,7 @@ export default function Invoices() {
                         <button
                           onClick={() => handleDelete(inv.id)}
                           disabled={deletingId === inv.id || inv.isPaid}
-                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition"
+                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-red-600/[0.46] text-white hover:bg-red-700/[0.46] disabled:opacity-50 transition"
                         >
                           {deletingId === inv.id ? "Удаление..." : "Удалить"}
                         </button>
