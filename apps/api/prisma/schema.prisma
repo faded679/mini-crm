@@ -20,6 +20,13 @@ enum PackagingType {
   boxes
 }
 
+enum InvoiceStatus {
+  new
+  awaiting_payment
+  paid
+  cancelled
+}
+
 enum RateUnit {
   pallet
   boxes
@@ -205,8 +212,16 @@ model Invoice {
   date            DateTime      @default(now())
   counterpartyId  Int           @map("counterparty_id")
   requestId       Int?          @map("request_id")
+  status          InvoiceStatus @default(new)
   isPaid          Boolean       @default(false) @map("is_paid")
   paidAt          DateTime?     @map("paid_at")
+  
+  // T-Bank payment fields
+  tbankPaymentId  String?       @unique @map("tbank_payment_id")
+  tbankPaymentUrl String?       @map("tbank_payment_url")
+  tbankOrderId    String?       @unique @map("tbank_order_id")
+  amount          Float         @default(0)
+  
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
