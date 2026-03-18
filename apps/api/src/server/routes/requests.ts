@@ -63,9 +63,23 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
 
     // Создаем новый платеж в T-Bank
     const amountInKopecks = Math.round(invoice.amount * 100);
-    const orderId = invoice.number;
+    // OrderId: только латиница, цифры и дефис, макс 36 символов
+    const orderId = `INV-${invoice.id}-${Date.now()}`.slice(0, 36);
     const description = `Оплата счета №${invoice.number}`;
     const notificationURL = `${process.env.API_BASE_URL || "https://test.ved31.ru/api"}/webhooks/tbank`;
+
+    console.log("T-Bank initPayment params:", {
+      amount: amountInKopecks,
+      orderId,
+      description,
+      customerKey: client.telegramId,
+      notificationURL,
+      invoiceAmount: invoice.amount,
+    });
+
+    if (amountInKopecks <= 0) {
+      throw new ApiError(400, "Invoice amount is zero or negative");
+    }
 
     const paymentResult = await tbankPayment.initPayment({
       amount: amountInKopecks,
@@ -101,6 +115,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       amount: invoice.amount,
     });
   } catch (err) {
+    console.error("send-payment-link error:", err);
     next(err);
   }
 });

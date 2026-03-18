@@ -89,15 +89,19 @@ export class TBankPaymentService {
 
     const token = this.generateToken(requestData);
 
+    const body = {
+      ...requestData,
+      Token: token,
+    };
+
+    console.log("T-Bank Init request:", JSON.stringify(body, null, 2));
+
     const response = await fetch(`${this.apiUrl}/Init`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ...requestData,
-        Token: token,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
