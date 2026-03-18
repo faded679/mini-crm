@@ -106,14 +106,11 @@ export class TBankPaymentService {
       body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      throw new Error(`T-Bank API error: ${response.status} ${response.statusText}`);
-    }
-
     const result = await response.json() as TBankInitPaymentResponse;
+    console.log("T-Bank Init response:", JSON.stringify(result, null, 2));
 
-    if (!result.Success) {
-      throw new Error(`T-Bank payment init failed: ${result.ErrorCode} - ${result.Message}`);
+    if (!response.ok || !result.Success) {
+      throw new Error(`T-Bank payment init failed: ${result.ErrorCode || response.status} - ${result.Message || response.statusText}`);
     }
 
     return result;
