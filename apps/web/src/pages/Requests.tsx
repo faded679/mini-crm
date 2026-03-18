@@ -21,7 +21,7 @@ const statusColors: Record<RequestStatus, string> = {
   archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
 
-type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "total" | "status" | "createdAt";
+type SortKey = "id" | "city" | "deliveryDate" | "volume" | "weight" | "boxCount" | "client" | "isFbs" | "mpDate" | "total" | "status" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const SORT_KEYS: SortKey[] = [
@@ -32,6 +32,8 @@ const SORT_KEYS: SortKey[] = [
   "weight",
   "boxCount",
   "client",
+  "isFbs",
+  "mpDate",
   "total",
   "status",
   "createdAt",
@@ -248,6 +250,12 @@ export default function Requests() {
         break;
       case "client":
         res = compareStr(getClientName(a), getClientName(b));
+        break;
+      case "isFbs":
+        res = compareNum(a.deliveryTypeId ?? 0, b.deliveryTypeId ?? 0);
+        break;
+      case "mpDate":
+        res = compareNum(new Date(a.mpAccountDate ?? "").getTime(), new Date(b.mpAccountDate ?? "").getTime());
         break;
       case "total": {
         const ta = getRequestTotal(a) ?? -1;
@@ -505,10 +513,14 @@ export default function Requests() {
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  Тип поставки
+                  <button onClick={() => toggleSort("isFbs")} className="hover:text-gray-900 dark:hover:text-white">
+                    Тип поставки {sortIndicator("isFbs")}
+                  </button>
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  Дата МП ЛК
+                  <button onClick={() => toggleSort("mpDate")} className="hover:text-gray-900 dark:hover:text-white">
+                    Дата МП ЛК {sortIndicator("mpDate")}
+                  </button>
                 </th>
                 <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400">
                   <button onClick={() => toggleSort("total")} className="hover:text-gray-900 dark:hover:text-white">
