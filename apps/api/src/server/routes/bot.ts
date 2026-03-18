@@ -130,9 +130,16 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       include: { services: true },
     });
 
-    // Send Telegram notification to client
-    try {
-      const schedule = await (prisma as any).deliverySchedule.findFirst({
+// Send Telegram notification to client
+try {
+  const schedule = isFbs
+    ? await (prisma as any).deliveryScheduleFbs.findFirst({
+        where: {
+          cityId: cityRecord.id,
+          deliveryDate: new Date(deliveryDate),
+        },
+      })
+    : await (prisma as any).deliverySchedule.findFirst({
         where: {
           cityId: cityRecord.id,
           deliveryDate: new Date(deliveryDate),

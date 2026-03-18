@@ -42,6 +42,7 @@ export interface Client {
   lastName: string | null;
   username: string | null;
   phone?: string | null;
+  email?: string | null;
   createdAt: string;
   _count?: { requests: number };
   counterparties?: Array<{ id: number; counterparty: Counterparty }>;
@@ -388,6 +389,13 @@ export function getClients() {
 
 export function getClientById(id: number) {
   return request<ClientDetail>(`/admin/clients/${id}`);
+}
+
+export function updateClient(id: number, data: { email?: string | null; phone?: string | null }) {
+  return request<Client>(`/admin/clients/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
 
 export function deleteClient(id: number) {

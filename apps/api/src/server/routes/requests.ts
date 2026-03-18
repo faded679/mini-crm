@@ -84,12 +84,33 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       totalAmount,
     });
 
+    // Формируем чек (Receipt) для 54-ФЗ
+    const receiptItems = invoice.items.map((item: any) => ({
+      Name: item.description || "Услуга",
+      Price: Math.round((Number(item.amount) || 0) * 100),
+      Quantity: 1,
+      Amount: Math.round((Number(item.amount) || 0) * 100),
+      Tax: "none",
+    }));
+
+    const receipt: any = {
+      Taxation: "usn_income",
+      Items: receiptItems,
+    };
+
+    if (client.email) {
+      receipt.Email = client.email;
+    } else if (client.phone) {
+      receipt.Phone = client.phone;
+    }
+
     const paymentResult = await tbankPayment.initPayment({
       amount: amountInKopecks,
       orderId,
       description,
       customerKey: client.telegramId,
       notificationURL,
+      ...(receipt.Email || receipt.Phone ? { receipt } : {}),
     });
 
     // Обновляем счет

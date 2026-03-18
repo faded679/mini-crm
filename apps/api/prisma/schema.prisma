@@ -39,6 +39,7 @@ model Client {
   firstName    String?          @map("first_name")
   lastName     String?          @map("last_name")
   phone        String?
+  email        String?
   consentGiven Boolean          @default(false) @map("consent_given")
   consentAt    DateTime?        @map("consent_at")
   createdAt    DateTime         @default(now()) @map("created_at")

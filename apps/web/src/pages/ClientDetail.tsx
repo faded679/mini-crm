@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import {
   getClientById,
   deleteClient,
+  updateClient,
   type ClientDetail as ClientDetailType,
   type RequestStatus,
 } from "../api";
@@ -47,6 +48,8 @@ export default function ClientDetail() {
   const [client, setClient] = useState<ClientDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState("");
 
   const handleDelete = async () => {
     if (!client) return;
@@ -130,6 +133,43 @@ export default function ClientDetail() {
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Телефон:</span>{" "}
             <span className="font-mono">{formatRuPhone(client.phone)}</span>
+          </div>
+          <div className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+            <span className="text-gray-400 dark:text-gray-500">Email:</span>{" "}
+            {editingEmail ? (
+              <form
+                className="inline-flex items-center gap-1"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    await updateClient(client.id, { email: emailValue || null });
+                    setClient({ ...client, email: emailValue || null } as any);
+                    setEditingEmail(false);
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : "Ошибка");
+                  }
+                }}
+              >
+                <input
+                  type="email"
+                  value={emailValue}
+                  onChange={(e) => setEmailValue(e.target.value)}
+                  className="px-2 py-0.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="email@example.com"
+                  autoFocus
+                />
+                <button type="submit" className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400">✓</button>
+                <button type="button" onClick={() => setEditingEmail(false)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+              </form>
+            ) : (
+              <>
+                <span className="font-mono">{client.email || "—"}</span>
+                <button
+                  onClick={() => { setEmailValue(client.email || ""); setEditingEmail(true); }}
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                >✎</button>
+              </>
+            )}
           </div>
           <div className="text-gray-600 dark:text-gray-400">
             <span className="text-gray-400 dark:text-gray-500">Организация:</span>{" "}

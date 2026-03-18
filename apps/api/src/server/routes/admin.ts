@@ -1074,6 +1074,31 @@ router.get("/clients/:id", async (req: Request, res: Response, next: NextFunctio
   }
 });
 
+// PATCH /admin/clients/:id
+router.patch("/clients/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const client = await prisma.client.findUnique({ where: { id } });
+    if (!client) throw new ApiError(404, "Client not found");
+
+    const { email, phone } = req.body;
+    const data: Record<string, any> = {};
+    if (email !== undefined) data.email = email || null;
+    if (phone !== undefined) data.phone = phone || null;
+
+    const updated = await prisma.client.update({
+      where: { id },
+      data,
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /admin/clients/:id
 router.delete("/clients/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {

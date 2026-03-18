@@ -1,5 +1,20 @@
 import crypto from "crypto";
 
+interface TBankReceiptItem {
+  Name: string;
+  Price: number;
+  Quantity: number;
+  Amount: number;
+  Tax: string;
+}
+
+interface TBankReceipt {
+  Email?: string;
+  Phone?: string;
+  Taxation: string;
+  Items: TBankReceiptItem[];
+}
+
 interface TBankInitPaymentParams {
   amount: number; // в копейках
   orderId: string;
@@ -8,6 +23,7 @@ interface TBankInitPaymentParams {
   notificationURL?: string;
   successURL?: string;
   failURL?: string;
+  receipt?: TBankReceipt;
 }
 
 interface TBankInitPaymentResponse {
@@ -85,6 +101,7 @@ export class TBankPaymentService {
       ...(params.notificationURL && { NotificationURL: params.notificationURL }),
       ...(params.successURL && { SuccessURL: params.successURL }),
       ...(params.failURL && { FailURL: params.failURL }),
+      ...(params.receipt && { Receipt: params.receipt }),
     };
 
     const token = this.generateToken(requestData);
