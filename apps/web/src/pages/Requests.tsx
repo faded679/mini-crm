@@ -849,11 +849,10 @@ export default function Requests() {
                     </div>
                   )}
                   {fbsQty && Number(fbsQty) > 0 && selectedFbsPrice && (
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm">
-
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
-                     
-                    </div>
+                    
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Сумма: </label>                    
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
+                    
                   )}
                 </div>
                 <div className="flex justify-end gap-3 mt-5">
@@ -873,7 +872,7 @@ export default function Requests() {
                           boxCount: 1,
                           deliveryTypeId: 1,
                           items: [{
-                            description: `${selectedFbsCity.shortName} FBS — ${selectedFbsPrice.volume}`,
+                            description: `${selectedFbsCity.fullName}`,
                             unit: "м³",
                             quantity: Number(fbsQty),
                             price: priceNum,
