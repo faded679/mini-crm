@@ -375,6 +375,13 @@ export function sendActPdf(id: number, clientTelegramId: string) {
   });
 }
 
+export function sendRequestPaymentLink(requestId: number) {
+  return request<{ success: boolean; paymentUrl: string; paymentId: string; amount: number }>(
+    `/admin/requests/${requestId}/send-payment-link`,
+    { method: "POST" }
+  );
+}
+
 export function getClients() {
   return request<Client[]>("/admin/clients");
 }

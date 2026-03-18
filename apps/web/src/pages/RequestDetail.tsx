@@ -12,6 +12,7 @@ import {
   createInvoice,
   sendInvoicePdf,
   sendActPdf,
+  sendRequestPaymentLink,
   updateRequest,
   updateRequestStatus,
   createRequestService,
@@ -1022,8 +1023,21 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                         ? "bg-blue-600 hover:bg-blue-700 text-white"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
                     )}
+                    disabled={!canCreateInvoice || invoiceCreating}
+                    onClick={async () => {
+                      if (!canCreateInvoice || invoiceCreating) return;
+                      setInvoiceCreating(true);
+                      try {
+                        await sendRequestPaymentLink(request.id);
+                        alert("Ссылка на оплату отправлена клиенту!");
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : "Ошибка отправки ссылки");
+                      } finally {
+                        setInvoiceCreating(false);
+                      }
+                    }}
                   >
-                    {invoiceCreating ? "Создание..." : "QR код"}
+                    {invoiceCreating ? "Отправка..." : "QR код"}
                   </button>
                   <button
                     className={cn(

@@ -11,6 +11,7 @@ import botRouter from "./routes/bot.js";
 import scheduleRouter from "./routes/schedule.js";
 import webhooksRouter from "./routes/webhooks.js";
 import invoicesRouter from "./routes/invoices.js";
+import requestsRouter from "./routes/requests.js";
 import { prisma } from "./db/prisma.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -53,6 +54,7 @@ export function createApp() {
   app.use("/auth", authRouter);
   app.use("/admin", adminRouter);
   app.use("/admin/invoices", invoicesRouter);
+  app.use("/admin/requests", requestsRouter);
   app.use("/bot", botRouter);
   app.use("/schedule", scheduleRouter);
   app.use("/webhooks", webhooksRouter);
