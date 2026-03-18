@@ -176,7 +176,7 @@ export default function FbsRequest() {
             }}
             className="h-12 px-4 rounded-2xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm slide-up w-2/5 min-w-0 appearance-none transition-all"
           >
-            <option value="">📅 Дата</option>
+            <option value="">Выбор даты</option>
             {schedule.map((s) => (
               <option key={s.id} value={s.deliveryDate}>
                 {new Date(s.deliveryDate).toLocaleDateString("ru-RU", {
@@ -189,8 +189,8 @@ export default function FbsRequest() {
           </select>
         )}
       </div>
-      {cityId && schedule.length === 0 && (
-        <p className="text-[11px] text-tg-hint mb-2">Нет доступных дат</p>
+      {cityId && !deliveryDate && schedule.length > 0 && (
+        <p className="text-[11px] text-amber-600 dark:text-amber-500 mb-2 slide-up text-right">⚠️ Дата выгрузки авто на маркетплейсе.</p>
       )}
 
       {/* Voume (from prise-fbs) */}

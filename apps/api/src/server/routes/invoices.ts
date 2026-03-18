@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
-import { tbankPayment } from "../services/tbank-payment.js";
+import { tbankPayment } from "../../services/tbank-payment.js";
 import { notifyClient } from "../services/telegram-notifier.js";
 
 const router = Router();
