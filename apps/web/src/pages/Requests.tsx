@@ -850,10 +850,9 @@ export default function Requests() {
                   )}
                   {fbsQty && Number(fbsQty) > 0 && selectedFbsPrice && (
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm">
-                      <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                        <span>{selectedFbsPrice.volume} × {fbsQty} м³</span>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
-                      </div>
+
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{fbsAmount.toLocaleString("ru-RU")} ₽</span>
+                     
                     </div>
                   )}
                 </div>
