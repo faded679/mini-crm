@@ -111,7 +111,7 @@ export default function FbsRequest() {
             .map((it, i) => `${i + 1}. ${it.volume} x${it.qty} = ${it.amount}₽`)
             .join("; ") + ` | Итого: ${total}₽`,
         items: items.map((it) => ({
-          description: `${selectedCity.shortName} FBS — ${it.volume}`,
+          description: `${selectedCity.fullName}`,
           unit: "м³",
           quantity: it.qty,
           price: parseFloat(it.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0,
