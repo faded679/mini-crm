@@ -23,7 +23,7 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
     const { OrderId, Status, PaymentId, Success } = notification;
 
     // Находим счет по OrderId (это наш invoice.id или invoice.number)
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await (prisma as any).invoice.findFirst({
       where: {
         OR: [
           { tbankOrderId: OrderId },
@@ -52,7 +52,7 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
     // Обновляем статус счета в зависимости от статуса платежа
     if (Success && Status === "CONFIRMED") {
       // Платеж успешно подтвержден
-      await prisma.invoice.update({
+      await (prisma as any).invoice.update({
         where: { id: invoice.id },
         data: {
           status: "paid",
@@ -76,7 +76,7 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
       }
     } else if (Status === "REJECTED" || Status === "CANCELED") {
       // Платеж отклонен или отменен
-      await prisma.invoice.update({
+      await (prisma as any).invoice.update({
         where: { id: invoice.id },
         data: {
           status: "cancelled",
