@@ -979,7 +979,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                 <div className="p-5 space-y-4">
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                     <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      <strong>По данной заявке уже существует счёт {createdInvoice.number}.</strong>
+                      <strong>По данной заявке есть действуюший счёт/акт {createdInvoice.number}.</strong>
                     </p>
                     <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
                       Чтобы создать новый счёт, необходимо удалить существующий во вкладке <strong>Счета</strong>.
@@ -997,7 +997,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Услуги</label>
                     <div className="space-y-2">
                       {createdInvoice.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:text-gray-100 dark:bg-gray-900 text-sm">
                           <div className="flex-1">{item.description}</div>
                           <div className="w-16 text-center">{item.quantity}</div>
                           <div className="w-16 text-center">{item.unit}</div>
