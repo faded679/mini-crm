@@ -871,7 +871,7 @@ export default function Requests() {
                           cityId: fbsCityId!,
                           deliveryDate: new Date(fbsDate).toISOString(),
                           packagingType: "boxes",
-                          boxCount: Number(fbsQty),
+                          boxCount: 1,
                           deliveryTypeId: 1,
                           items: [{
                             description: `${selectedFbsCity.shortName} FBS — ${selectedFbsPrice.volume}`,
