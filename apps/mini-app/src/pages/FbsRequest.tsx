@@ -326,11 +326,9 @@ export default function FbsRequest() {
             >
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-tg-text font-medium truncate">
-                  {it.volume}
-                </div>
-                <div className="text-[11px] text-tg-hint">
                   {it.qty} × {it.price}
                 </div>
+
               </div>
               <span className="text-sm font-semibold text-tg-text ml-2 whitespace-nowrap">
                 {it.amount.toLocaleString("ru-RU")} ₽
