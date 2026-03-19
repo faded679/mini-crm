@@ -5,12 +5,10 @@ import {
   getCitiesFbs,
   getScheduleFbs,
   getPriceFbs,
-  getServicePrices,
   getClientServicePrices,
   type CityFbs,
   type ScheduleEntryFbs,
   type PriceFbsEntry,
-  type ServicePrice,
   type ClientServicePrice,
 } from "../api";
 import { getTelegramUser } from "../telegram";
@@ -22,21 +20,12 @@ interface LineItem {
   amount: number;
 }
 
-interface AdditionalServiceItem {
-  serviceId: number;
-  name: string;
-  quantity: number;
-  price: number;
-  amount: number;
-}
-
 export default function FbsRequest() {
   const navigate = useNavigate();
 
   const [cities, setCities] = useState<CityFbs[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntryFbs[]>([]);
   const [prices, setPrices] = useState<PriceFbsEntry[]>([]);
-  const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
   const [clientServicePrices, setClientServicePrices] = useState<ClientServicePrice[]>([]);
 
   const [cityId, setCityId] = useState<number | null>(null);
@@ -45,9 +34,6 @@ export default function FbsRequest() {
   const [qty, setQty] = useState("");
 
   const [items, setItems] = useState<LineItem[]>([]);
-  const [additionalServices, setAdditionalServices] = useState<AdditionalServiceItem[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
-  const [serviceQty, setServiceQty] = useState("");
   
   // Client services toggles
   const [selectedClientServices, setSelectedClientServices] = useState<Set<number>>(new Set());
@@ -61,7 +47,6 @@ export default function FbsRequest() {
       const def = data.find((c) => c.shortName === "WB Курск FBS");
       if (def) setCityId(def.id);
     }).catch(() => {});
-    getServicePrices().then(setServicePrices).catch(() => setServicePrices([]));
     getClientServicePrices("FBS").then(setClientServicePrices).catch(() => setClientServicePrices([]));
   }, []);
 
@@ -105,29 +90,6 @@ export default function FbsRequest() {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleAddService = () => {
-    if (!selectedServiceId || !serviceQty || Number(serviceQty) <= 0) return;
-    const service = servicePrices.find((s) => s.id === selectedServiceId);
-    if (!service) return;
-    const quantity = Number(serviceQty);
-    const amount = service.price * quantity;
-    setAdditionalServices((prev) => [
-      ...prev,
-      {
-        serviceId: service.id,
-        name: service.name,
-        quantity,
-        price: service.price,
-        amount,
-      },
-    ]);
-    setServiceQty("");
-  };
-
-  const handleRemoveService = (idx: number) => {
-    setAdditionalServices((prev) => prev.filter((_, i) => i !== idx));
-  };
-
   const handleToggleClientService = (serviceId: number) => {
     setSelectedClientServices((prev) => {
       const newSet = new Set(prev);
@@ -141,8 +103,6 @@ export default function FbsRequest() {
   };
 
   const total = items.reduce((s, it) => s + it.amount, 0);
-  const servicesTotal = additionalServices.reduce((s, it) => s + it.amount, 0);
-  const grandTotal = total + servicesTotal;
 
   const handleSubmit = async () => {
     if (!selectedCity || items.length === 0) return;
@@ -161,6 +121,9 @@ export default function FbsRequest() {
         .map((id) => clientServicePrices.find((s) => s.id === id))
         .filter((s): s is ClientServicePrice => s !== undefined);
 
+      const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => sum + s.price, 0);
+      const grandTotal = total + clientServicesTotal;
+
       const allItems = [
         ...items.map((it) => ({
           description: `${selectedCity.fullName}`,
@@ -168,13 +131,6 @@ export default function FbsRequest() {
           quantity: it.qty,
           price: parseFloat(it.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0,
           amount: it.amount,
-        })),
-        ...additionalServices.map((svc) => ({
-          description: svc.name,
-          unit: "шт",
-          quantity: svc.quantity,
-          price: svc.price,
-          amount: svc.amount,
         })),
         ...selectedClientServicesList.map((svc) => ({
           description: svc.name,
@@ -199,13 +155,10 @@ export default function FbsRequest() {
           items
             .map((it, i) => `${i + 1}. ${it.volume} x${it.qty} = ${it.amount}₽`)
             .join("; ") + 
-          (additionalServices.length > 0 
-            ? " | Доп. услуги: " + additionalServices.map((s) => `${s.name} x${s.quantity}`).join(", ")
-            : "") +
           (selectedClientServicesList.length > 0
             ? " | Услуги клиента: " + selectedClientServicesList.map((s) => s.name).join(", ")
             : "") +
-          ` | Итого: ${(grandTotal + selectedClientServicesList.reduce((sum, s) => sum + s.price, 0)).toLocaleString("ru-RU")}₽`,
+          ` | Итого: ${grandTotal.toLocaleString("ru-RU")}₽`,
         items: allItems,
       }); 
       navigate("/history");
