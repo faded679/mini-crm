@@ -566,4 +566,14 @@ router.get("/price-fbs", async (req: Request, res: Response, next: NextFunction)
   }
 });
 
+// GET /bot/service-prices — list additional services for mini-app
+router.get("/service-prices", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const items = await (prisma as any).servicePrice.findMany({ orderBy: { id: "asc" } });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

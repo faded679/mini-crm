@@ -217,5 +217,5 @@ export interface ServicePrice {
 }
 
 export function getServicePrices() {
-  return api<ServicePrice[]>("/admin/service-prices");
+  return api<ServicePrice[]>("/bot/service-prices");
 }
