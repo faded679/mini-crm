@@ -205,3 +205,17 @@ export function acceptConsent(data: {
     body: JSON.stringify(data),
   });
 }
+
+// ---------- Additional Services ----------
+
+export interface ServicePrice {
+  id: number;
+  name: string;
+  price: number;
+  unit: string;
+  comment: string | null;
+}
+
+export function getServicePrices() {
+  return api<ServicePrice[]>("/admin/service-prices");
+}

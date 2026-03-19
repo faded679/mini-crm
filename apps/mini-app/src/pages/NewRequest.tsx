@@ -7,11 +7,13 @@ import {
   getPalletTypes,
   getRates,
   getScheduleForCity,
+  getServicePrices,
   type City,
   type BoxType,
   type PalletType,
   type PriceRate,
   type ScheduleEntry,
+  type ServicePrice,
 } from "../api";
 import { getTelegramUser } from "../telegram";
 
@@ -25,6 +27,14 @@ interface LineItem {
   amount: number;
 }
 
+interface AdditionalServiceItem {
+  serviceId: number;
+  name: string;
+  quantity: number;
+  price: number;
+  amount: number;
+}
+
 export default function NewRequest() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -34,6 +44,7 @@ export default function NewRequest() {
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -43,6 +54,10 @@ export default function NewRequest() {
   const [qty, setQty] = useState("");
 
   const [items, setItems] = useState<LineItem[]>([]);
+  const [additionalServices, setAdditionalServices] = useState<AdditionalServiceItem[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [serviceQty, setServiceQty] = useState("");
+  
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [deliveryTypeId, setDeliveryTypeId] = useState<number | null>(null);
@@ -51,6 +66,7 @@ export default function NewRequest() {
     getCities().then(setCities).catch(() => {});
     getBoxTypes().then(setBoxTypes).catch(() => {});
     getPalletTypes().then(setPalletTypes).catch(() => {});
+    getServicePrices().then(setServicePrices).catch(() => setServicePrices([]));
     
     // Set delivery type based on URL parameter
     const typeParam = searchParams.get("type");
@@ -113,7 +129,32 @@ export default function NewRequest() {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleAddService = () => {
+    if (!selectedServiceId || !serviceQty || Number(serviceQty) <= 0) return;
+    const service = servicePrices.find((s) => s.id === selectedServiceId);
+    if (!service) return;
+    const quantity = Number(serviceQty);
+    const amount = service.price * quantity;
+    setAdditionalServices((prev) => [
+      ...prev,
+      {
+        serviceId: service.id,
+        name: service.name,
+        quantity,
+        price: service.price,
+        amount,
+      },
+    ]);
+    setServiceQty("");
+  };
+
+  const handleRemoveService = (idx: number) => {
+    setAdditionalServices((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const total = items.reduce((s, it) => s + it.amount, 0);
+  const servicesTotal = additionalServices.reduce((s, it) => s + it.amount, 0);
+  const grandTotal = total + servicesTotal;
 
   const handleSubmit = async () => {
     if (!selectedCity || items.length === 0) return;
@@ -129,6 +170,24 @@ export default function NewRequest() {
       const totalQty = items.reduce((s, it) => s + it.qty, 0);
       const mainPkg = items[0].packaging;
       const mainBoxTypeId = mainPkg === "boxes" ? items[0].typeId ?? undefined : undefined;
+      
+      const allItems = [
+        ...items.map((it) => ({
+          description: `${selectedCity.fullName} ${it.packaging === "pallets" ? "Палета" : "Коробка"} — ${it.typeName}`,
+          unit: it.packaging === "pallets" ? "пал" : "кор",
+          quantity: it.qty,
+          price: it.price,
+          amount: it.amount,
+        })),
+        ...additionalServices.map((svc) => ({
+          description: svc.name,
+          unit: "шт",
+          quantity: svc.quantity,
+          price: svc.price,
+          amount: svc.amount,
+        })),
+      ];
+
       await createRequest({
         telegramId: user.id,
         username: user.username,
@@ -143,14 +202,12 @@ export default function NewRequest() {
         boxCount: totalQty,
         comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
-          .join("; ") + ` | Итого: ${total}₽`,
-        items: items.map((it) => ({
-          description: `${selectedCity.fullName} ${it.packaging === "pallets" ? "Палета" : "Коробка"} — ${it.typeName}`,
-          unit: it.packaging === "pallets" ? "пал" : "кор",
-          quantity: it.qty,
-          price: it.price,
-          amount: it.amount,
-        })),
+          .join("; ") + 
+          (additionalServices.length > 0 
+            ? " | Доп. услуги: " + additionalServices.map((s) => `${s.name} x${s.quantity}`).join(", ")
+            : "") +
+          ` | Итого: ${grandTotal}₽`,
+        items: allItems,
       });
       navigate("/history");
     } catch (err) {
@@ -356,6 +413,92 @@ export default function NewRequest() {
             <span className="text-sm font-bold text-tg-text">Итого</span>
             <span className="text-sm font-bold text-tg-button">{total.toLocaleString("ru-RU")} ₽</span>
           </div>
+        </div>
+      )}
+
+      {/* Additional Services */}
+      {items.length > 0 && servicePrices.length > 0 && (
+        <div className="mb-3 slide-up">
+          <p className="text-xs text-tg-hint mb-2">Дополнительные услуги (опционально)</p>
+          <div className="flex gap-2 mb-2">
+            <select
+              value={selectedServiceId ?? ""}
+              onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
+              className="flex-1 h-10 px-3 rounded-xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm"
+            >
+              <option value="">Выберите услугу</option>
+              {servicePrices.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} — {s.price}₽
+                </option>
+              ))}
+            </select>
+            {selectedServiceId && (
+              <input
+                type="number"
+                value={serviceQty}
+                onChange={(e) => setServiceQty(e.target.value)}
+                min="1"
+                placeholder="Кол-во"
+                className="w-20 h-10 px-3 rounded-xl bg-tg-secondary-bg border border-gray-700/20 outline-none text-tg-text text-sm"
+              />
+            )}
+          </div>
+          {selectedServiceId && serviceQty && Number(serviceQty) > 0 && (
+            <button
+              type="button"
+              onClick={handleAddService}
+              className="w-full h-10 rounded-xl bg-blue-600/80 text-white text-sm font-medium transition-all active:opacity-80"
+            >
+              + Добавить услугу
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Additional Services List */}
+      {additionalServices.length > 0 && (
+        <div className="bg-tg-secondary-bg rounded-xl overflow-hidden mb-3 slide-up">
+          <div className="px-3 py-2 text-xs font-medium text-tg-hint border-b" style={{ borderColor: "var(--tg-theme-bg-color, #fff)" }}>
+            Доп. услуги
+          </div>
+          {additionalServices.map((svc, i) => (
+            <div
+              key={i}
+              className="flex items-center px-3 py-2 border-b last:border-b-0"
+              style={{ borderColor: "var(--tg-theme-bg-color, #fff)" }}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-tg-text font-medium truncate">
+                  {svc.name}
+                </div>
+                <div className="text-[11px] text-tg-hint">
+                  {svc.quantity} × {svc.price}₽
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-tg-text ml-2 whitespace-nowrap">
+                {svc.amount.toLocaleString("ru-RU")} ₽
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemoveService(i)}
+                className="ml-2 w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:bg-red-50 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          {servicesTotal > 0 && (
+            <div
+              className="flex justify-between items-center px-3 py-2"
+              style={{ backgroundColor: "var(--tg-theme-bg-color, #fff)" }}
+            >
+              <span className="text-sm font-bold text-tg-text">Общая сумма</span>
+              <span className="text-sm font-bold text-tg-button">
+                {grandTotal.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+          )}
         </div>
       )}
 
