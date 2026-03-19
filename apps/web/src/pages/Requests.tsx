@@ -521,9 +521,7 @@ export default function Requests() {
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  <button onClick={() => toggleSort("boxCount")} className="hover:text-gray-900 dark:hover:text-white">
-                    Мест {sortIndicator("boxCount")}
-                  </button>
+                  Мест
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("client")} className="hover:text-gray-900 dark:hover:text-white">
@@ -870,6 +868,7 @@ export default function Requests() {
                           deliveryDate: new Date(fbsDate).toISOString(),
                           packagingType: "boxes",
                           boxCount: 1,
+                          volume: Number(fbsQty),
                           deliveryTypeId: 1,
                           items: [{
                             description: `${selectedFbsCity.fullName}`,

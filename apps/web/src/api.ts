@@ -197,6 +197,7 @@ export interface CreateAdminRequestPayload {
   packagingType: PackagingType;
   boxTypeId?: number;
   boxCount: number;
+  volume?: number;
   weight?: number;
   comment?: string;
   deliveryTypeId?: number;
