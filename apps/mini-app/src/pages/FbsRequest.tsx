@@ -326,7 +326,7 @@ export default function FbsRequest() {
             >
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-tg-text font-medium truncate">
-                  {it.qty} × {it.price}
+                  {it.qty} м³ × {it.price}
                 </div>
 
               </div>
