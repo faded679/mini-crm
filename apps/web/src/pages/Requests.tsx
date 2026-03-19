@@ -521,9 +521,6 @@ export default function Requests() {
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  Мест
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("client")} className="hover:text-gray-900 dark:hover:text-white">
                     Клиент {sortIndicator("client")}
                   </button>
@@ -583,7 +580,6 @@ export default function Requests() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.weight ?? "—"} кг</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.boxCount}</td>
                   <td className="px-4 py-3 text-sm" onClick={(e) => e.stopPropagation()}>
                     <a
                       href={`/admin/clients/${r.client.id}`}
