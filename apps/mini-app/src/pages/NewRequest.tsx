@@ -381,7 +381,11 @@ export default function NewRequest() {
                 <div className="text-sm text-tg-text font-medium truncate">
                   {it.packaging === "pallets" ? "Палета" : "Коробка"} · {it.typeName} x {it.qty}
                 </div>
+
               </div>
+              <span className="text-sm font-semibold text-tg-text ml-2 whitespace-nowrap">
+                {it.amount.toLocaleString("ru-RU")} ₽
+              </span>
               <button
                 type="button"
                 onClick={() => handleRemoveItem(i)}
