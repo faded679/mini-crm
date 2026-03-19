@@ -6,10 +6,12 @@ import {
   getScheduleFbs,
   getPriceFbs,
   getServicePrices,
+  getClientServicePrices,
   type CityFbs,
   type ScheduleEntryFbs,
   type PriceFbsEntry,
   type ServicePrice,
+  type ClientServicePrice,
 } from "../api";
 import { getTelegramUser } from "../telegram";
 
@@ -35,6 +37,7 @@ export default function FbsRequest() {
   const [schedule, setSchedule] = useState<ScheduleEntryFbs[]>([]);
   const [prices, setPrices] = useState<PriceFbsEntry[]>([]);
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
+  const [clientServicePrices, setClientServicePrices] = useState<ClientServicePrice[]>([]);
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -46,6 +49,9 @@ export default function FbsRequest() {
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [serviceQty, setServiceQty] = useState("");
   
+  // Client services toggles
+  const [selectedClientServices, setSelectedClientServices] = useState<Set<number>>(new Set());
+  
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -56,6 +62,7 @@ export default function FbsRequest() {
       if (def) setCityId(def.id);
     }).catch(() => {});
     getServicePrices().then(setServicePrices).catch(() => setServicePrices([]));
+    getClientServicePrices("FBS").then(setClientServicePrices).catch(() => setClientServicePrices([]));
   }, []);
 
   const selectedCity = cities.find((c) => c.id === cityId);
@@ -121,6 +128,18 @@ export default function FbsRequest() {
     setAdditionalServices((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleToggleClientService = (serviceId: number) => {
+    setSelectedClientServices((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(serviceId)) {
+        newSet.delete(serviceId);
+      } else {
+        newSet.add(serviceId);
+      }
+      return newSet;
+    });
+  };
+
   const total = items.reduce((s, it) => s + it.amount, 0);
   const servicesTotal = additionalServices.reduce((s, it) => s + it.amount, 0);
   const grandTotal = total + servicesTotal;
@@ -138,6 +157,10 @@ export default function FbsRequest() {
     try {
       const totalQty = items.reduce((s, it) => s + it.qty, 0);
       
+      const selectedClientServicesList = Array.from(selectedClientServices)
+        .map((id) => clientServicePrices.find((s) => s.id === id))
+        .filter((s): s is ClientServicePrice => s !== undefined);
+
       const allItems = [
         ...items.map((it) => ({
           description: `${selectedCity.fullName}`,
@@ -152,6 +175,13 @@ export default function FbsRequest() {
           quantity: svc.quantity,
           price: svc.price,
           amount: svc.amount,
+        })),
+        ...selectedClientServicesList.map((svc) => ({
+          description: svc.name,
+          unit: svc.unit,
+          quantity: 1,
+          price: svc.price,
+          amount: svc.price,
         })),
       ];
 
@@ -172,7 +202,10 @@ export default function FbsRequest() {
           (additionalServices.length > 0 
             ? " | Доп. услуги: " + additionalServices.map((s) => `${s.name} x${s.quantity}`).join(", ")
             : "") +
-          ` | Итого: ${grandTotal}₽`,
+          (selectedClientServicesList.length > 0
+            ? " | Услуги клиента: " + selectedClientServicesList.map((s) => s.name).join(", ")
+            : "") +
+          ` | Итого: ${(grandTotal + selectedClientServicesList.reduce((sum, s) => sum + s.price, 0)).toLocaleString("ru-RU")}₽`,
         items: allItems,
       }); 
       navigate("/history");
@@ -291,6 +324,30 @@ export default function FbsRequest() {
               ✨ Добавить
             </button>
           )}
+        </div>
+      )}
+
+      {/* Client Services Toggles */}
+      {selectedPrice && clientServicePrices.length > 0 && (
+        <div className="mb-3 slide-up">
+          <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
+          {clientServicePrices.map((service) => (
+            <label
+              key={service.id}
+              className="flex items-center justify-between px-4 py-3 mb-2 rounded-xl bg-tg-secondary-bg border border-gray-700/20 cursor-pointer transition-all active:opacity-80"
+            >
+              <div className="flex-1">
+                <div className="text-sm text-tg-text font-medium">{service.name}</div>
+                <div className="text-xs text-tg-hint">{service.price} ₽ / {service.unit}</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={selectedClientServices.has(service.id)}
+                onChange={() => handleToggleClientService(service.id)}
+                className="w-5 h-5 rounded accent-tg-button"
+              />
+            </label>
+          ))}
         </div>
       )}
 

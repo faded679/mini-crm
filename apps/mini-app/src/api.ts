@@ -219,3 +219,21 @@ export interface ServicePrice {
 export function getServicePrices() {
   return api<ServicePrice[]>("/bot/service-prices");
 }
+
+export interface ClientServicePrice {
+  id: number;
+  deliveryTypeId: number;
+  name: string;
+  price: number;
+  unit: string;
+  comment: string | null;
+  deliveryType: {
+    id: number;
+    name: string;
+  };
+}
+
+export function getClientServicePrices(deliveryType?: string) {
+  const qs = deliveryType ? `?deliveryType=${encodeURIComponent(deliveryType)}` : "";
+  return api<ClientServicePrice[]>(`/bot/client-service-prices${qs}`);
+}

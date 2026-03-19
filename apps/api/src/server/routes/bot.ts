@@ -599,4 +599,30 @@ router.get("/service-prices", async (_req: Request, res: Response, next: NextFun
   }
 });
 
+// GET /bot/client-service-prices?deliveryType=FBS — list client additional services filtered by delivery type
+router.get("/client-service-prices", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const deliveryTypeName = req.query.deliveryType as string | undefined;
+    const where: any = {};
+    
+    if (deliveryTypeName) {
+      const deliveryType = await (prisma as any).deliveryType.findFirst({
+        where: { name: deliveryTypeName }
+      });
+      if (deliveryType) {
+        where.deliveryTypeId = deliveryType.id;
+      }
+    }
+
+    const items = await (prisma as any).clientServicePrice.findMany({ 
+      where,
+      orderBy: { id: "asc" },
+      include: { deliveryType: true }
+    });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
