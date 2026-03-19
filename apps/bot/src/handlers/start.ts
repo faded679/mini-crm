@@ -21,7 +21,7 @@ export async function handleStart(ctx: Context): Promise<void> {
   if (!userId) return;
 
   try {
-    const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
+    const { consentGiven, hasPhone, hasEmail, hasInn } = await checkConsent(String(userId));
 
     // Step 1: Check consent
     if (!consentGiven) {
@@ -60,7 +60,14 @@ export async function handleStart(ctx: Context): Promise<void> {
       return;
     }
 
-    // Step 3: Check INN
+    // Step 3: Check email
+    if (!hasEmail) {
+      await setMenuButton(userId, false);
+      await ctx.reply("📧 Введите вашу электронную почту (email):");
+      return;
+    }
+
+    // Step 4: Check INN
     if (!hasInn) {
       await setMenuButton(userId, false);
       await ctx.reply("🏢 Введите ИНН вашей организации (10 или 12 цифр):");

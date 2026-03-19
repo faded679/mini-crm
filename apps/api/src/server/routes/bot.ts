@@ -300,18 +300,19 @@ router.get("/consent/:telegramId", async (req: Request, res: Response, next: Nex
   try {
     const { telegramId } = req.params;
 
-    const client = await prisma.client.findUnique({
+    const client = await (prisma as any).client.findUnique({
       where: { telegramId },
       select: { 
         consentGiven: true, 
         consentAt: true, 
-        phone: true, 
+        phone: true,
+        email: true,
         counterparties: { select: { id: true }, take: 1 }
       },
     });
 
     if (!client) {
-      res.json({ consentGiven: false, hasPhone: false, hasInn: false });
+      res.json({ consentGiven: false, hasPhone: false, hasEmail: false, hasInn: false });
       return;
     }
 
@@ -319,6 +320,7 @@ router.get("/consent/:telegramId", async (req: Request, res: Response, next: Nex
       consentGiven: client.consentGiven, 
       consentAt: client.consentAt,
       hasPhone: !!client.phone,
+      hasEmail: !!client.email,
       hasInn: client.counterparties.length > 0
     });
   } catch (err) {
@@ -368,6 +370,27 @@ router.post("/phone", async (req: Request, res: Response, next: NextFunction) =>
     });
 
     res.json({ phone: client.phone });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /bot/email — save client email
+router.post("/email", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { telegramId, email } = req.body;
+
+    if (!telegramId) throw new ApiError(400, "Missing telegramId");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+      throw new ApiError(400, "Invalid email");
+    }
+
+    const client = await (prisma as any).client.update({
+      where: { telegramId: String(telegramId) },
+      data: { email: String(email) },
+    });
+
+    res.json({ email: client.email });
   } catch (err) {
     next(err);
   }

@@ -2,7 +2,7 @@ import { Bot } from "grammy";
 import { env } from "./env.js";
 import { handleStart } from "./handlers/start.js";
 import { getSession, clearSession } from "./handlers/new-request.js";
-import { acceptConsent, checkConsent, savePhone, linkInn } from "./api.js";
+import { acceptConsent, checkConsent, savePhone, saveEmail, linkInn } from "./api.js";
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -117,9 +117,8 @@ bot.on("message:contact", async (ctx) => {
       reply_markup: { remove_keyboard: true },
     });
 
-    // Ask for INN
-    waitingForInn.add(user.id);
-    await ctx.reply("🏢 Введите ИНН вашей организации (10 или 12 цифр):");
+    // Ask for email
+    await ctx.reply("📧 Введите вашу электронную почту (email):");
   } catch {
     await ctx.reply("Ошибка при сохранении номера. Попробуйте позже.");
   }
@@ -129,10 +128,31 @@ bot.on("message:text", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  // Check if user needs to provide INN (either in waitingForInn set or missing INN in registration)
-  const { consentGiven, hasPhone, hasInn } = await checkConsent(String(userId));
-  
-  if (consentGiven && hasPhone && !hasInn) {
+  const { consentGiven, hasPhone, hasEmail, hasInn } = await checkConsent(String(userId));
+
+  // Step: waiting for email (after phone, before INN)
+  if (consentGiven && hasPhone && !hasEmail) {
+    const text = ctx.message.text.trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
+      await ctx.reply("❌ Введите корректный email (например: example@mail.ru):");
+      return;
+    }
+
+    try {
+      await saveEmail(String(userId), text);
+      await ctx.reply("✅ Email сохранён.");
+
+      // Ask for INN
+      await ctx.reply("🏢 Введите ИНН вашей организации (10 или 12 цифр):");
+    } catch {
+      await ctx.reply("Ошибка при сохранении email. Попробуйте ещё раз:");
+    }
+    return;
+  }
+
+  // Step: waiting for INN (after email)
+  if (consentGiven && hasPhone && hasEmail && !hasInn) {
     const text = ctx.message.text.trim();
 
     if (!/^\d{10}$|^\d{12}$/.test(text)) {

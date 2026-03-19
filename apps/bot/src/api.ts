@@ -44,7 +44,7 @@ export async function createRequest(data: CreateRequestPayload): Promise<Shipmen
   return res.json() as Promise<ShipmentRequest>;
 }
 
-export async function checkConsent(telegramId: string): Promise<{ consentGiven: boolean; hasPhone: boolean; hasInn: boolean }> {
+export async function checkConsent(telegramId: string): Promise<{ consentGiven: boolean; hasPhone: boolean; hasEmail: boolean; hasInn: boolean }> {
   const res = await fetch(`${env.API_URL}/bot/consent/${telegramId}`);
 
   if (!res.ok) {
@@ -52,7 +52,7 @@ export async function checkConsent(telegramId: string): Promise<{ consentGiven: 
     throw new Error(`API error ${res.status}: ${body}`);
   }
 
-  return res.json() as Promise<{ consentGiven: boolean; hasPhone: boolean; hasInn: boolean }>;
+  return res.json() as Promise<{ consentGiven: boolean; hasPhone: boolean; hasEmail: boolean; hasInn: boolean }>;
 }
 
 export async function acceptConsent(data: {
@@ -88,6 +88,21 @@ export async function savePhone(telegramId: string, phone: string): Promise<{ ph
   }
 
   return res.json() as Promise<{ phone: string }>;
+}
+
+export async function saveEmail(telegramId: string, email: string): Promise<{ email: string }> {
+  const res = await fetch(`${env.API_URL}/bot/email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId, email }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+
+  return res.json() as Promise<{ email: string }>;
 }
 
 export async function linkInn(telegramId: string, inn: string): Promise<{ counterpartyId: number; name: string; inn: string }> {
