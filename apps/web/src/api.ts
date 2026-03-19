@@ -815,6 +815,44 @@ export function deleteServicePrice(id: number) {
   });
 }
 
+// --------------- Client Service Prices ---------------
+
+export interface ClientServicePrice {
+  id: number;
+  deliveryTypeId: number;
+  name: string;
+  price: number;
+  unit: string;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deliveryType: DeliveryType;
+}
+
+export function getClientServicePrices() {
+  return request<ClientServicePrice[]>("/admin/client-service-prices");
+}
+
+export function createClientServicePrice(data: { deliveryTypeId: number; name: string; price: number; unit?: string; comment?: string | null }) {
+  return request<ClientServicePrice>("/admin/client-service-prices", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateClientServicePrice(id: number, data: { deliveryTypeId?: number; name?: string; price?: number; unit?: string; comment?: string | null }) {
+  return request<ClientServicePrice>(`/admin/client-service-prices/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteClientServicePrice(id: number) {
+  return request<void>(`/admin/client-service-prices/${id}`, {
+    method: "DELETE",
+  });
+}
+
 // --------------- Broadcast ---------------
 
 export interface BroadcastResult {

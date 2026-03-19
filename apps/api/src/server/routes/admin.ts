@@ -1700,6 +1700,97 @@ router.delete("/service-prices/:id", async (req: Request, res: Response, next: N
   }
 });
 
+// --------------- Client Service Prices ---------------
+
+router.get("/client-service-prices", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const items = await (prisma as any).clientServicePrice.findMany({ 
+      orderBy: { id: "asc" },
+      include: { deliveryType: true }
+    });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/client-service-prices", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { deliveryTypeId, name, price, unit, comment } = req.body as {
+      deliveryTypeId?: number;
+      name?: string;
+      price?: number;
+      unit?: string;
+      comment?: string | null;
+    };
+    if (!deliveryTypeId || !Number.isFinite(deliveryTypeId)) throw new ApiError(400, "deliveryTypeId is required");
+    if (!name?.trim()) throw new ApiError(400, "name is required");
+    if (price === undefined || !Number.isFinite(price) || price < 0) throw new ApiError(400, "Invalid price");
+
+    const created = await (prisma as any).clientServicePrice.create({
+      data: {
+        deliveryTypeId,
+        name: name.trim(),
+        price,
+        unit: unit?.trim() || "шт",
+        comment: comment?.trim() || null,
+      },
+      include: { deliveryType: true }
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/client-service-prices/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { deliveryTypeId, name, price, unit, comment } = req.body as {
+      deliveryTypeId?: number;
+      name?: string;
+      price?: number;
+      unit?: string;
+      comment?: string | null;
+    };
+
+    const data: any = {};
+    if (deliveryTypeId !== undefined) {
+      if (!Number.isFinite(deliveryTypeId)) throw new ApiError(400, "Invalid deliveryTypeId");
+      data.deliveryTypeId = deliveryTypeId;
+    }
+    if (name !== undefined) data.name = name.trim();
+    if (price !== undefined) {
+      if (!Number.isFinite(price) || price! < 0) throw new ApiError(400, "Invalid price");
+      data.price = price;
+    }
+    if (unit !== undefined) data.unit = unit.trim();
+    if (comment !== undefined) data.comment = comment?.trim() || null;
+
+    const updated = await (prisma as any).clientServicePrice.update({ 
+      where: { id }, 
+      data,
+      include: { deliveryType: true }
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/client-service-prices/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+    await (prisma as any).clientServicePrice.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/rates
 router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -326,13 +326,14 @@ model RequestFieldHistory {
 }
 
 model DeliveryType {
-  id        Int               @id @default(autoincrement())
-  name      String            @unique
-  note      String?           @map("note")
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
+  id        Int                  @id @default(autoincrement())
+  name      String               @unique
+  note      String?              @map("note")
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
 
-  requests  ShipmentRequest[]
+  requests            ShipmentRequest[]
+  clientServicePrices ClientServicePrice[]
 
   @@map("delivery_types")
 }
@@ -347,4 +348,19 @@ model ServicePrice {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("service_prices")
+}
+
+model ClientServicePrice {
+  id             Int          @id @default(autoincrement())
+  deliveryTypeId Int          @map("delivery_type_id")
+  name           String
+  price          Float
+  unit           String       @default("шт")
+  comment        String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  deliveryType   DeliveryType @relation(fields: [deliveryTypeId], references: [id])
+
+  @@map("client_service_prices")
 }

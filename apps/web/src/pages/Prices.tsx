@@ -24,6 +24,11 @@ import {
   createServicePrice,
   updateServicePrice,
   deleteServicePrice,
+  getClientServicePrices,
+  createClientServicePrice,
+  updateClientServicePrice,
+  deleteClientServicePrice,
+  getDeliveryTypes,
   getPriceFbs,
   createPriceFbs,
   updatePriceFbs,
@@ -35,6 +40,8 @@ import {
   type PriceRate,
   type RateUnit,
   type ServicePrice,
+  type ClientServicePrice,
+  type DeliveryType,
   type PriceFbsEntry,
 } from "../api";
 import { cn } from "../lib/utils";
@@ -52,6 +59,8 @@ export default function Prices() {
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
+  const [clientServicePrices, setClientServicePrices] = useState<ClientServicePrice[]>([]);
+  const [deliveryTypes, setDeliveryTypes] = useState<DeliveryType[]>([]);
   const [priceFbsList, setPriceFbsList] = useState<PriceFbsEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCity, setFilterCity] = useState<number | "all">("all");
@@ -95,6 +104,21 @@ export default function Prices() {
   const [spEditUnit, setSpEditUnit] = useState("");
   const [spEditComment, setSpEditComment] = useState("");
   const [savingSp, setSavingSp] = useState(false);
+
+  // client service price management
+  const [newCspDeliveryTypeId, setNewCspDeliveryTypeId] = useState<number | "">("");
+  const [newCspName, setNewCspName] = useState("");
+  const [newCspPrice, setNewCspPrice] = useState("");
+  const [newCspUnit, setNewCspUnit] = useState("");
+  const [newCspComment, setNewCspComment] = useState("");
+  const [addingCsp, setAddingCsp] = useState(false);
+  const [cspEditId, setCspEditId] = useState<number | null>(null);
+  const [cspEditDeliveryTypeId, setCspEditDeliveryTypeId] = useState<number | "">("");
+  const [cspEditName, setCspEditName] = useState("");
+  const [cspEditPrice, setCspEditPrice] = useState("");
+  const [cspEditUnit, setCspEditUnit] = useState("");
+  const [cspEditComment, setCspEditComment] = useState("");
+  const [savingCsp, setSavingCsp] = useState(false);
 
   // pallet type management
   const [newPtName, setNewPtName] = useState("");
@@ -144,13 +168,25 @@ export default function Prices() {
   const [saving, setSaving] = useState(false);
 
   const reload = async () => {
-    const [c, cfbs, r, bt, pt, sp, pfbs] = await Promise.all([getCities(), getCitiesFbs(), getRates(), getBoxTypes(), getPalletTypes(), getServicePrices(), getPriceFbs()]);
+    const [c, cfbs, r, bt, pt, sp, csp, dt, pfbs] = await Promise.all([
+      getCities(), 
+      getCitiesFbs(), 
+      getRates(), 
+      getBoxTypes(), 
+      getPalletTypes(), 
+      getServicePrices(), 
+      getClientServicePrices(),
+      getDeliveryTypes(),
+      getPriceFbs()
+    ]);
     setCities(c);
     setCitiesFbs(cfbs);
     setRates(r);
     setBoxTypes(bt);
     setPalletTypes(pt);
     setServicePrices(sp);
+    setClientServicePrices(csp);
+    setDeliveryTypes(dt);
     setPriceFbsList(pfbs);
   };
 
@@ -342,6 +378,48 @@ export default function Prices() {
   const handleDeleteSp = async (id: number) => {
     if (!confirm("Удалить услугу?")) return;
     try { await deleteServicePrice(id); await reload(); } catch (e) { alert((e as Error).message); }
+  };
+
+  // client service price handlers
+  const handleAddCsp = async () => {
+    if (addingCsp || !newCspDeliveryTypeId || !newCspName.trim() || !newCspPrice) return;
+    setAddingCsp(true);
+    try {
+      await createClientServicePrice({
+        deliveryTypeId: Number(newCspDeliveryTypeId),
+        name: newCspName.trim(),
+        price: Number(newCspPrice),
+        unit: newCspUnit.trim() || "шт",
+        comment: newCspComment.trim() || null,
+      });
+      setNewCspDeliveryTypeId("");
+      setNewCspName("");
+      setNewCspPrice("");
+      setNewCspUnit("");
+      setNewCspComment("");
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setAddingCsp(false); }
+  };
+
+  const handleSaveCspEdit = async () => {
+    if (savingCsp || cspEditId === null || !cspEditDeliveryTypeId || !cspEditName.trim() || !cspEditPrice) return;
+    setSavingCsp(true);
+    try {
+      await updateClientServicePrice(cspEditId, {
+        deliveryTypeId: Number(cspEditDeliveryTypeId),
+        name: cspEditName.trim(),
+        price: Number(cspEditPrice),
+        unit: cspEditUnit.trim() || "шт",
+        comment: cspEditComment.trim() || null,
+      });
+      setCspEditId(null);
+      await reload();
+    } catch (e) { alert((e as Error).message); } finally { setSavingCsp(false); }
+  };
+
+  const handleDeleteCsp = async (id: number) => {
+    if (!confirm("Удалить услугу клиента?")) return;
+    try { await deleteClientServicePrice(id); await reload(); } catch (e) { alert((e as Error).message); }
   };
 
   // city fbs handlers
@@ -872,6 +950,93 @@ export default function Prices() {
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => { setSpEditId(sp.id); setSpEditName(sp.name); setSpEditPrice(String(sp.price)); setSpEditUnit(sp.unit); setSpEditComment(sp.comment ?? ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
                           <button onClick={() => handleDeleteSp(sp.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Client Service Prices */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Доп. услуги клиента</p>
+
+        <div className="flex flex-wrap items-end gap-2 mb-3">
+          <select value={newCspDeliveryTypeId} onChange={(e) => setNewCspDeliveryTypeId(e.target.value ? Number(e.target.value) : "")} className="w-32 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+            <option value="">Тип доставки</option>
+            {deliveryTypes.map((dt) => (
+              <option key={dt.id} value={dt.id}>{dt.name}</option>
+            ))}
+          </select>
+          <input value={newCspName} onChange={(e) => setNewCspName(e.target.value)} placeholder="Название" className="w-56 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newCspPrice} onChange={(e) => setNewCspPrice(e.target.value)} placeholder="Цена" inputMode="decimal" className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newCspUnit} onChange={(e) => setNewCspUnit(e.target.value)} placeholder="Ед. изм." className="w-28 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <input value={newCspComment} onChange={(e) => setNewCspComment(e.target.value)} placeholder="Комментарий" className="w-52 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+          <button onClick={handleAddCsp} disabled={addingCsp || !newCspDeliveryTypeId || !newCspName.trim() || !newCspPrice} className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 disabled:opacity-50 transition">
+            <Plus size={14} /> Добавить
+          </button>
+        </div>
+
+        {clientServicePrices.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Тип доставки</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Название</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Цена</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ед. изм.</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Комментарий</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {clientServicePrices.map((csp) => (
+                  <tr key={csp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {cspEditId === csp.id ? (
+                        <select value={cspEditDeliveryTypeId} onChange={(e) => setCspEditDeliveryTypeId(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+                          <option value="">Выберите</option>
+                          {deliveryTypes.map((dt) => (
+                            <option key={dt.id} value={dt.id}>{dt.name}</option>
+                          ))}
+                        </select>
+                      ) : csp.deliveryType.name}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">
+                      {cspEditId === csp.id ? (
+                        <input value={cspEditName} onChange={(e) => setCspEditName(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : csp.name}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {cspEditId === csp.id ? (
+                        <input value={cspEditPrice} onChange={(e) => setCspEditPrice(e.target.value)} inputMode="decimal" className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : csp.price}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {cspEditId === csp.id ? (
+                        <input value={cspEditUnit} onChange={(e) => setCspEditUnit(e.target.value)} className="w-24 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : csp.unit}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                      {cspEditId === csp.id ? (
+                        <input value={cspEditComment} onChange={(e) => setCspEditComment(e.target.value)} className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" />
+                      ) : csp.comment || "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {cspEditId === csp.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={handleSaveCspEdit} disabled={savingCsp} className="p-1 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"><Check size={16} /></button>
+                          <button onClick={() => setCspEditId(null)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={16} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setCspEditId(csp.id); setCspEditDeliveryTypeId(csp.deliveryTypeId); setCspEditName(csp.name); setCspEditPrice(String(csp.price)); setCspEditUnit(csp.unit); setCspEditComment(csp.comment ?? ""); }} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Pencil size={16} /></button>
+                          <button onClick={() => handleDeleteCsp(csp.id)} className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16} /></button>
                         </div>
                       )}
                     </td>
