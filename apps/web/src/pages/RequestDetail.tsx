@@ -565,8 +565,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               )}
             </div>
 
-              {request.deliveryTypeId !== 1 && (
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                   <button
                     onClick={async () => {
                       if (!request) return;
@@ -592,7 +591,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     <FileText size={14} /> Подставить
                   </button>
                 </div>
-              )}
 
           </div>
 
