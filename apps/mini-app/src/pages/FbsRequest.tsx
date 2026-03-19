@@ -289,22 +289,29 @@ export default function FbsRequest() {
       {items.length > 0 && clientServicePrices.length > 0 && (
         <div className="mb-3 slide-up">
           <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
-          {clientServicePrices.map((service) => (
-            <div
-              key={service.id}
-              onClick={() => handleToggleClientService(service.id)}
-              className="flex items-center justify-between py-2 cursor-pointer transition-all active:opacity-80"
-            >
-              <div className="flex-1">
-                <span className="text-sm text-tg-text font-medium">{service.name} — {service.price} ₽</span>
+          {clientServicePrices.map((service) => {
+            const isSelected = selectedClientServices.has(service.id);
+            return (
+              <div
+                key={service.id}
+                onClick={() => handleToggleClientService(service.id)}
+                className="flex items-center py-2 cursor-pointer transition-all active:opacity-80"
+              >
+                <div
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isSelected ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isSelected ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
+                <span className="ml-3 text-sm text-tg-text font-medium">{service.name} — {service.price} ₽</span>
               </div>
-              {selectedClientServices.has(service.id) && (
-                <svg className="w-5 h-5 text-green-500 ml-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
