@@ -281,23 +281,22 @@ export default function FbsRequest() {
       )}
 
       {/* Client Services Toggles */}
-      {selectedPrice && clientServicePrices.length > 0 && (
+      {items.length > 0 && clientServicePrices.length > 0 && (
         <div className="mb-3 slide-up">
           <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
           {clientServicePrices.map((service) => (
             <label
               key={service.id}
-              className="flex items-center justify-between px-4 py-3 mb-2 rounded-xl bg-tg-secondary-bg border border-gray-700/20 cursor-pointer transition-all active:opacity-80"
+              className="flex items-center justify-between py-2 cursor-pointer transition-all active:opacity-80"
             >
               <div className="flex-1">
-                <div className="text-sm text-tg-text font-medium">{service.name}</div>
-                <div className="text-xs text-tg-hint">{service.price} ₽ / {service.unit}</div>
+                <span className="text-sm text-tg-text font-medium">{service.name} — {service.price} ₽</span>
               </div>
               <input
                 type="checkbox"
                 checked={selectedClientServices.has(service.id)}
                 onChange={() => handleToggleClientService(service.id)}
-                className="w-5 h-5 rounded accent-tg-button"
+                className="w-5 h-5 rounded accent-tg-button ml-3"
               />
             </label>
           ))}
