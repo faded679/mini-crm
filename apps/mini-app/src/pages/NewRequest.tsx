@@ -7,11 +7,13 @@ import {
   getPalletTypes,
   getRates,
   getScheduleForCity,
+  getClientServicePrices,
   type City,
   type BoxType,
   type PalletType,
   type PriceRate,
   type ScheduleEntry,
+  type ClientServicePrice,
 } from "../api";
 import { getTelegramUser } from "../telegram";
 
@@ -34,6 +36,7 @@ export default function NewRequest() {
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [clientServicePrices, setClientServicePrices] = useState<ClientServicePrice[]>([]);
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -44,6 +47,9 @@ export default function NewRequest() {
 
   const [items, setItems] = useState<LineItem[]>([]);
   
+  // Client services toggles
+  const [selectedClientServices, setSelectedClientServices] = useState<Set<number>>(new Set());
+  
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [deliveryTypeId, setDeliveryTypeId] = useState<number | null>(null);
@@ -52,6 +58,7 @@ export default function NewRequest() {
     getCities().then(setCities).catch(() => {});
     getBoxTypes().then(setBoxTypes).catch(() => {});
     getPalletTypes().then(setPalletTypes).catch(() => {});
+    getClientServicePrices("FBO").then(setClientServicePrices).catch(() => setClientServicePrices([]));
     
     // Set delivery type based on URL parameter
     const typeParam = searchParams.get("type");
@@ -114,7 +121,24 @@ export default function NewRequest() {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleToggleClientService = (serviceId: number) => {
+    setSelectedClientServices((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(serviceId)) {
+        newSet.delete(serviceId);
+      } else {
+        newSet.add(serviceId);
+      }
+      return newSet;
+    });
+  };
+
   const total = items.reduce((s, it) => s + it.amount, 0);
+  const clientServicesTotal = Array.from(selectedClientServices)
+    .map((id) => clientServicePrices.find((s) => s.id === id))
+    .filter((s) => s !== undefined)
+    .reduce((sum, s) => sum + s.price, 0);
+  const grandTotal = total + clientServicesTotal;
 
   const handleSubmit = async () => {
     if (!selectedCity || items.length === 0) return;
@@ -131,6 +155,10 @@ export default function NewRequest() {
       const mainPkg = items[0].packaging;
       const mainBoxTypeId = mainPkg === "boxes" ? items[0].typeId ?? undefined : undefined;
       
+      const selectedClientServicesList = Array.from(selectedClientServices)
+        .map((id) => clientServicePrices.find((s) => s.id === id))
+        .filter((s): s is ClientServicePrice => s !== undefined);
+      
       const allItems = [
         ...items.map((it) => ({
           description: `${selectedCity.fullName} ${it.packaging === "pallets" ? "Палета" : "Коробка"} — ${it.typeName}`,
@@ -138,6 +166,13 @@ export default function NewRequest() {
           quantity: it.qty,
           price: it.price,
           amount: it.amount,
+        })),
+        ...selectedClientServicesList.map((svc) => ({
+          description: svc.name,
+          unit: svc.unit,
+          quantity: 1,
+          price: svc.price,
+          amount: svc.price,
         })),
       ];
 
@@ -156,7 +191,10 @@ export default function NewRequest() {
         comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
           .join("; ") + 
-          ` | Итого: ${total}₽`,
+          (selectedClientServicesList.length > 0
+            ? " | Услуги клиента: " + selectedClientServicesList.map((s) => s.name).join(", ")
+            : "") +
+          ` | Итого: ${grandTotal}₽`,
         items: allItems,
       });
       navigate("/history");
@@ -361,11 +399,40 @@ export default function NewRequest() {
           ))}
           <div className="flex justify-between items-center px-3 py-2" style={{ backgroundColor: "var(--tg-theme-bg-color, #fff)" }}>
             <span className="text-sm font-bold text-tg-text">Итого</span>
-            <span className="text-sm font-bold text-tg-button">{total.toLocaleString("ru-RU")} ₽</span>
+            <span className="text-sm font-bold text-tg-button">{grandTotal.toLocaleString("ru-RU")} ₽</span>
           </div>
         </div>
       )}
 
+      {/* Client Services Toggles */}
+      {items.length > 0 && clientServicePrices.length > 0 && (
+        <div className="mb-3 slide-up">
+          <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
+          {clientServicePrices.map((service) => {
+            const isSelected = selectedClientServices.has(service.id);
+            return (
+              <div
+                key={service.id}
+                onClick={() => handleToggleClientService(service.id)}
+                className="flex items-center py-2 cursor-pointer transition-all active:opacity-80"
+              >
+                <div
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isSelected ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isSelected ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
+                <span className="ml-3 text-base text-tg-text font-medium">{service.name} — {service.price} ₽</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Submit */}
       {items.length > 0 && (
