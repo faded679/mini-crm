@@ -392,10 +392,6 @@ export default function FbsRequest() {
         </div>
       )}
 
-      {/* Additional Services */}
-      {items.length > 0 && servicePrices.length > 0 && (
-        <div className="mb-3 slide-up">
- 
       {/* Submit */}
       {items.length > 0 && (
         <button
