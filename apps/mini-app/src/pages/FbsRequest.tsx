@@ -285,36 +285,6 @@ export default function FbsRequest() {
         </div>
       )}
 
-      {/* Client Services Toggles */}
-      {items.length > 0 && clientServicePrices.length > 0 && (
-        <div className="mb-3 slide-up">
-          <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
-          {clientServicePrices.map((service) => {
-            const isSelected = selectedClientServices.has(service.id);
-            return (
-              <div
-                key={service.id}
-                onClick={() => handleToggleClientService(service.id)}
-                className="flex items-center py-2 cursor-pointer transition-all active:opacity-80"
-              >
-                <div
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    isSelected ? 'bg-green-500' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isSelected ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </div>
-                <span className="ml-3 text-base text-tg-text font-medium">{service.name} — {service.price} ₽</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* Items list */}
       {items.length > 0 && (
         <div className="bg-tg-secondary-bg rounded-xl overflow-hidden mb-3 slide-up">
@@ -342,6 +312,37 @@ export default function FbsRequest() {
               </button>
             </div>
           ))}
+          
+          {/* Client Services Toggles */}
+          {clientServicePrices.length > 0 && (
+            <div className="px-3 py-2 border-t" style={{ borderColor: "var(--tg-theme-bg-color, #fff)" }}>
+              <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
+              {clientServicePrices.map((service) => {
+                const isSelected = selectedClientServices.has(service.id);
+                return (
+                  <div
+                    key={service.id}
+                    onClick={() => handleToggleClientService(service.id)}
+                    className="flex items-center py-2 cursor-pointer transition-all active:opacity-80"
+                  >
+                    <div
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isSelected ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isSelected ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </div>
+                    <span className="ml-3 text-base text-tg-text font-medium">{service.name} — {service.price} ₽</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
           <div
             className="flex justify-between items-center px-3 py-2"
             style={{ backgroundColor: "var(--tg-theme-bg-color, #fff)" }}
