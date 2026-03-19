@@ -21,6 +21,7 @@ import {
   suggestRequestService,
   getDeliveryTypes,
   getInvoices,
+  getServicePrices,
   type City,
   type PackagingType,
   type ShipmentRequestDetail,
@@ -32,6 +33,7 @@ import {
   type InvoiceItemPayload,
   type Invoice,
   type DeliveryType,
+  type ServicePrice,
 } from "../api";
 import { cn } from "../lib/utils";
 import { ArrowLeft, FileText, Plus, Trash2 } from "lucide-react";
@@ -93,12 +95,18 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
   // Price list data for inline add
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
   const [rates, setRates] = useState<PriceRate[]>([]);
+  const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
 
   // Inline add-from-pricelist form state
   const [addPkgType, setAddPkgType] = useState<"boxes" | "pallets">("boxes");
   const [addTypeId, setAddTypeId] = useState<string>("");
   const [addQty, setAddQty] = useState<string>("1");
   const [addingService, setAddingService] = useState(false);
+  
+  // Additional services form state
+  const [selectedServicePriceId, setSelectedServicePriceId] = useState<string>("");
+  const [serviceQty, setServiceQty] = useState<string>("1");
+  const [addingAdditionalService, setAddingAdditionalService] = useState(false);
 
   useEffect(() => {
     getCities().then(setCities).catch(() => setCities([]));
@@ -118,6 +126,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
 
   useEffect(() => {
     getRates().then(setRates).catch(() => setRates([]));
+  }, []);
+
+  useEffect(() => {
+    getServicePrices().then(setServicePrices).catch(() => setServicePrices([]));
   }, []);
 
   useEffect(() => {
@@ -721,6 +733,72 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               );
             })()}
           </div>
+
+          {/* Additional Services from ServicePrice */}
+          {servicePrices.length > 0 && (
+            <div className="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-dashed border-blue-300 dark:border-blue-600">
+              <p className="text-xs text-blue-600 dark:text-blue-400 mb-2 font-medium">Дополнительные услуги</p>
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="min-w-[200px] flex-1">
+                  <label className="block text-[11px] text-gray-400 mb-0.5">Услуга</label>
+                  <select
+                    value={selectedServicePriceId}
+                    onChange={(e) => setSelectedServicePriceId(e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="">Выберите услугу...</option>
+                    {servicePrices.map((sp) => (
+                      <option key={sp.id} value={String(sp.id)}>
+                        {sp.name} — {sp.price}₽
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-20">
+                  <label className="block text-[11px] text-gray-400 mb-0.5">Кол-во</label>
+                  <input
+                    value={serviceQty}
+                    onChange={(e) => setServiceQty(e.target.value)}
+                    inputMode="numeric"
+                    className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
+                  />
+                </div>
+                <button
+                  disabled={!selectedServicePriceId || !serviceQty || Number(serviceQty) <= 0 || addingAdditionalService || !request}
+                  onClick={async () => {
+                    if (!request || !selectedServicePriceId || !serviceQty || Number(serviceQty) <= 0) return;
+                    setAddingAdditionalService(true);
+                    try {
+                      const selectedService = servicePrices.find((sp) => String(sp.id) === selectedServicePriceId);
+                      if (!selectedService) return;
+                      const qty = Number(serviceQty);
+                      const svc = await createRequestService(request.id, {
+                        description: selectedService.name,
+                        unit: selectedService.unit || "шт",
+                        quantity: qty,
+                        price: selectedService.price,
+                      });
+                      setServices((prev) => [...prev, svc]);
+                      setSelectedServicePriceId("");
+                      setServiceQty("1");
+                    } catch {
+                      alert("Ошибка при добавлении услуги");
+                    } finally {
+                      setAddingAdditionalService(false);
+                    }
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 text-xs rounded-lg font-medium transition",
+                    selectedServicePriceId && serviceQty && Number(serviceQty) > 0
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                  )}
+                >
+                  {addingAdditionalService ? "..." : "Добавить"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Services */}
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
