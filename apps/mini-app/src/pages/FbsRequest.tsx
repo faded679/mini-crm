@@ -308,7 +308,7 @@ export default function FbsRequest() {
                     }`}
                   />
                 </div>
-                <span className="ml-3 text-sm text-tg-text font-medium">{service.name} — {service.price} ₽</span>
+                <span className="ml-3 text-base text-tg-text font-medium">{service.name} — {service.price} ₽</span>
               </div>
             );
           })}
