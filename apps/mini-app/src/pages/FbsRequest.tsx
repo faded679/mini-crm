@@ -103,6 +103,11 @@ export default function FbsRequest() {
   };
 
   const total = items.reduce((s, it) => s + it.amount, 0);
+  const clientServicesTotal = Array.from(selectedClientServices)
+    .map((id) => clientServicePrices.find((s) => s.id === id))
+    .filter((s) => s !== undefined)
+    .reduce((sum, s) => sum + s.price, 0);
+  const grandTotal = total + clientServicesTotal;
 
   const handleSubmit = async () => {
     if (!selectedCity || items.length === 0) return;
@@ -285,8 +290,9 @@ export default function FbsRequest() {
         <div className="mb-3 slide-up">
           <p className="text-xs text-tg-hint mb-2">Дополнительные услуги</p>
           {clientServicePrices.map((service) => (
-            <label
+            <div
               key={service.id}
+              onClick={() => handleToggleClientService(service.id)}
               className="flex items-center justify-between py-2 cursor-pointer transition-all active:opacity-80"
             >
               <div className="flex-1">
@@ -295,10 +301,10 @@ export default function FbsRequest() {
               <input
                 type="checkbox"
                 checked={selectedClientServices.has(service.id)}
-                onChange={() => handleToggleClientService(service.id)}
-                className="w-5 h-5 rounded accent-tg-button ml-3"
+                onChange={() => {}}
+                className="w-5 h-5 rounded accent-tg-button ml-3 pointer-events-none"
               />
-            </label>
+            </div>
           ))}
         </div>
       )}
@@ -338,7 +344,7 @@ export default function FbsRequest() {
           >
             <span className="text-sm font-bold text-tg-text">Итого</span>
             <span className="text-sm font-bold text-tg-button">
-              {total.toLocaleString("ru-RU")} ₽
+              {grandTotal.toLocaleString("ru-RU")} ₽
             </span>
           </div>
         </div>
