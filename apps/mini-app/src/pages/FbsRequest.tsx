@@ -107,7 +107,11 @@ export default function FbsRequest() {
   const clientServicesTotal = Array.from(selectedClientServices)
     .map((id) => clientServicePrices.find((s) => s.id === id))
     .filter((s) => s !== undefined)
-    .reduce((sum, s) => sum + (s.price * (totalVolume / 0.1)), 0);
+    .reduce((sum, s) => {
+      // "Забор груза с адреса" - flat price, others - calculated by volume
+      const isPickupService = s.name.includes("Забор груза");
+      return sum + (isPickupService ? s.price : s.price * (totalVolume / 0.1));
+    }, 0);
   const grandTotal = total + clientServicesTotal;
 
   const handleSubmit = async () => {
@@ -127,7 +131,10 @@ export default function FbsRequest() {
         .map((id) => clientServicePrices.find((s) => s.id === id))
         .filter((s): s is ClientServicePrice => s !== undefined);
 
-      const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => sum + (s.price * (totalQty / 0.1)), 0);
+      const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => {
+        const isPickupService = s.name.includes("Забор груза");
+        return sum + (isPickupService ? s.price : s.price * (totalQty / 0.1));
+      }, 0);
       const grandTotal = total + clientServicesTotal;
 
       const allItems = [
@@ -138,13 +145,16 @@ export default function FbsRequest() {
           price: parseFloat(it.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0,
           amount: it.amount,
         })),
-        ...selectedClientServicesList.map((svc) => ({
-          description: svc.name,
-          unit: svc.unit,
-          quantity: totalQty / 0.1,
-          price: svc.price,
-          amount: svc.price * (totalQty / 0.1),
-        })),
+        ...selectedClientServicesList.map((svc) => {
+          const isPickupService = svc.name.includes("Забор груза");
+          return {
+            description: svc.name,
+            unit: svc.unit,
+            quantity: isPickupService ? 1 : totalQty / 0.1,
+            price: svc.price,
+            amount: isPickupService ? svc.price : svc.price * (totalQty / 0.1),
+          };
+        }),
       ];
 
       await createRequest({
@@ -338,11 +348,17 @@ export default function FbsRequest() {
                       />
                     </div>
                     <span className="ml-3 text-base text-tg-text font-medium">
-                      {service.name} — {service.price} ₽/0.1м³
-                      {totalVolume > 0 && (
-                        <span className="text-sm text-tg-hint ml-1">
-                          ({Math.round(service.price * (totalVolume / 0.1) * 100) / 100} ₽)
-                        </span>
+                      {service.name.includes("Забор груза") ? (
+                        <>{service.name} — {service.price} ₽</>
+                      ) : (
+                        <>
+                          {service.name} — {service.price} ₽/0.1м³
+                          {totalVolume > 0 && (
+                            <span className="text-sm text-tg-hint ml-1">
+                              ({Math.round(service.price * (totalVolume / 0.1) * 100) / 100} ₽)
+                            </span>
+                          )}
+                        </>
                       )}
                     </span>
                   </div>
