@@ -103,10 +103,11 @@ export default function FbsRequest() {
   };
 
   const total = items.reduce((s, it) => s + it.amount, 0);
+  const totalVolume = items.reduce((s, it) => s + it.qty, 0);
   const clientServicesTotal = Array.from(selectedClientServices)
     .map((id) => clientServicePrices.find((s) => s.id === id))
     .filter((s) => s !== undefined)
-    .reduce((sum, s) => sum + s.price, 0);
+    .reduce((sum, s) => sum + (s.price * (totalVolume / 0.1)), 0);
   const grandTotal = total + clientServicesTotal;
 
   const handleSubmit = async () => {
@@ -126,7 +127,7 @@ export default function FbsRequest() {
         .map((id) => clientServicePrices.find((s) => s.id === id))
         .filter((s): s is ClientServicePrice => s !== undefined);
 
-      const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => sum + s.price, 0);
+      const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => sum + (s.price * (totalQty / 0.1)), 0);
       const grandTotal = total + clientServicesTotal;
 
       const allItems = [
@@ -140,9 +141,9 @@ export default function FbsRequest() {
         ...selectedClientServicesList.map((svc) => ({
           description: svc.name,
           unit: svc.unit,
-          quantity: 1,
+          quantity: totalQty / 0.1,
           price: svc.price,
-          amount: svc.price,
+          amount: svc.price * (totalQty / 0.1),
         })),
       ];
 
@@ -336,7 +337,14 @@ export default function FbsRequest() {
                         }`}
                       />
                     </div>
-                    <span className="ml-3 text-base text-tg-text font-medium">{service.name} — {service.price} ₽</span>
+                    <span className="ml-3 text-base text-tg-text font-medium">
+                      {service.name} — {service.price} ₽/0.1м³
+                      {totalVolume > 0 && (
+                        <span className="text-sm text-tg-hint ml-1">
+                          ({Math.round(service.price * (totalVolume / 0.1) * 100) / 100} ₽)
+                        </span>
+                      )}
+                    </span>
                   </div>
                 );
               })}
