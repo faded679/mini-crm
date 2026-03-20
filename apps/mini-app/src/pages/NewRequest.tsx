@@ -138,7 +138,11 @@ export default function NewRequest() {
   const clientServicesTotal = Array.from(selectedClientServices)
     .map((id) => clientServicePrices.find((s) => s.id === id))
     .filter((s) => s !== undefined)
-    .reduce((sum, s) => sum + (s.price * totalBoxCount), 0);
+    .reduce((sum, s) => {
+      // "Забор груза с адреса" - flat price, others - calculated by box count
+      const isPickupService = s.name.includes("Забор груза");
+      return sum + (isPickupService ? s.price : s.price * totalBoxCount);
+    }, 0);
   const grandTotal = total + clientServicesTotal;
 
   const handleSubmit = async () => {
@@ -168,13 +172,16 @@ export default function NewRequest() {
           price: it.price,
           amount: it.amount,
         })),
-        ...selectedClientServicesList.map((svc) => ({
-          description: svc.name,
-          unit: svc.unit,
-          quantity: totalQty,
-          price: svc.price,
-          amount: svc.price * totalQty,
-        })),
+        ...selectedClientServicesList.map((svc) => {
+          const isPickupService = svc.name.includes("Забор груза");
+          return {
+            description: svc.name,
+            unit: svc.unit,
+            quantity: isPickupService ? 1 : totalQty,
+            price: svc.price,
+            amount: isPickupService ? svc.price : svc.price * totalQty,
+          };
+        }),
       ];
 
       await createRequest({
@@ -193,7 +200,10 @@ export default function NewRequest() {
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
           .join("; ") + 
           (selectedClientServicesList.length > 0
-            ? " | Услуги клиента: " + selectedClientServicesList.map((s) => `${s.name} x${totalQty}`).join(", ")
+            ? " | Услуги клиента: " + selectedClientServicesList.map((s) => {
+              const isPickupService = s.name.includes("Забор груза");
+              return isPickupService ? s.name : `${s.name} x${totalQty}`;
+            }).join(", ")
             : "") +
           ` | Итого: ${grandTotal}₽`,
         items: allItems,
@@ -421,11 +431,17 @@ export default function NewRequest() {
                       />
                     </div>
                     <span className="ml-3 text-base text-tg-text font-medium">
-                      {service.name} — {service.price} ₽/кор
-                      {totalBoxCount > 0 && (
-                        <span className="text-sm text-tg-hint ml-1">
-                          ({Math.round(service.price * totalBoxCount * 100) / 100} ₽)
-                        </span>
+                      {service.name.includes("Забор груза") ? (
+                        <>{service.name} — {service.price} ₽</>
+                      ) : (
+                        <>
+                          {service.name} — {service.price} ₽/кор
+                          {totalBoxCount > 0 && (
+                            <span className="text-sm text-tg-hint ml-1">
+                              ({Math.round(service.price * totalBoxCount * 100) / 100} ₽)
+                            </span>
+                          )}
+                        </>
                       )}
                     </span>
                   </div>
