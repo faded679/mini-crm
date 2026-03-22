@@ -27,6 +27,17 @@ export default function BottomNav() {
       ),
     },
     {
+      path: "/info",
+      label: "Инфо",
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 16v-4" />
+          <path d="M12 8h.01" />
+        </svg>
+      ),
+    },
+    {
       path: "/profile",
       label: "Профиль",
       icon: (
@@ -50,25 +61,20 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed left-1/2 bottom-0 -translate-x-1/2 w-full max-w-[420px] bg-nav-bg border-t border-gray-200 z-50" style={{ padding: "12px 10px calc(14px + env(safe-area-inset-bottom))" }}>
-      <div className="flex items-center gap-2">
-        <div className="w-2/3 grid grid-cols-3 gap-1">
-          {tabs.map((tab) => {
-            const active = isActive(tab.path);
-            return (
-              <Link
-                key={tab.path}
-                to={tab.path}
-                className={`flex flex-col items-center text-center text-xs py-1.5 rounded-xl transition-all ${active ? "text-accent font-bold" : "text-heading"}`}
-              >
-                <span className="block mb-1">{tab.icon}</span>
-                {tab.label}
-              </Link>
-            );
-          })}
-        </div>
-        <div className="w-1/3 bg-card rounded-[20px] min-h-[64px] flex items-center justify-center text-xl font-semibold text-heading">
-          0 ₽
-        </div>
+      <div className="grid grid-cols-4 gap-1">
+        {tabs.map((tab) => {
+          const active = isActive(tab.path);
+          return (
+            <Link
+              key={tab.path}
+              to={tab.path}
+              className={`flex flex-col items-center text-center text-xs py-1.5 rounded-xl transition-all ${active ? "text-accent font-bold" : "text-heading"}`}
+            >
+              <span className="block mb-1">{tab.icon}</span>
+              {tab.label}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

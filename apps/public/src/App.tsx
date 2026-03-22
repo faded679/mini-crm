@@ -8,6 +8,7 @@ import FbsRequest from "./pages/FbsRequest";
 import FboRequest from "./pages/FboRequest";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
+import Info from "./pages/Info";
 import Success from "./pages/Success";
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/fbs" element={<FbsRequest />} />
           <Route path="/fbo" element={<FboRequest />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/info" element={<Info />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/success/:id" element={<Success />} />
           <Route path="*" element={<Navigate to="/" replace />} />
