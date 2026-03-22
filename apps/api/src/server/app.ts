@@ -12,6 +12,7 @@ import scheduleRouter from "./routes/schedule.js";
 import webhooksRouter from "./routes/webhooks.js";
 import invoicesRouter from "./routes/invoices.js";
 import requestsRouter from "./routes/requests.js";
+import publicAuthRouter from "./routes/public-auth.js";
 import { prisma } from "./db/prisma.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,7 @@ export function createApp() {
   app.use("/assets", express.static(path.join(__dirname, "../../assets")));
 
   app.use("/auth", authRouter);
+  app.use("/public-auth", publicAuthRouter);
   app.use("/admin", adminRouter);
   app.use("/admin/invoices", invoicesRouter);
   app.use("/admin/requests", requestsRouter);

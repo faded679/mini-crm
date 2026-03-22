@@ -8,6 +8,7 @@ interface LoginProps {
 
 export default function Login({ onSuccess }: LoginProps) {
   const [phone, setPhone] = useState("");
+  const [requestId, setRequestId] = useState("");
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,8 @@ export default function Login({ onSuccess }: LoginProps) {
     setLoading(true);
     setError("");
     try {
-      await authCall(phone);
+      const response = await authCall(phone);
+      setRequestId(response.requestId);
       setStep("code");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка");
@@ -38,8 +40,8 @@ export default function Login({ onSuccess }: LoginProps) {
     setLoading(true);
     setError("");
     try {
-      const res = await authVerify(phone, code);
-      saveAuth(res.phone, res.token);
+      const res = await authVerify(requestId, code);
+      saveAuth(res.client.phone, "");
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка");

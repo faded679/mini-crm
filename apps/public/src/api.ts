@@ -146,18 +146,18 @@ export function getClientServicePrices(deliveryType?: string) {
 // ---------- Auth ----------
 
 export function authCall(phone: string) {
-  return api<{ ok: boolean }>("/bot/auth/call", {
+  return api<{ requestId: string; message: string }>("/public-auth/request-call", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
   });
 }
 
-export function authVerify(phone: string, code: string) {
-  return api<{ token: string; clientId: number; phone: string }>("/bot/auth/verify", {
+export function authVerify(requestId: string, code: string) {
+  return api<{ success: boolean; client: { id: number; phone: string } }>("/public-auth/verify-call", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, code }),
+    body: JSON.stringify({ requestId, code }),
   });
 }
 
