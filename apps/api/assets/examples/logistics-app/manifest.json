@@ -1,0 +1,23 @@
+﻿{
+  "name": "Логистический №1",
+  "short_name": "Соколов GO",
+  "description": "PWA для грузоперевозок, складских услуг и ответственного хранения",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F1EC",
+  "theme_color": "#9C6B3F",
+  "lang": "ru",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

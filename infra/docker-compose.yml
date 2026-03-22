@@ -47,7 +47,7 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       API_URL: http://mini-crm-api:3000
-      MINI_APP_URL: ${MINI_APP_URL:-https://test.ved31.ru}
+      MINI_APP_URL: ${MINI_APP_URL:-https://test.ved31.ru/app}
 
   mini-app:
     build:
@@ -65,6 +65,14 @@ services:
     container_name: mini-crm-web
     restart: unless-stopped
 
+  public:
+    build:
+      context: ../apps/public
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://test.ved31.ru/api}
+    container_name: mini-crm-public
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     container_name: mini-crm-nginx
@@ -73,6 +81,7 @@ services:
       - api
       - mini-app
       - web
+      - public
     ports:
       - "80:80"
       - "443:443"

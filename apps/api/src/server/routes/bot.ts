@@ -625,4 +625,179 @@ router.get("/client-service-prices", async (req: Request, res: Response, next: N
   }
 });
 
+// ===================== WEB (public site) =====================
+
+// POST /bot/auth/call — stub: initiate phone call auth
+router.post("/auth/call", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) throw new ApiError(400, "Missing phone");
+    // TODO: integrate real call-based auth
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /bot/auth/verify — stub: verify code (accepts any code)
+router.post("/auth/verify", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, code } = req.body;
+    if (!phone) throw new ApiError(400, "Missing phone");
+    if (!code) throw new ApiError(400, "Missing code");
+    // TODO: verify real code; for now accept anything
+    // Upsert client by phone
+    let client = await (prisma as any).client.findFirst({ where: { phone: String(phone) } });
+    if (!client) {
+      client = await (prisma as any).client.create({
+        data: {
+          telegramId: `web_${phone}`,
+          phone: String(phone),
+          consentGiven: true,
+          consentAt: new Date(),
+        },
+      });
+    }
+    res.json({ token: `stub_${phone}`, clientId: client.id, phone: client.phone });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /bot/requests-web — create request from public website (by phone)
+router.post("/requests-web", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      phone,
+      firstName,
+      lastName,
+      city,
+      deliveryDate,
+      size,
+      weight,
+      boxCount,
+      boxTypeId,
+      packagingType,
+      comment,
+      deliveryTypeId,
+      mpAccountDate,
+    } = req.body;
+
+    if (!phone || !city || !deliveryDate || !boxCount || !packagingType) {
+      throw new ApiError(400, "Missing required fields");
+    }
+
+    if (packagingType !== "pallets" && packagingType !== "boxes") {
+      throw new ApiError(400, "Invalid packagingType");
+    }
+
+    // Find or create client by phone
+    let client = await (prisma as any).client.findFirst({ where: { phone: String(phone) } });
+    if (!client) {
+      client = await (prisma as any).client.create({
+        data: {
+          telegramId: `web_${phone}`,
+          phone: String(phone),
+          firstName: firstName || null,
+          lastName: lastName || null,
+          consentGiven: true,
+          consentAt: new Date(),
+        },
+      });
+    } else if (firstName || lastName) {
+      client = await (prisma as any).client.update({
+        where: { id: client.id },
+        data: {
+          ...(firstName ? { firstName } : {}),
+          ...(lastName ? { lastName } : {}),
+        },
+      });
+    }
+
+    const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
+    const cityRecord = isFbs
+      ? await (prisma as any).cityFbs.findUnique({ where: { shortName: city } })
+      : await (prisma as any).city.findUnique({ where: { shortName: city } });
+    if (!cityRecord) throw new ApiError(400, `City not found: ${city}`);
+
+    const parsedWeight =
+      weight !== undefined && weight !== null && weight !== "" ? Number(weight) : undefined;
+    if (parsedWeight !== undefined && (!Number.isFinite(parsedWeight) || parsedWeight <= 0)) {
+      throw new ApiError(400, "Invalid weight");
+    }
+
+    const parsedBoxTypeId =
+      boxTypeId !== undefined && boxTypeId !== null && boxTypeId !== "" ? Number(boxTypeId) : undefined;
+
+    if (packagingType === "boxes" && !isFbs) {
+      if (parsedBoxTypeId === undefined || !Number.isFinite(parsedBoxTypeId)) {
+        throw new ApiError(400, "boxTypeId is required for boxes");
+      }
+      const exists = await (prisma as any).boxType.findUnique({ where: { id: parsedBoxTypeId } });
+      if (!exists) throw new ApiError(400, "Invalid boxTypeId");
+    }
+
+    const request = await prisma.shipmentRequest.create({
+      data: {
+        clientId: client.id,
+        cityId: cityRecord.id,
+        city,
+        deliveryDate: new Date(deliveryDate),
+        size: size ?? "-",
+        boxCount: Number(boxCount),
+        ...(parsedBoxTypeId !== undefined ? { boxTypeId: parsedBoxTypeId } : {}),
+        packagingType,
+        comment: comment || null,
+        status: "new",
+        ...(parsedWeight !== undefined ? { weight: parsedWeight } : {}),
+        ...(deliveryTypeId !== undefined && deliveryTypeId !== null ? { deliveryTypeId: Number(deliveryTypeId) } : {}),
+        ...(mpAccountDate ? { mpAccountDate: new Date(mpAccountDate) } : {}),
+      } as any,
+    });
+
+    // Create service lines from items
+    const items = req.body.items as { description: string; unit: string; quantity: number; price: number; amount: number }[] | undefined;
+    if (Array.isArray(items) && items.length > 0) {
+      await (prisma as any).requestService.createMany({
+        data: items.map((it: any) => ({
+          requestId: request.id,
+          description: String(it.description ?? ""),
+          unit: String(it.unit ?? "шт"),
+          quantity: Number(it.quantity) || 0,
+          price: Number(it.price) || 0,
+          amount: Number(it.amount) || 0,
+        })),
+      });
+    }
+
+    const full = await (prisma as any).shipmentRequest.findUnique({
+      where: { id: request.id },
+      include: { services: true },
+    });
+
+    res.status(201).json(full);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bot/requests-by-phone/:phone — list client requests by phone
+router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone } = req.params;
+    const client = await (prisma as any).client.findFirst({ where: { phone: String(phone) } });
+    if (!client) {
+      res.json([]);
+      return;
+    }
+    const requests = await prisma.shipmentRequest.findMany({
+      where: { clientId: client.id },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(requests);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
