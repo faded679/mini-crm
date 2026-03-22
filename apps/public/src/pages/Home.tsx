@@ -18,34 +18,36 @@ export default function Home() {
       </section>
 
       <section className="bg-card rounded-[22px] shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3 overflow-hidden">
-        <div className="rounded-[20px] overflow-hidden border border-gray-200">
+        <div className="relative rounded-[20px] overflow-hidden border border-gray-200">
           <img
             src={`${import.meta.env.VITE_API_URL}/assets/examples/logistics-app/hero-main.jpg`}
             alt="Маршрут доставки"
             className="w-full block"
           />
+          {/* Кнопка FBS в точке A (верхняя часть маршрута) */}
+          <button
+            onClick={() => navigate("/fbs")}
+            className="absolute top-[15%] right-[8%] rounded-full w-12 h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center"
+            style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
+          >
+            FBS
+          </button>
+          {/* Кнопка FBO в точке B (нижняя часть маршрута) */}
+          <button
+            onClick={() => navigate("/fbo")}
+            className="absolute bottom-[15%] right-[8%] rounded-full w-12 h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center"
+            style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
+          >
+            FBO
+          </button>
         </div>
       </section>
 
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <h2 className="text-heading text-lg font-bold mb-2">Доставка на маркетплейсы</h2>
-        <p className="text-sm text-heading leading-relaxed mb-1">
+        <p className="text-sm text-heading leading-relaxed">
           Белгород → склады WB и OZON. FBS и FBO поставки, регулярные рейсы без переносов.
         </p>
-        <div className="grid grid-cols-2 gap-2.5 mt-4">
-          <button
-            onClick={() => navigate("/fbs")}
-            className="block text-center rounded-[14px] py-2.5 px-3 bg-accent text-white font-semibold text-sm active:bg-accent-dark transition"
-          >
-            Заявка FBS
-          </button>
-          <button
-            onClick={() => navigate("/fbo")}
-            className="block text-center rounded-[14px] py-2.5 px-3 bg-accent text-white font-semibold text-sm active:bg-accent-dark transition"
-          >
-            Заявка FBO
-          </button>
-        </div>
       </section>
 
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
