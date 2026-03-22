@@ -27,7 +27,7 @@ export default function Home() {
           {/* Кнопка FBS в точке A (верхняя часть маршрута) */}
           <button
             onClick={() => navigate("/fbs")}
-            className="absolute top-[40%] left-[50%] -translate-x-1/2 rounded-[14px] w-36 h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center"
+            className="absolute top-[39%] left-[50%] -translate-x-1/2 rounded-[14px] w-40 h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center"
             style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
           >
             FBS
@@ -35,7 +35,7 @@ export default function Home() {
           {/* Кнопка FBO в точке B (нижняя часть маршрута) */}
           <button
             onClick={() => navigate("/fbo")}
-            className="absolute bottom-[40%] left-[50%] -translate-x-1/2 rounded-[14px] w-36 h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center"
+            className="absolute bottom-[39%] left-[50%] -translate-x-1/2 rounded-[14px] w-40 h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center"
             style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
           >
             FBO
