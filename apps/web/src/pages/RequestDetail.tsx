@@ -355,7 +355,13 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   <button
                     disabled={updating}
                     className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
-                    onClick={() => void handleSaveEdits()}
+                    onClick={async () => {
+                      try {
+                        await handleSaveEdits();
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : "Ошибка сохранения");
+                      }
+                    }}
                     type="button"
                   >
                     {updating ? "Сохранение..." : "Сохранить"}
