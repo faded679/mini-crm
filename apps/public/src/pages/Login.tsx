@@ -37,18 +37,38 @@ export default function Login({ onSuccess }: LoginProps) {
   useEffect(() => {
     if (step !== "waiting" || !sessionId) return;
 
-    const interval = setInterval(async () => {
+    console.log("Starting verification polling for sessionId:", sessionId);
+
+    // Первая проверка сразу
+    const checkStatus = async () => {
       try {
+        console.log("Checking verification status...");
         const status = await checkVerification(sessionId);
+        console.log("Verification status:", status);
+        
         if (status.verified && status.client) {
-          clearInterval(interval);
+          console.log("Verification successful!");
           saveAuth(status.client.phone, "");
           onSuccess();
+          return true;
         }
+        return false;
       } catch (err) {
         console.error("Verification check error:", err);
+        return false;
       }
-    }, 3000); // Проверяем каждые 3 секунды
+    };
+
+    // Проверяем сразу
+    checkStatus();
+
+    // Затем каждые 3 секунды
+    const interval = setInterval(async () => {
+      const verified = await checkStatus();
+      if (verified) {
+        clearInterval(interval);
+      }
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [step, sessionId, onSuccess]);
