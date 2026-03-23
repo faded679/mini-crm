@@ -35,6 +35,8 @@ services:
       TBANK_SECRET_KEY: ${TBANK_SECRET_KEY:-}
       TBANK_API_URL: ${TBANK_API_URL:-https://securepay.tinkoff.ru/v2}
       API_BASE_URL: ${API_BASE_URL:-https://test.ved31.ru/api}
+      ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}
+      ZVONOK_CAMPAIGN_ID: ${ZVONOK_CAMPAIGN_ID:-}
 
   bot:
     build:
