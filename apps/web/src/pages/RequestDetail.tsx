@@ -245,9 +245,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
     const city = editCity.trim();
     if (!city) throw new Error("Город обязателен");
 
-    const volume = editVolume.trim() === "" ? null : Number(editVolume);
-    if (volume !== null && (!Number.isFinite(volume) || volume <= 0)) throw new Error("Некорректный объём");
-
     const deliveryDate = editDeliveryDate;
     if (!deliveryDate) throw new Error("Дата доставки обязательна");
 
@@ -255,12 +252,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
     const boxCount = Number(editBoxCount);
     if (!Number.isFinite(boxCount) || boxCount <= 0) throw new Error("Некорректное количество");
 
+    // Optional fields - allow empty/null values
+    const volume = editVolume.trim() === "" ? null : Number(editVolume);
     const weight = editWeight.trim() === "" ? null : Number(editWeight);
-    if (weight !== null && (!Number.isFinite(weight) || weight <= 0)) throw new Error("Некорректный вес");
-
-    const boxTypeId = editPackagingType === "boxes" ? (editBoxTypeId === "" ? null : Number(editBoxTypeId)) : null;
-    if (editPackagingType === "boxes" && boxTypeId === null) throw new Error("Выберите тип коробки");
-    if (boxTypeId !== null && (!Number.isFinite(boxTypeId) || boxTypeId <= 0)) throw new Error("Некорректный тип коробки");
+    const boxTypeId = editBoxTypeId === "" ? null : Number(editBoxTypeId);
 
     setUpdating(true);
     try {
