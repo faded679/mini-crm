@@ -132,6 +132,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 
 // Send Telegram notification to client
 try {
+  // Look up schedule by exact shipment date selected by client
   const schedule = isFbs
     ? await (prisma as any).deliveryScheduleFbs.findFirst({
         where: {
@@ -146,7 +147,7 @@ try {
         },
       });
 
-      const dateStr = new Date(deliveryDate).toLocaleDateString("ru-RU", {
+      const shipmentDateStr = new Date(deliveryDate).toLocaleDateString("ru-RU", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -174,7 +175,7 @@ try {
       let msg = `<b>Заявка №${request.id} принята</b> ✅\n\n`;
       msg += `<b>Направление:</b> Белгород → ${destination}\n`;
       msg += `<b>Поставка:</b> ${cargoLine}\n`;
-      msg += `<b>Запланированная дата в л/к МП:</b> ${dateStr}\n`;
+      msg += `<b>Запланированная дата в л/к МП:</b> ${mpAccountDate ? new Date(mpAccountDate).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }) : shipmentDateStr}\n`;
 
       if (schedule?.acceptDays) {
         msg += `\nЧтобы груз попал в рейс, сдайте его на наш склад заранее:\n\n`;
