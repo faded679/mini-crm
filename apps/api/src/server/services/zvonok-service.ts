@@ -13,16 +13,18 @@ export async function sendCallCode(phone: string): Promise<CallResponse> {
   }
 
   try {
+    const params = new URLSearchParams({
+      public_key: publicKey,
+      campaign_id: campaignId,
+      phone: phone,
+    });
+
     const response = await fetch("https://zvonok.com/manager/cabapi_external/api/v1/phones/call/", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify({
-        public_key: publicKey,
-        campaign_id: campaignId,
-        phone: phone,
-      }),
+      body: params.toString(),
     });
 
     if (!response.ok) {
