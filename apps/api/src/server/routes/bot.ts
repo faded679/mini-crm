@@ -786,7 +786,12 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
 router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone } = req.params;
-    const client = await (prisma as any).client.findFirst({ where: { phone: String(phone) } });
+    const phoneStr = String(phone);
+    const phoneWithPlus = phoneStr.startsWith("+") ? phoneStr : "+" + phoneStr;
+    const phoneWithoutPlus = phoneStr.startsWith("+") ? phoneStr.slice(1) : phoneStr;
+    const client = await (prisma as any).client.findFirst({ 
+      where: { OR: [{ phone: phoneWithPlus }, { phone: phoneWithoutPlus }] } 
+    });
     if (!client) {
       res.json([]);
       return;

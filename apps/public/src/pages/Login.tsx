@@ -48,7 +48,7 @@ export default function Login({ onSuccess }: LoginProps) {
         
         if (status.verified && status.client) {
           console.log("Verification successful!");
-          saveAuth(status.client.phone, "");
+          saveAuth(status.client.phone, String(status.client.id || "verified"));
           onSuccess();
           return true;
         }

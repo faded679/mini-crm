@@ -81,45 +81,50 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
     if (status.verified) {
       console.log("Verification successful for phone:", session.phone);
 
-      // Ищем или создаем клиента по номеру телефона
-      let client = await (prisma as any).client.findFirst({
-        where: { phone: session.phone },
-      });
-
-      console.log("Found existing client:", client ? client.id : "none");
-
-      if (!client) {
-        try {
-          client = await (prisma as any).client.create({
-            data: {
-              phone: session.phone,
-              telegramId: `phone_${session.phone}`,
-            },
-          });
-          console.log("Created new client:", client.id);
-        } catch (createErr: any) {
-          console.error("Error creating client:", createErr.message);
-          // Если telegramId уже существует, ищем по нему
-          if (createErr.code === "P2002") {
-            client = await (prisma as any).client.findFirst({
-              where: { telegramId: `phone_${session.phone}` },
-            });
-            console.log("Found client by telegramId:", client?.id);
-          } else {
-            throw createErr;
-          }
-        }
-      }
-
       // Верификация успешна, удаляем сессию
       verificationSessions.delete(sessionId);
 
-      // Возвращаем данные клиента
+      // Нормализуем номер для поиска (с + и без)
+      const phoneWithPlus = session.phone.startsWith("+") ? session.phone : "+" + session.phone;
+      const phoneWithoutPlus = session.phone.startsWith("+") ? session.phone.slice(1) : session.phone;
+
+      // Пытаемся найти или создать клиента
+      let clientId = 0;
+      let clientPhone = session.phone;
+      
+      try {
+        // Ищем клиента по обоим форматам номера
+        let client = await (prisma as any).client.findFirst({
+          where: { 
+            OR: [
+              { phone: phoneWithPlus },
+              { phone: phoneWithoutPlus },
+            ]
+          },
+        });
+        console.log("Found existing client:", client ? client.id : "none");
+
+        if (!client) {
+          client = await (prisma as any).client.create({
+            data: {
+              phone: phoneWithoutPlus,
+              telegramId: `phone_${phoneWithoutPlus}_${Date.now()}`,
+            },
+          });
+          console.log("Created new client:", client.id);
+        }
+        
+        clientId = client.id;
+        clientPhone = client.phone || session.phone;
+      } catch (dbErr: any) {
+        console.error("DB error (non-fatal):", dbErr.message);
+      }
+
       res.json({
         verified: true,
         client: {
-          id: client.id,
-          phone: client.phone,
+          id: clientId,
+          phone: clientPhone,
         },
       });
     } else {
