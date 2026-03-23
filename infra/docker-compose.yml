@@ -47,7 +47,7 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       API_URL: http://mini-crm-api:3000
-      MINI_APP_URL: ${MINI_APP_URL:-https://test.ved31.ru/app}
+      MINI_APP_URL: ${MINI_APP_URL:-https://test.ved31.ru/app/}
 
   mini-app:
     build:
