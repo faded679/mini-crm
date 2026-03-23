@@ -536,7 +536,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               )}
             </div>
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Дата МП ЛК</p>
               {editing ? (
                 <input
