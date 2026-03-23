@@ -204,5 +204,6 @@ bot.catch((err) => {
 bot.start({
   onStart: async (botInfo) => {
     console.log("Bot started");
+    console.log("MINI_APP_URL:", env.MINI_APP_URL);
   },
 });
