@@ -57,7 +57,8 @@ export async function initiateVerificationCall(phone: string): Promise<Verificat
 }
 
 // Проверить статус верификации - позвонил ли клиент
-export async function checkVerificationStatus(phone: string): Promise<CallStatusResponse> {
+// createdAfter - ISO string, только звонки после этого времени считаются валидными
+export async function checkVerificationStatus(phone: string, createdAfter?: string): Promise<CallStatusResponse> {
   const publicKey = process.env.ZVONOK_PUBLIC_KEY;
   const campaignId = process.env.ZVONOK_CAMPAIGN_ID;
 
@@ -93,9 +94,19 @@ export async function checkVerificationStatus(phone: string): Promise<CallStatus
       calls = Array.isArray(data.data) ? data.data : [];
     }
     
+    // Фильтруем только свежие звонки (после создания сессии, с запасом 60 сек)
+    let relevantCalls = calls;
+    if (createdAfter) {
+      const threshold = new Date(new Date(createdAfter).getTime() - 60 * 1000); // 60 сек запас
+      relevantCalls = calls.filter((call: any) => {
+        if (!call.created) return false;
+        return new Date(call.created) >= threshold;
+      });
+      console.log(`Filtered calls: ${relevantCalls.length} of ${calls.length} (after ${threshold.toISOString()})`);
+    }
+
     // Zvonok статусы: pincode_ok = клиент подтвердил номер
-    // Проверяем последний (первый в массиве) звонок
-    const hasSuccessfulCall = calls.some((call: any) => 
+    const hasSuccessfulCall = relevantCalls.some((call: any) => 
       call.status === "pincode_ok" ||
       call.status === "success" || 
       call.status === "confirmed" || 

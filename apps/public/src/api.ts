@@ -154,7 +154,7 @@ export function requestVerification(phone: string) {
 }
 
 export function checkVerification(sessionId: string) {
-  return api<{ verified: boolean; client?: { id: number; phone: string }; message?: string }>(`/public-auth/check-verification/${sessionId}`, {
+  return api<{ verified: boolean; token?: string; client?: { id: number; phone: string }; message?: string }>(`/public-auth/check-verification/${sessionId}`, {
     method: "GET",
   });
 }
@@ -185,6 +185,10 @@ export function createWebRequest(data: CreateWebRequestPayload) {
   });
 }
 
-export function getRequestsByPhone(phone: string) {
-  return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}`);
+export function getRequestsByPhone(phone: string, token?: string) {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}`, { headers });
 }

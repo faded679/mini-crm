@@ -782,10 +782,31 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
   }
 });
 
-// GET /bot/requests-by-phone/:phone — list client requests by phone
+// GET /bot/requests-by-phone/:phone — list client requests by phone (requires JWT)
 router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone } = req.params;
+
+    // Проверяем JWT токен
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const jwt = await import("jsonwebtoken");
+      const JWT_SECRET = process.env.JWT_SECRET || "public-client-secret-change-me";
+      try {
+        const decoded = jwt.default.verify(authHeader.slice(7), JWT_SECRET) as any;
+        const tokenPhone = String(decoded.phone || "");
+        const tokenPhoneDigits = tokenPhone.replace(/\D/g, "");
+        const reqPhoneDigits = String(phone).replace(/\D/g, "");
+        if (tokenPhoneDigits !== reqPhoneDigits) {
+          res.status(403).json({ error: "Access denied" });
+          return;
+        }
+      } catch {
+        res.status(401).json({ error: "Invalid token" });
+        return;
+      }
+    }
+
     const phoneStr = String(phone);
     const phoneWithPlus = phoneStr.startsWith("+") ? phoneStr : "+" + phoneStr;
     const phoneWithoutPlus = phoneStr.startsWith("+") ? phoneStr.slice(1) : phoneStr;

@@ -22,3 +22,8 @@ export function clearAuth() {
 export function isAuthenticated(): boolean {
   return !!getPhone() && !!getToken();
 }
+
+export function getAuthHeader(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getRequestsByPhone, type ShipmentRequest } from "../api";
-import { getPhone } from "../auth";
+import { getPhone, getToken } from "../auth";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   new:       { label: "Новая",     color: "bg-blue-50 text-blue-700" },
@@ -19,8 +19,9 @@ export default function Orders() {
 
   useEffect(() => {
     const phone = getPhone();
+    const token = getToken();
     if (!phone) { setLoading(false); return; }
-    getRequestsByPhone(phone)
+    getRequestsByPhone(phone, token || undefined)
       .then((all) => setRequests(all.filter((r) => r.status !== "archived")))
       .catch(() => {})
       .finally(() => setLoading(false));

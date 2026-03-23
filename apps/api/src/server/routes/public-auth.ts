@@ -1,7 +1,10 @@
 import { Router } from "express";
+import jwt from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
 import { initiateVerificationCall, checkVerificationStatus } from "../services/zvonok-service.js";
+
+const JWT_SECRET = process.env.JWT_SECRET || "public-client-secret-change-me";
 
 const router = Router();
 
@@ -75,8 +78,8 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
       throw new ApiError(401, "Session expired");
     }
 
-    // Проверяем статус верификации в Zvonok по номеру телефона
-    const status = await checkVerificationStatus(session.phone);
+    // Проверяем статус верификации в Zvonok по номеру телефона (только свежие звонки)
+    const status = await checkVerificationStatus(session.phone, session.createdAt);
 
     if (status.verified) {
       console.log("Verification successful for phone:", session.phone);
@@ -120,8 +123,16 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
         console.error("DB error (non-fatal):", dbErr.message);
       }
 
+      // Генерируем JWT токен для авторизации
+      const token = jwt.sign(
+        { clientId, phone: clientPhone },
+        JWT_SECRET,
+        { expiresIn: "30d" }
+      );
+
       res.json({
         verified: true,
+        token,
         client: {
           id: clientId,
           phone: clientPhone,
