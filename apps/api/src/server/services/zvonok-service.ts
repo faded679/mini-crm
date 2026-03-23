@@ -90,8 +90,14 @@ export async function checkVerificationStatus(phone: string): Promise<CallStatus
     // Проверяем, был ли успешный входящий звонок
     // data.data - массив звонков для этого номера
     const calls = data.data || [];
+    
+    // Zvonok помечает входящие звонки как "in_process" когда клиент позвонил
     const hasSuccessfulCall = calls.some((call: any) => 
-      call.status === "success" || call.status === "confirmed" || call.call_status === "answered"
+      call.status === "in_process" || 
+      call.status === "success" || 
+      call.status === "confirmed" || 
+      call.call_status === "answered" ||
+      call.call_status === "in_process"
     );
 
     return {
