@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
-import { sendCallCode } from "../services/greensms-service.js";
+import { sendCallCode } from "../services/zvonok-service.js";
 
 const router = Router();
 
@@ -24,7 +24,7 @@ router.post("/request-call", async (req, res, next) => {
       throw new ApiError(400, "Invalid phone number");
     }
 
-    // Отправляем звонок через GreenSMS
+    // Отправляем звонок через Zvonok
     const response = await sendCallCode(normalizedPhone);
     
     // Сохраняем код с временем жизни 5 минут

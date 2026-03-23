@@ -20,7 +20,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "greensms": "^1.9.1",
     "jsonwebtoken": "^9.0.2",
     "pdfkit": "^0.15.0",
     "pino": "^9.5.0",
