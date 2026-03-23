@@ -1,5 +1,6 @@
-import GreenSMS from "greensms";
+import GreenSMSModule from "greensms";
 
+const GreenSMS = (GreenSMSModule as any).default || GreenSMSModule;
 const client = new GreenSMS({
   user: process.env.GREENSMS_USER || "",
   pass: process.env.GREENSMS_PASS || "",
