@@ -83,16 +83,16 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
       verificationSessions.delete(sessionId);
 
       // Ищем или создаем клиента по номеру телефона
-      let client = await (prisma as any).client.findUnique({
+      let client = await (prisma as any).client.findFirst({
         where: { phone: session.phone },
       });
 
       if (!client) {
-        // Создаем нового клиента
+        // Создаем нового клиента (telegramId обязателен, используем phone как placeholder)
         client = await (prisma as any).client.create({
           data: {
             phone: session.phone,
-            telegramId: null,
+            telegramId: `phone_${session.phone}`,
             username: null,
             firstName: null,
             lastName: null,

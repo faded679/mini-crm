@@ -78,18 +78,20 @@ export async function checkVerificationStatus(phone: string, createdAfter?: stri
       throw new Error(`Zvonok API error: ${response.status} ${errorText}`);
     }
 
-    const data = await response.json() as {
-      status: string;
-      data?: any[];
-    };
+    const data: any = await response.json();
 
-    if (data.status === "error") {
+    console.log("Zvonok calls_by_phone response:", JSON.stringify(data).substring(0, 500));
+
+    // Zvonok возвращает массив звонков напрямую ИЛИ объект с ошибкой
+    let calls: any[] = [];
+    if (Array.isArray(data)) {
+      calls = data;
+    } else if (data && data.status === "error") {
+      console.log("Zvonok error:", data);
       return { verified: false };
+    } else if (data && data.data) {
+      calls = Array.isArray(data.data) ? data.data : [];
     }
-
-    // Проверяем, был ли успешный входящий звонок
-    // data — массив звонков для этого номера (Zvonok возвращает массив напрямую)
-    const calls = Array.isArray(data) ? data : (data.data || []);
     
     // Фильтруем только звонки, созданные после начала сессии
     const recentCalls = createdAfter 
