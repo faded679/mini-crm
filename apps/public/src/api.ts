@@ -145,19 +145,17 @@ export function getClientServicePrices(deliveryType?: string) {
 
 // ---------- Auth ----------
 
-export function authCall(phone: string) {
-  return api<{ requestId: string; message: string }>("/public-auth/request-call", {
+export function requestVerification(phone: string) {
+  return api<{ sessionId: string; verificationNumber: string; message: string }>("/public-auth/request-verification", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
   });
 }
 
-export function authVerify(requestId: string, code: string) {
-  return api<{ success: boolean; client: { id: number; phone: string } }>("/public-auth/verify-call", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ requestId, code }),
+export function checkVerification(sessionId: string) {
+  return api<{ verified: boolean; client?: { id: number; phone: string }; message?: string }>(`/public-auth/check-verification/${sessionId}`, {
+    method: "GET",
   });
 }
 

@@ -1,15 +1,15 @@
 import { Router } from "express";
 import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
-import { sendCallCode } from "../services/zvonok-service.js";
+import { initiateVerificationCall, checkVerificationStatus } from "../services/zvonok-service.js";
 
 const router = Router();
 
-// Временное хранилище для кодов (в продакшене использовать Redis)
-const callCodes = new Map<string, { code: string; phone: string; expiresAt: number }>();
+// Временное хранилище для сессий верификации (в продакшене использовать Redis)
+const verificationSessions = new Map<string, { phone: string; expiresAt: number }>();
 
-// POST /public-auth/request-call - инициировать звонок
-router.post("/request-call", async (req, res, next) => {
+// POST /public-auth/request-verification - инициировать сессию верификации
+router.post("/request-verification", async (req, res, next) => {
   try {
     const { phone } = req.body;
     
@@ -24,86 +24,93 @@ router.post("/request-call", async (req, res, next) => {
       throw new ApiError(400, "Invalid phone number");
     }
 
-    // Отправляем звонок через Zvonok
-    const response = await sendCallCode(normalizedPhone);
+    // Инициируем сессию верификации через Zvonok
+    const response = await initiateVerificationCall(normalizedPhone);
     
-    // Сохраняем код с временем жизни 5 минут
-    callCodes.set(response.request_id, {
-      code: response.code,
+    // Сохраняем сессию с временем жизни 10 минут
+    verificationSessions.set(response.request_id, {
       phone: normalizedPhone,
-      expiresAt: Date.now() + 5 * 60 * 1000,
+      expiresAt: Date.now() + 10 * 60 * 1000,
     });
 
-    // Очистка старых кодов
-    for (const [key, value] of callCodes.entries()) {
+    // Очистка старых сессий
+    for (const [key, value] of verificationSessions.entries()) {
       if (value.expiresAt < Date.now()) {
-        callCodes.delete(key);
+        verificationSessions.delete(key);
       }
     }
 
     res.json({ 
-      requestId: response.request_id,
-      message: "Call initiated. Please enter the last 4 digits of the calling number."
+      sessionId: response.request_id,
+      verificationNumber: response.verification_number,
+      message: `Позвоните на номер ${response.verification_number} для подтверждения`
     });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /public-auth/verify-call - проверить код и авторизовать
-router.post("/verify-call", async (req, res, next) => {
+// GET /public-auth/check-verification/:sessionId - проверить статус верификации
+router.get("/check-verification/:sessionId", async (req, res, next) => {
   try {
-    const { requestId, code } = req.body;
+    const { sessionId } = req.params;
     
-    if (!requestId || !code) {
-      throw new ApiError(400, "Request ID and code are required");
+    if (!sessionId) {
+      throw new ApiError(400, "Session ID is required");
     }
 
-    // Проверяем код
-    const stored = callCodes.get(requestId);
+    // Проверяем существование сессии
+    const session = verificationSessions.get(sessionId);
     
-    if (!stored) {
-      throw new ApiError(401, "Invalid or expired request");
+    if (!session) {
+      throw new ApiError(404, "Session not found or expired");
     }
 
-    if (stored.expiresAt < Date.now()) {
-      callCodes.delete(requestId);
-      throw new ApiError(401, "Code expired");
+    if (session.expiresAt < Date.now()) {
+      verificationSessions.delete(sessionId);
+      throw new ApiError(401, "Session expired");
     }
 
-    if (stored.code !== code) {
-      throw new ApiError(401, "Invalid code");
-    }
+    // Проверяем статус верификации в Zvonok
+    const status = await checkVerificationStatus(sessionId);
 
-    // Код верный, удаляем из хранилища
-    callCodes.delete(requestId);
+    if (status.verified) {
+      // Верификация успешна, удаляем сессию
+      verificationSessions.delete(sessionId);
 
-    // Ищем или создаем клиента по номеру телефона
-    let client = await (prisma as any).client.findUnique({
-      where: { phone: stored.phone },
-    });
+      // Ищем или создаем клиента по номеру телефона
+      let client = await (prisma as any).client.findUnique({
+        where: { phone: session.phone },
+      });
 
-    if (!client) {
-      // Создаем нового клиента
-      client = await (prisma as any).client.create({
-        data: {
-          phone: stored.phone,
-          telegramId: null,
-          username: null,
-          firstName: null,
-          lastName: null,
+      if (!client) {
+        // Создаем нового клиента
+        client = await (prisma as any).client.create({
+          data: {
+            phone: session.phone,
+            telegramId: null,
+            username: null,
+            firstName: null,
+            lastName: null,
+          },
+        });
+      }
+
+      // Возвращаем данные клиента
+      res.json({
+        verified: true,
+        client: {
+          id: client.id,
+          phone: client.phone,
         },
       });
+    } else {
+      // Верификация еще не завершена
+      res.json({
+        verified: false,
+        message: "Ожидание звонка..."
+      });
     }
-
-    // Возвращаем данные клиента (без токена, так как это публичный сайт)
-    res.json({
-      success: true,
-      client: {
-        id: client.id,
-        phone: client.phone,
-      },
-    });
   } catch (err) {
     next(err);
   }

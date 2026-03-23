@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { authCall, authVerify } from "../api";
+import { useState, useEffect } from "react";
+import { requestVerification, checkVerification } from "../api";
 import { saveAuth } from "../auth";
 
 interface LoginProps {
@@ -8,13 +8,13 @@ interface LoginProps {
 
 export default function Login({ onSuccess }: LoginProps) {
   const [phone, setPhone] = useState("");
-  const [requestId, setRequestId] = useState("");
-  const [step, setStep] = useState<"phone" | "code">("phone");
-  const [code, setCode] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const [verificationNumber, setVerificationNumber] = useState("");
+  const [step, setStep] = useState<"phone" | "waiting">("phone");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleCall = async () => {
+  const handleRequestVerification = async () => {
     if (!phone || phone.length < 10) {
       setError("Введите корректный номер телефона");
       return;
@@ -22,9 +22,10 @@ export default function Login({ onSuccess }: LoginProps) {
     setLoading(true);
     setError("");
     try {
-      const response = await authCall(phone);
-      setRequestId(response.requestId);
-      setStep("code");
+      const response = await requestVerification(phone);
+      setSessionId(response.sessionId);
+      setVerificationNumber(response.verificationNumber);
+      setStep("waiting");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка");
     } finally {
@@ -32,23 +33,25 @@ export default function Login({ onSuccess }: LoginProps) {
     }
   };
 
-  const handleVerify = async () => {
-    if (!code) {
-      setError("Введите код");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      const res = await authVerify(requestId, code);
-      saveAuth(res.client.phone, "");
-      onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Polling для проверки статуса верификации
+  useEffect(() => {
+    if (step !== "waiting" || !sessionId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const status = await checkVerification(sessionId);
+        if (status.verified && status.client) {
+          clearInterval(interval);
+          saveAuth(status.client.phone, "");
+          onSuccess();
+        }
+      } catch (err) {
+        console.error("Verification check error:", err);
+      }
+    }, 3000); // Проверяем каждые 3 секунды
+
+    return () => clearInterval(interval);
+  }, [step, sessionId, onSuccess]);
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4">
@@ -67,7 +70,7 @@ export default function Login({ onSuccess }: LoginProps) {
           {step === "phone" ? (
             <>
               <h2 className="text-heading text-base font-bold mb-3">Вход по телефону</h2>
-              <p className="text-muted text-sm mb-4">Мы позвоним на ваш номер. Последние 4 цифры входящего номера — ваш код.</p>
+              <p className="text-muted text-sm mb-4">Введите ваш номер телефона для получения номера для звонка</p>
               <input
                 type="tel"
                 value={phone}
@@ -77,37 +80,35 @@ export default function Login({ onSuccess }: LoginProps) {
               />
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
               <button
-                onClick={handleCall}
+                onClick={handleRequestVerification}
                 disabled={loading}
                 className="w-full h-12 rounded-2xl bg-accent text-white font-semibold text-sm disabled:opacity-50 transition active:bg-accent-dark"
               >
-                {loading ? "Звоним..." : "Получить код"}
+                {loading ? "Загрузка..." : "Продолжить"}
               </button>
             </>
           ) : (
             <>
-              <h2 className="text-heading text-base font-bold mb-3">Введите код</h2>
+              <h2 className="text-heading text-base font-bold mb-3">Позвоните на номер</h2>
               <p className="text-muted text-sm mb-4">
-                Последние 4 цифры входящего номера на <strong>{phone}</strong>
+                Для подтверждения позвоните на указанный номер с телефона <strong>{phone}</strong>
               </p>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="Код из 4 цифр"
-                maxLength={4}
-                className="w-full h-12 px-4 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm text-center tracking-[0.3em] text-lg mb-3 transition-all focus:border-accent"
-              />
+              <div className="bg-accent/10 rounded-2xl p-4 mb-4 text-center">
+                <p className="text-muted text-xs mb-1">Номер для звонка</p>
+                <a 
+                  href={`tel:${verificationNumber}`}
+                  className="text-accent text-2xl font-bold tracking-wider"
+                >
+                  {verificationNumber}
+                </a>
+              </div>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                <p className="text-muted text-sm">Ожидание звонка...</p>
+              </div>
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
               <button
-                onClick={handleVerify}
-                disabled={loading}
-                className="w-full h-12 rounded-2xl bg-accent text-white font-semibold text-sm disabled:opacity-50 transition active:bg-accent-dark"
-              >
-                {loading ? "Проверяем..." : "Войти"}
-              </button>
-              <button
-                onClick={() => { setStep("phone"); setCode(""); setError(""); }}
+                onClick={() => { setStep("phone"); setSessionId(""); setError(""); }}
                 className="w-full mt-2 text-muted text-xs underline"
               >
                 Изменить номер
