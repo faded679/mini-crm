@@ -1,10 +1,17 @@
 import GreenSMSModule from "greensms";
 
 const GreenSMS = (GreenSMSModule as any).default || GreenSMSModule;
-const client = new GreenSMS({
-  user: process.env.GREENSMS_USER || "",
-  pass: process.env.GREENSMS_PASS || "",
-});
+
+let _client: any = null;
+function getClient() {
+  if (!_client) {
+    const user = process.env.GREENSMS_USER || "";
+    const pass = process.env.GREENSMS_PASS || "";
+    if (!user && !pass) throw new Error("GreenSMS credentials not configured");
+    _client = new GreenSMS({ user, pass });
+  }
+  return _client;
+}
 
 interface CallResponse {
   request_id: string;
@@ -19,7 +26,7 @@ interface CallStatusResponse {
 
 export async function sendCallCode(phone: string): Promise<CallResponse> {
   try {
-    const response = await client.call.send({ to: phone });
+    const response = await getClient().call.send({ to: phone });
     return {
       request_id: response.request_id,
       code: response.code,
@@ -32,7 +39,7 @@ export async function sendCallCode(phone: string): Promise<CallResponse> {
 
 export async function verifyCallCode(requestId: string, code: string): Promise<boolean> {
   try {
-    const response = await client.call.status({ id: requestId });
+    const response = await getClient().call.status({ id: requestId });
     return response.code === code && response.status === "completed";
   } catch (error: any) {
     return false;
