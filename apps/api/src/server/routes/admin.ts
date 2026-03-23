@@ -875,8 +875,8 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       }
     }
 
-    if (body.boxCount !== undefined) {
-      if (!Number.isFinite(body.boxCount) || body.boxCount <= 0) {
+    if (body.boxCount !== undefined && body.boxCount !== null) {
+      if (!Number.isFinite(body.boxCount) || body.boxCount < 0) {
         throw new ApiError(400, "Invalid boxCount");
       }
     }
