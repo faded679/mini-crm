@@ -35,20 +35,25 @@ export async function sendCallCode(phone: string): Promise<CallResponse> {
     const data = await response.json() as {
       status: string;
       message?: string;
-      data?: {
-        call_id?: string;
-        pincode?: string;
-      };
+      data?: any;
     };
     
-    // Zvonok возвращает pincode в ответе
-    if (data.status !== "ok" || !data.data?.pincode) {
-      throw new Error(`Zvonok call failed: ${data.message || "Unknown error"}`);
+    // Проверяем на ошибку
+    if (data.status === "error") {
+      throw new Error(`Zvonok call failed: ${data.data || data.message || "Unknown error"}`);
+    }
+
+    // Zvonok возвращает pincode в data (может быть строкой или объектом)
+    const pincode = typeof data.data === 'string' ? data.data : data.data?.pincode;
+    const callId = data.data?.call_id || data.data?.id || String(Date.now());
+
+    if (!pincode) {
+      throw new Error(`Zvonok call failed: pincode not found in response`);
     }
 
     return {
-      request_id: data.data.call_id || String(Date.now()),
-      code: data.data.pincode,
+      request_id: callId,
+      code: pincode,
       phone: phone,
     };
   } catch (error: any) {
