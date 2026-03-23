@@ -251,6 +251,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
     const deliveryDate = editDeliveryDate;
     if (!deliveryDate) throw new Error("Дата доставки обязательна");
 
+    if (!editBoxCount || editBoxCount.trim() === "") throw new Error("Количество мест обязательно");
     const boxCount = Number(editBoxCount);
     if (!Number.isFinite(boxCount) || boxCount <= 0) throw new Error("Некорректное количество");
 
@@ -501,8 +502,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                 <input
                   type="number"
                   min="1"
+                  required
                   value={editBoxCount}
                   onChange={(e) => setEditBoxCount(e.target.value)}
+                  onFocus={(e) => e.target.value === "0" && setEditBoxCount("")}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
