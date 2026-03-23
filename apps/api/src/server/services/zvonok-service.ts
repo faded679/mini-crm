@@ -91,11 +91,13 @@ export async function checkVerificationStatus(phone: string): Promise<CallStatus
     // data.data - массив звонков для этого номера
     const calls = data.data || [];
     
-    // Zvonok помечает входящие звонки как "in_process" когда клиент позвонил
+    // Zvonok статусы: pincode_ok = клиент подтвердил номер
     const hasSuccessfulCall = calls.some((call: any) => 
+      call.status === "pincode_ok" ||
       call.status === "in_process" || 
       call.status === "success" || 
       call.status === "confirmed" || 
+      call.call_status === "pincode_ok" ||
       call.call_status === "answered" ||
       call.call_status === "in_process"
     );
