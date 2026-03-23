@@ -482,9 +482,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Вес</p>
               {editing ? (
                 <input
+                  type="number"
+                  min="0"
+                  step="0.1"
                   value={editWeight}
                   onChange={(e) => setEditWeight(e.target.value)}
-                  inputMode="decimal"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
@@ -497,9 +499,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Кол-во мест</p>
               {editing ? (
                 <input
+                  type="number"
+                  min="1"
                   value={editBoxCount}
                   onChange={(e) => setEditBoxCount(e.target.value)}
-                  inputMode="numeric"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
@@ -560,9 +563,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Объём</p>
               {editing ? (
                 <input
+                  type="number"
+                  min="0"
+                  step="0.01"
                   value={editVolume}
                   onChange={(e) => setEditVolume(e.target.value)}
-                  inputMode="decimal"
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               ) : (
