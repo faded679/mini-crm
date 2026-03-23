@@ -42,8 +42,8 @@ export async function initiateVerificationCall(phone: string): Promise<Verificat
     }
 
     // Для метода confirm, клиент должен позвонить на номер кампании
-    // Используем номер из переменной окружения или из ответа API
-    const verificationNumber = process.env.ZVONOK_VERIFICATION_NUMBER || data.data?.phone || "+78005558607";
+    // Номер кампании берём ТОЛЬКО из переменной окружения (data.data.phone — это номер клиента)
+    const verificationNumber = process.env.ZVONOK_VERIFICATION_NUMBER || "+78005558607";
     const sessionId = phone; // Используем номер телефона как ID сессии
 
     return {
