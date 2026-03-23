@@ -79,26 +79,40 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
     const status = await checkVerificationStatus(session.phone, session.createdAt);
 
     if (status.verified) {
-      // Верификация успешна, удаляем сессию
-      verificationSessions.delete(sessionId);
+      console.log("Verification successful for phone:", session.phone);
 
       // Ищем или создаем клиента по номеру телефона
       let client = await (prisma as any).client.findFirst({
         where: { phone: session.phone },
       });
 
+      console.log("Found existing client:", client ? client.id : "none");
+
       if (!client) {
-        // Создаем нового клиента (telegramId обязателен, используем phone как placeholder)
-        client = await (prisma as any).client.create({
-          data: {
-            phone: session.phone,
-            telegramId: `phone_${session.phone}`,
-            username: null,
-            firstName: null,
-            lastName: null,
-          },
-        });
+        try {
+          client = await (prisma as any).client.create({
+            data: {
+              phone: session.phone,
+              telegramId: `phone_${session.phone}`,
+            },
+          });
+          console.log("Created new client:", client.id);
+        } catch (createErr: any) {
+          console.error("Error creating client:", createErr.message);
+          // Если telegramId уже существует, ищем по нему
+          if (createErr.code === "P2002") {
+            client = await (prisma as any).client.findFirst({
+              where: { telegramId: `phone_${session.phone}` },
+            });
+            console.log("Found client by telegramId:", client?.id);
+          } else {
+            throw createErr;
+          }
+        }
       }
+
+      // Верификация успешна, удаляем сессию
+      verificationSessions.delete(sessionId);
 
       // Возвращаем данные клиента
       res.json({
