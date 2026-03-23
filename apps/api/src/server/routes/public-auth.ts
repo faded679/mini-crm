@@ -18,11 +18,14 @@ router.post("/request-verification", async (req, res, next) => {
     }
 
     // Нормализация номера телефона
-    const normalizedPhone = phone.replace(/\D/g, "");
+    let normalizedPhone = phone.replace(/\D/g, "");
     
     if (normalizedPhone.length < 10) {
       throw new ApiError(400, "Invalid phone number");
     }
+
+    // Zvonok ожидает номер в формате +7XXXXXXXXXX
+    normalizedPhone = "+" + normalizedPhone;
 
     // Инициируем сессию верификации через Zvonok
     const response = await initiateVerificationCall(normalizedPhone);
