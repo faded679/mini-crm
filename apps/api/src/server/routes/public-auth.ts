@@ -6,7 +6,7 @@ import { initiateVerificationCall, checkVerificationStatus } from "../services/z
 const router = Router();
 
 // Временное хранилище для сессий верификации (в продакшене использовать Redis)
-const verificationSessions = new Map<string, { phone: string; expiresAt: number }>();
+const verificationSessions = new Map<string, { phone: string; expiresAt: number; createdAt: string }>();
 
 // POST /public-auth/request-verification - инициировать сессию верификации
 router.post("/request-verification", async (req, res, next) => {
@@ -34,6 +34,7 @@ router.post("/request-verification", async (req, res, next) => {
     verificationSessions.set(response.request_id, {
       phone: normalizedPhone,
       expiresAt: Date.now() + 10 * 60 * 1000,
+      createdAt: new Date().toISOString(),
     });
 
     // Очистка старых сессий
@@ -74,8 +75,8 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
       throw new ApiError(401, "Session expired");
     }
 
-    // Проверяем статус верификации в Zvonok по номеру телефона
-    const status = await checkVerificationStatus(session.phone);
+    // Проверяем статус верификации в Zvonok по номеру телефона (только свежие звонки)
+    const status = await checkVerificationStatus(session.phone, session.createdAt);
 
     if (status.verified) {
       // Верификация успешна, удаляем сессию
