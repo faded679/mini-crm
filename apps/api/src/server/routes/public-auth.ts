@@ -71,8 +71,8 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
       throw new ApiError(401, "Session expired");
     }
 
-    // Проверяем статус верификации в Zvonok
-    const status = await checkVerificationStatus(sessionId);
+    // Проверяем статус верификации в Zvonok по номеру телефона
+    const status = await checkVerificationStatus(session.phone);
 
     if (status.verified) {
       // Верификация успешна, удаляем сессию

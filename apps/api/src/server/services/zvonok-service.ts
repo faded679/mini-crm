@@ -9,7 +9,7 @@ interface CallStatusResponse {
   phone?: string;
 }
 
-// Инициировать сессию верификации - получить номер для звонка
+// Инициировать сессию верификации - создать звонок для подтверждения
 export async function initiateVerificationCall(phone: string): Promise<VerificationCallResponse> {
   const publicKey = process.env.ZVONOK_PUBLIC_KEY;
   const campaignId = process.env.ZVONOK_CAMPAIGN_ID;
@@ -19,20 +19,11 @@ export async function initiateVerificationCall(phone: string): Promise<Verificat
   }
 
   try {
-    // TODO: Заменить на реальный endpoint из документации Zvonok
-    // Этот endpoint нужно получить из личного кабинета Zvonok для кампании "Звонок на проверочный номер"
-    const params = new URLSearchParams({
-      public_key: publicKey,
-      campaign_id: campaignId,
-      phone: phone,
-    });
+    // Используем endpoint /phones/confirm/ для создания звонка подтверждения
+    const url = `https://zvonok.com/manager/cabapi_external/api/v1/phones/confirm/?campaign_id=${campaignId}&phone=${encodeURIComponent(phone)}&public_key=${publicKey}`;
 
-    const response = await fetch("https://zvonok.com/manager/cabapi_external/api/v1/phones/verification/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
+    const response = await fetch(url, {
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -50,9 +41,10 @@ export async function initiateVerificationCall(phone: string): Promise<Verificat
       throw new Error(`Zvonok verification init failed: ${data.data || data.message || "Unknown error"}`);
     }
 
-    // Zvonok должен вернуть номер для звонка и ID сессии
-    const verificationNumber = data.data?.verification_number || data.data?.phone || "+78005558607";
-    const sessionId = data.data?.session_id || data.data?.id || String(Date.now());
+    // Для метода confirm, клиент должен позвонить на номер кампании
+    // Используем номер из переменной окружения или из ответа API
+    const verificationNumber = process.env.ZVONOK_VERIFICATION_NUMBER || data.data?.phone || "+78005558607";
+    const sessionId = phone; // Используем номер телефона как ID сессии
 
     return {
       request_id: sessionId,
@@ -65,21 +57,19 @@ export async function initiateVerificationCall(phone: string): Promise<Verificat
 }
 
 // Проверить статус верификации - позвонил ли клиент
-export async function checkVerificationStatus(sessionId: string): Promise<CallStatusResponse> {
+export async function checkVerificationStatus(phone: string): Promise<CallStatusResponse> {
   const publicKey = process.env.ZVONOK_PUBLIC_KEY;
+  const campaignId = process.env.ZVONOK_CAMPAIGN_ID;
 
-  if (!publicKey) {
+  if (!publicKey || !campaignId) {
     throw new Error("Zvonok credentials not configured");
   }
 
   try {
-    // TODO: Заменить на реальный endpoint из документации Zvonok
-    const params = new URLSearchParams({
-      public_key: publicKey,
-      session_id: sessionId,
-    });
+    // Используем endpoint /phones/calls_by_phone/ для проверки статуса звонков
+    const url = `https://zvonok.com/manager/cabapi_external/api/v1/phones/calls_by_phone/?campaign_id=${campaignId}&phone=${encodeURIComponent(phone)}&public_key=${publicKey}`;
 
-    const response = await fetch(`https://zvonok.com/manager/cabapi_external/api/v1/phones/verification/status/?${params.toString()}`, {
+    const response = await fetch(url, {
       method: "GET",
     });
 
@@ -90,20 +80,23 @@ export async function checkVerificationStatus(sessionId: string): Promise<CallSt
 
     const data = await response.json() as {
       status: string;
-      data?: any;
+      data?: any[];
     };
 
     if (data.status === "error") {
       return { verified: false };
     }
 
-    // Проверяем, был ли входящий звонок
-    const verified = data.data?.verified === true || data.data?.status === "verified";
-    const phone = data.data?.phone;
+    // Проверяем, был ли успешный входящий звонок
+    // data.data - массив звонков для этого номера
+    const calls = data.data || [];
+    const hasSuccessfulCall = calls.some((call: any) => 
+      call.status === "success" || call.status === "confirmed" || call.call_status === "answered"
+    );
 
     return {
-      verified,
-      phone,
+      verified: hasSuccessfulCall,
+      phone: hasSuccessfulCall ? phone : undefined,
     };
   } catch (error: any) {
     throw new Error(`Zvonok status check error: ${error.message}`);

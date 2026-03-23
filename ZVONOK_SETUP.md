@@ -24,35 +24,29 @@
 В документации кампании или в разделе API найдите:
 
 **Endpoint для инициации верификации:**
-- URL: `https://zvonok.com/manager/cabapi_external/api/v1/phones/verification/` (TODO: уточнить)
-- Метод: POST
+- URL: `https://zvonok.com/manager/cabapi_external/api/v1/phones/confirm/`
+- Метод: GET
 - Параметры: `public_key`, `campaign_id`, `phone`
-- Ответ: должен содержать `verification_number` (номер для звонка) и `session_id`
+- Пример: `https://zvonok.com/manager/cabapi_external/api/v1/phones/confirm/?campaign_id=1309561629&phone=%2B79102206684&public_key=090c5262b79fa335c2cb195439b8f6c1`
 
 **Endpoint для проверки статуса:**
-- URL: `https://zvonok.com/manager/cabapi_external/api/v1/phones/verification/status/` (TODO: уточнить)
+- URL: `https://zvonok.com/manager/cabapi_external/api/v1/phones/calls_by_phone/`
 - Метод: GET
-- Параметры: `public_key`, `session_id`
-- Ответ: должен содержать `verified: true/false`
+- Параметры: `public_key`, `campaign_id`, `phone`
+- Пример: `https://zvonok.com/manager/cabapi_external/api/v1/phones/calls_by_phone/?campaign_id=1309561629&phone=%2B79102206684&public_key=090c5262b79fa335c2cb195439b8f6c1`
+- Ответ: массив звонков для указанного номера
 
-### 4. Обновите код
-
-После получения точных endpoints из документации Zvonok:
-
-1. Откройте `apps/api/src/server/services/zvonok-service.ts`
-2. Замените TODO комментарии на реальные endpoints
-3. Проверьте формат ответов и при необходимости скорректируйте парсинг
-
-### 5. Добавьте credentials в .env
+### 4. Добавьте credentials в .env
 
 На сервере в файле `/root/mini-crm/infra/.env`:
 
 ```bash
 ZVONOK_PUBLIC_KEY=ваш_public_key
 ZVONOK_CAMPAIGN_ID=ваш_campaign_id
+ZVONOK_VERIFICATION_NUMBER=+78005558607
 ```
 
-### 6. Задеплойте изменения
+### 5. Задеплойте изменения
 
 ```bash
 git add -A
