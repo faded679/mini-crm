@@ -229,11 +229,10 @@ export default function Finance() {
                   <thead>
                     <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
                       <th className="pb-2 pr-3">Дата</th>
-                      <th className="pb-2 pr-3">Плательщик</th>
+                      <th className="pb-2 pr-3">Организация</th>
                       <th className="pb-2 pr-3">ИНН</th>
                       <th className="pb-2 pr-3 text-right">Сумма</th>
                       <th className="pb-2 pr-3">Назначение</th>
-                      <th className="pb-2 pr-3">Организация</th>
                       <th className="pb-2 pr-3">Счета</th>
                       <th className="pb-2 pr-3">Статус</th>
                       <th className="pb-2"></th>
@@ -246,26 +245,25 @@ export default function Finance() {
                         className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                       >
                         <td className="py-2 pr-3 whitespace-nowrap">{fmtDate(tx.documentDate)}</td>
-                        <td className="py-2 pr-3 max-w-[200px] truncate" title={tx.payerName}>
-                          {tx.payerName}
-                        </td>
-                        <td className="py-2 pr-3 whitespace-nowrap text-gray-400 font-mono text-xs">
-                          {tx.payerInn || "—"}
-                        </td>
-                        <td className="py-2 pr-3 text-right whitespace-nowrap font-medium text-green-600 dark:text-green-400">
-                          +{fmtMoney(tx.amount)}
-                        </td>
-                        <td className="py-2 pr-3 max-w-[250px] truncate text-gray-500 dark:text-gray-400" title={tx.purpose}>
-                          {tx.purpose}
-                        </td>
                         <td className="py-2 pr-3 whitespace-nowrap">
                           {tx.counterparty ? (
                             <span className="text-gray-900 dark:text-gray-200">
                               {tx.counterparty.shortName || tx.counterparty.name}
                             </span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-gray-400 max-w-[200px] truncate inline-block" title={tx.payerName}>
+                              {tx.payerName}
+                            </span>
                           )}
+                        </td>
+                        <td className="py-2 pr-3 whitespace-nowrap text-gray-400 font-mono text-xs">
+                          {tx.counterparty?.inn || tx.payerInn || "—"}
+                        </td>
+                        <td className="py-2 pr-3 text-right whitespace-nowrap font-medium text-green-600 dark:text-green-400">
+                          +{fmtMoney(tx.amount)}
+                        </td>
+                        <td className="py-2 pr-3 max-w-[250px] truncate text-gray-500 dark:text-gray-400" title={tx.purpose}>
+                          {tx.purpose}
                         </td>
                         <td className="py-2 pr-3">
                           {tx.invoiceNumbers.length > 0 ? (
