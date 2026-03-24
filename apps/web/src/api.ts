@@ -940,6 +940,7 @@ export interface BankImportBatch {
 }
 
 export interface CounterpartyFinanceSummary {
+  counterparty: { id: number; name: string; shortName: string | null; inn: string | null };
   balance: { totalBilled: number; totalPaid: number; balance: number };
   invoices: Invoice[];
   payments: BankTransaction[];

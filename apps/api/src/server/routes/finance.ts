@@ -126,6 +126,13 @@ router.get("/counterparty/:id/summary", async (req: Request, res: Response, next
     const counterpartyId = Number(req.params.id);
     if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
 
+    // Get counterparty info
+    const counterparty = await (prisma as any).counterparty.findUnique({
+      where: { id: counterpartyId },
+      select: { id: true, name: true, shortName: true, inn: true },
+    });
+    if (!counterparty) throw new ApiError(404, "Counterparty not found");
+
     // Get balance
     const balance = await (prisma as any).counterpartyBalance.findUnique({
       where: { counterpartyId },
@@ -145,6 +152,7 @@ router.get("/counterparty/:id/summary", async (req: Request, res: Response, next
     });
 
     res.json({
+      counterparty,
       balance: balance || { totalBilled: 0, totalPaid: 0, balance: 0 },
       invoices,
       payments,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   createCounterparty,
   dadataFindParty,
@@ -47,6 +48,7 @@ function toFormState(c?: Counterparty): FormState {
 }
 
 export default function Counterparties() {
+  const navigate = useNavigate();
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -599,7 +601,13 @@ export default function Counterparties() {
               )}
             </div>
 
-            <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <button
+                onClick={() => { setFinanceOpen(false); navigate(`/finance/reconciliation/${financeCp.id}`); }}
+                className="px-4 py-2 rounded-lg text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 font-medium"
+              >
+                Полная сверка →
+              </button>
               <button
                 onClick={() => setFinanceOpen(false)}
                 className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"

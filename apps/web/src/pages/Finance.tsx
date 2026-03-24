@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   importBankStatement,
   getFinanceTransactions,
@@ -39,6 +40,7 @@ function fmtMoney(n: number) {
 }
 
 export default function Finance() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("transactions");
 
   // Transactions tab
@@ -332,9 +334,10 @@ export default function Finance() {
                     {balances.map((b) => (
                       <tr
                         key={b.id}
-                        className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                        onClick={() => navigate(`/finance/reconciliation/${b.counterpartyId}`)}
+                        className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
                       >
-                        <td className="py-2.5 pr-3 font-medium text-gray-900 dark:text-gray-200">
+                        <td className="py-2.5 pr-3 font-medium text-blue-700 dark:text-blue-400 hover:underline">
                           {b.counterparty.shortName || b.counterparty.name}
                         </td>
                         <td className="py-2.5 pr-3 text-gray-400 font-mono text-xs">
