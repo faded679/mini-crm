@@ -798,7 +798,7 @@ export default function Requests() {
                       <option value="">Выберите организацию</option>
                       {filteredOrganizations.map((item) => (
                         <option key={item.clientId} value={item.clientId}>
-                          {item.displayName} {item.shortName && `(${item.shortName})`} — {item.contactName}
+                          {item.shortName || item.displayName} — {item.contactName}
                         </option>
                       ))}
                     </select>
