@@ -99,7 +99,12 @@ export default function Finance() {
     setImporting(true);
     setImportResult(null);
     try {
-      const text = await file.text();
+      const text = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file, "windows-1251");
+      });
       const result = await importBankStatement(text, file.name);
       setImportResult(result);
       loadImportHistory();
