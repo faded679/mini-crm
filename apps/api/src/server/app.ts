@@ -43,7 +43,7 @@ export function createApp() {
   void seedBoxTypes();
 
   app.use(cors({ origin: env.CORS_ORIGINS.split(",") }));
-  app.use(express.json());
+  app.use(express.json({ limit: "10mb" }));
   app.use(requestId);
 
   app.get("/health", (_req, res) => {
