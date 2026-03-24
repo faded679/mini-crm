@@ -6,10 +6,20 @@ import {
   getClients,
   getCounterparties,
   updateCounterparty,
+  getCounterpartyFinanceSummary,
   type Client,
   type Counterparty,
   type CounterpartyPayload,
+  type CounterpartyFinanceSummary,
 } from "../api";
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("ru-RU");
+}
+
+function fmtMoney(n: number) {
+  return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " \u20BD";
+}
 
 type FormState = CounterpartyPayload & { id?: number };
 
@@ -46,6 +56,24 @@ export default function Counterparties() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>({ name: "", contactClientIds: [] });
   const [dadataLoading, setDadataLoading] = useState(false);
+
+  // Finance modal
+  const [financeOpen, setFinanceOpen] = useState(false);
+  const [financeCp, setFinanceCp] = useState<Counterparty | null>(null);
+  const [financeSummary, setFinanceSummary] = useState<CounterpartyFinanceSummary | null>(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
+
+  async function openFinance(c: Counterparty) {
+    setFinanceCp(c);
+    setFinanceSummary(null);
+    setFinanceOpen(true);
+    setFinanceLoading(true);
+    try {
+      const summary = await getCounterpartyFinanceSummary(c.id);
+      setFinanceSummary(summary);
+    } catch { /* ignore */ }
+    setFinanceLoading(false);
+  }
 
   const clientById = useMemo(() => {
     const m = new Map<number, Client>();
@@ -236,6 +264,12 @@ export default function Counterparties() {
                           .join(", ")}
                   </td>
                   <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                    <button
+                      onClick={() => openFinance(c)}
+                      className="px-3 py-1.5 rounded-lg text-sm bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:text-green-400 mr-2"
+                    >
+                      Финансы
+                    </button>
                     <button
                       onClick={() => openEdit(c)}
                       className="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
@@ -439,6 +473,138 @@ export default function Counterparties() {
                 disabled={saving}
               >
                 {saving ? "Сохранение..." : "Сохранить"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Finance modal */}
+      {financeOpen && financeCp && (
+        <div
+          className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setFinanceOpen(false); }}
+        >
+          <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden max-h-[85vh] flex flex-col">
+            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  Финансы — {financeCp.shortName || financeCp.name}
+                </div>
+                {financeCp.inn && <div className="text-xs text-gray-400">ИНН: {financeCp.inn}</div>}
+              </div>
+              <button
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                onClick={() => setFinanceOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1">
+              {financeLoading ? (
+                <div className="text-center py-8 text-gray-500">Загрузка...</div>
+              ) : !financeSummary ? (
+                <div className="text-center py-8 text-gray-400">Нет данных</div>
+              ) : (
+                <>
+                  {/* Balance cards */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 text-center">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Выставлено</div>
+                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-200">{fmtMoney(financeSummary.balance.totalBilled)}</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 text-center">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Оплачено</div>
+                      <div className="text-lg font-semibold text-green-600 dark:text-green-400">{fmtMoney(financeSummary.balance.totalPaid)}</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 text-center">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Баланс</div>
+                      <div className={`text-lg font-bold ${
+                        financeSummary.balance.balance > 0
+                          ? "text-green-600 dark:text-green-400"
+                          : financeSummary.balance.balance < 0
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-gray-500"
+                      }`}>
+                        {financeSummary.balance.balance > 0 ? "+" : ""}{fmtMoney(financeSummary.balance.balance)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payments */}
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Поступления ({financeSummary.payments.length})</h3>
+                    {financeSummary.payments.length === 0 ? (
+                      <div className="text-sm text-gray-400">Нет поступлений</div>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                            <th className="pb-1.5 pr-3">Дата</th>
+                            <th className="pb-1.5 pr-3 text-right">Сумма</th>
+                            <th className="pb-1.5">Назначение</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {financeSummary.payments.map((p) => (
+                            <tr key={p.id} className="border-b border-gray-100 dark:border-gray-700/50">
+                              <td className="py-1.5 pr-3 whitespace-nowrap">{fmtDate(p.documentDate)}</td>
+                              <td className="py-1.5 pr-3 text-right whitespace-nowrap font-medium text-green-600 dark:text-green-400">+{fmtMoney(p.amount)}</td>
+                              <td className="py-1.5 text-gray-500 dark:text-gray-400 truncate max-w-[300px]" title={p.purpose}>{p.purpose}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* Invoices */}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Счета ({financeSummary.invoices.length})</h3>
+                    {financeSummary.invoices.length === 0 ? (
+                      <div className="text-sm text-gray-400">Нет счетов</div>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                            <th className="pb-1.5 pr-3">Номер</th>
+                            <th className="pb-1.5 pr-3">Дата</th>
+                            <th className="pb-1.5 pr-3 text-right">Сумма</th>
+                            <th className="pb-1.5">Статус</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {financeSummary.invoices.map((inv) => {
+                            const total = inv.items.reduce((s, it) => s + it.amount, 0);
+                            return (
+                              <tr key={inv.id} className="border-b border-gray-100 dark:border-gray-700/50">
+                                <td className="py-1.5 pr-3 font-medium">{inv.number}</td>
+                                <td className="py-1.5 pr-3 whitespace-nowrap">{fmtDate(inv.date)}</td>
+                                <td className="py-1.5 pr-3 text-right whitespace-nowrap">{fmtMoney(total)}</td>
+                                <td className="py-1.5">
+                                  {inv.isPaid ? (
+                                    <span className="text-green-600 dark:text-green-400 text-xs font-medium">Оплачен</span>
+                                  ) : (
+                                    <span className="text-yellow-600 dark:text-yellow-400 text-xs font-medium">Не оплачен</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => setFinanceOpen(false)}
+                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+              >
+                Закрыть
               </button>
             </div>
           </div>
