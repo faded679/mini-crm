@@ -73,6 +73,7 @@ export default function Requests() {
   // New request modal
   const [showNewModal, setShowNewModal] = useState(false);
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
+  const [orgSearch, setOrgSearch] = useState("");
   const [citiesList, setCitiesList] = useState<City[]>([]);
   const [newReq, setNewReq] = useState({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "" });
   const [creating, setCreating] = useState(false);
@@ -94,6 +95,30 @@ export default function Requests() {
   const sortParam = searchParams.get("sort");
   const sortKey = isSortKey(sortParam) ? sortParam : "id";
   const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
+
+  // Отфильтрованные и отсортированные организации
+  const filteredOrganizations = useMemo(() => {
+    // Создаем плоский список: каждая пара (организация, контакт)
+    const flatList = counterparties.flatMap((cp) =>
+      cp.contacts.map((contact) => ({
+        counterparty: cp,
+        contact,
+        clientId: contact.client.id,
+        displayName: cp.name,
+        shortName: cp.shortName || "",
+        contactName: contact.client.firstName ?? contact.client.username ?? contact.client.telegramId,
+        searchText: `${cp.name} ${cp.shortName || ""} ${contact.client.firstName || ""} ${contact.client.username || ""} ${contact.client.telegramId}`.toLowerCase(),
+      }))
+    );
+
+    // Фильтрация по поисковому запросу
+    const filtered = orgSearch.trim()
+      ? flatList.filter((item) => item.searchText.includes(orgSearch.toLowerCase().trim()))
+      : flatList;
+
+    // Сортировка по алфавиту (по полному имени организации)
+    return filtered.sort((a, b) => a.displayName.localeCompare(b.displayName, "ru"));
+  }, [counterparties, orgSearch]);
 
   const setParam = useCallback((key: string, value: string | "") => {
     setSearchParams((prev) => {
@@ -405,6 +430,7 @@ export default function Requests() {
               setFbsQty("");
               setScheduleFbs([]);
               setPricesFbs([]);
+              setOrgSearch("");
               setShowNewModal(true);
             }}
             className="px-3 py-1 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition"
@@ -631,7 +657,7 @@ export default function Requests() {
         return (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewModal(false); }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) { setShowNewModal(false); setOrgSearch(""); } }}
         >
           <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
             {/* Step 1: Delivery type toggle */}
@@ -660,13 +686,20 @@ export default function Requests() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Организация</label>
+                    <input
+                      type="text"
+                      placeholder="Поиск организации..."
+                      value={orgSearch}
+                      onChange={(e) => setOrgSearch(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 mb-2"
+                    />
                     <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
                       <option value="">Выберите организацию</option>
-                      {counterparties.map((cp) => cp.contacts.map((contact) => (
-                        <option key={`${cp.id}-${contact.client.id}`} value={contact.client.id}>
-                          {cp.shortName || cp.name} ({contact.client.firstName ?? contact.client.username ?? contact.client.telegramId})
+                      {filteredOrganizations.map((item) => (
+                        <option key={item.clientId} value={item.clientId}>
+                          {item.displayName} {item.shortName && `(${item.shortName})`} — {item.contactName}
                         </option>
-                      )))}
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -705,7 +738,7 @@ export default function Requests() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-5">
-                  <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
+                  <button onClick={() => { setShowNewModal(false); setOrgSearch(""); }} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
                   {newReq.boxCount && (
                     <button
                       disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
@@ -754,13 +787,20 @@ export default function Requests() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Организация</label>
+                    <input
+                      type="text"
+                      placeholder="Поиск организации..."
+                      value={orgSearch}
+                      onChange={(e) => setOrgSearch(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 mb-2"
+                    />
                     <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
                       <option value="">Выберите организацию</option>
-                      {counterparties.map((cp) => cp.contacts.map((contact) => (
-                        <option key={`${cp.id}-${contact.client.id}`} value={contact.client.id}>
-                          {cp.shortName || cp.name} ({contact.client.firstName ?? contact.client.username ?? contact.client.telegramId})
+                      {filteredOrganizations.map((item) => (
+                        <option key={item.clientId} value={item.clientId}>
+                          {item.displayName} {item.shortName && `(${item.shortName})`} — {item.contactName}
                         </option>
-                      )))}
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -850,7 +890,7 @@ export default function Requests() {
                     )}
                 </div>
                 <div className="flex justify-end gap-3 mt-5">
-                  <button onClick={() => setShowNewModal(false)} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
+                  <button onClick={() => { setShowNewModal(false); setOrgSearch(""); }} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
                   <button
                     disabled={creating || !canCreateFbs}
                     onClick={async () => {
