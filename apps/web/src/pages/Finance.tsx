@@ -244,7 +244,7 @@ export default function Finance() {
                         key={tx.id}
                         className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                       >
-                        <td className="py-2 pr-3 whitespace-nowrap">{fmtDate(tx.documentDate)}</td>
+                        <td className="py-2 pr-3 whitespace-nowrap text-gray-900 dark:text-gray-200">{fmtDate(tx.documentDate)}</td>
                         <td className="py-2 pr-3 whitespace-nowrap">
                           {tx.counterparty ? (
                             <span className="text-gray-900 dark:text-gray-200">
