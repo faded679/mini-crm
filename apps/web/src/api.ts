@@ -869,3 +869,125 @@ export function sendBroadcast(message: string, clientIds?: number[]) {
     body: JSON.stringify({ message, clientIds }),
   });
 }
+
+// --------------- Finance ---------------
+
+export interface BankTransaction {
+  id: number;
+  documentNumber: string;
+  documentDate: string;
+  amount: number;
+  direction: string;
+  payerName: string;
+  payerInn: string | null;
+  payerAccount: string | null;
+  payerBik: string | null;
+  payerBank: string | null;
+  recipientName: string;
+  recipientInn: string | null;
+  recipientAccount: string | null;
+  purpose: string;
+  counterpartyId: number | null;
+  counterparty: { id: number; name: string; shortName: string | null; inn: string | null } | null;
+  invoiceNumbers: string[];
+  status: "new" | "matched" | "unmatched" | "ignored";
+  matchedAt: string | null;
+  importBatchId: string;
+  createdAt: string;
+}
+
+export interface BankImportResult {
+  batchId: string;
+  totalDocuments: number;
+  incomingCount: number;
+  importedCount: number;
+  skippedDuplicates: number;
+  matchedCount: number;
+  unmatchedCount: number;
+  transactions: {
+    id: number;
+    payerName: string;
+    amount: number;
+    status: string;
+    counterpartyName?: string;
+    invoiceNumbers: string[];
+  }[];
+}
+
+export interface CounterpartyBalance {
+  id: number;
+  counterpartyId: number;
+  totalBilled: number;
+  totalPaid: number;
+  balance: number;
+  lastUpdated: string;
+  counterparty: { id: number; name: string; shortName: string | null; inn: string | null };
+}
+
+export interface BankImportBatch {
+  id: string;
+  fileName: string;
+  periodStart: string;
+  periodEnd: string;
+  account: string;
+  totalIncoming: number;
+  totalOutgoing: number;
+  openBalance: number;
+  closeBalance: number;
+  recordCount: number;
+  source: string;
+  importedAt: string;
+}
+
+export interface CounterpartyFinanceSummary {
+  balance: { totalBilled: number; totalPaid: number; balance: number };
+  invoices: Invoice[];
+  payments: BankTransaction[];
+}
+
+export function importBankStatement(fileContent: string, fileName: string) {
+  return request<BankImportResult>("/admin/finance/import", {
+    method: "POST",
+    body: JSON.stringify({ fileContent, fileName }),
+  });
+}
+
+export function getFinanceTransactions(filters?: {
+  status?: string;
+  counterpartyId?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set("status", filters.status);
+  if (filters?.counterpartyId) params.set("counterpartyId", String(filters.counterpartyId));
+  if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+  const q = params.toString() ? `?${params.toString()}` : "";
+  return request<BankTransaction[]>(`/admin/finance/transactions${q}`);
+}
+
+export function matchBankTransaction(id: number, counterpartyId: number) {
+  return request<{ ok: true }>(`/admin/finance/transactions/${id}/match`, {
+    method: "PATCH",
+    body: JSON.stringify({ counterpartyId }),
+  });
+}
+
+export function ignoreBankTransaction(id: number) {
+  return request<{ ok: true }>(`/admin/finance/transactions/${id}/ignore`, {
+    method: "PATCH",
+  });
+}
+
+export function getFinanceBalances() {
+  return request<CounterpartyBalance[]>("/admin/finance/balances");
+}
+
+export function getCounterpartyFinanceSummary(counterpartyId: number) {
+  return request<CounterpartyFinanceSummary>(`/admin/finance/counterparty/${counterpartyId}/summary`);
+}
+
+export function getFinanceImportHistory() {
+  return request<BankImportBatch[]>("/admin/finance/import-history");
+}

@@ -11,6 +11,7 @@ import Counterparties from "./pages/Counterparties";
 import Invoices from "./pages/Invoices";
 import Prices from "./pages/Prices";
 import Broadcast from "./pages/Broadcast";
+import Finance from "./pages/Finance";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/prices" element={<Prices />} />
             <Route path="/broadcast" element={<Broadcast />} />
+            <Route path="/finance" element={<Finance />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

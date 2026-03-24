@@ -71,6 +71,8 @@ model Counterparty {
 
   contacts              CounterpartyContact[]
   invoices              Invoice[]
+  bankTransactions      BankTransaction[]
+  balance               CounterpartyBalance?
 
   @@map("counterparties")
 }
@@ -348,6 +350,82 @@ model ServicePrice {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("service_prices")
+}
+
+enum TransactionStatus {
+  new
+  matched
+  unmatched
+  ignored
+}
+
+model BankImportBatch {
+  id            String   @id @default(uuid())
+  fileName      String   @map("file_name")
+  periodStart   DateTime @map("period_start")
+  periodEnd     DateTime @map("period_end")
+  account       String
+  totalIncoming Float    @map("total_incoming")
+  totalOutgoing Float    @map("total_outgoing")
+  openBalance   Float    @map("open_balance")
+  closeBalance  Float    @map("close_balance")
+  recordCount   Int      @map("record_count")
+  source        String   @default("manual")
+  importedAt    DateTime @default(now()) @map("imported_at")
+
+  transactions  BankTransaction[]
+
+  @@map("bank_import_batches")
+}
+
+model BankTransaction {
+  id                  Int               @id @default(autoincrement())
+  documentNumber      String            @map("document_number")
+  documentDate        DateTime          @map("document_date")
+  amount              Float
+  direction           String
+
+  payerName           String            @map("payer_name")
+  payerInn            String?           @map("payer_inn")
+  payerAccount        String?           @map("payer_account")
+  payerBik            String?           @map("payer_bik")
+  payerBank           String?           @map("payer_bank")
+
+  recipientName       String            @map("recipient_name")
+  recipientInn        String?           @map("recipient_inn")
+  recipientAccount    String?           @map("recipient_account")
+
+  purpose             String
+
+  counterpartyId      Int?              @map("counterparty_id")
+  counterparty        Counterparty?     @relation(fields: [counterpartyId], references: [id])
+
+  invoiceNumbers      String[]          @map("invoice_numbers")
+
+  status              TransactionStatus @default(new)
+  matchedAt           DateTime?         @map("matched_at")
+
+  importBatchId       String            @map("import_batch_id")
+  importBatch         BankImportBatch   @relation(fields: [importBatchId], references: [id])
+  rawData             Json?             @map("raw_data")
+
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  @@unique([documentNumber, documentDate, amount, payerInn])
+  @@map("bank_transactions")
+}
+
+model CounterpartyBalance {
+  id               Int          @id @default(autoincrement())
+  counterpartyId   Int          @unique @map("counterparty_id")
+  totalBilled      Float        @default(0) @map("total_billed")
+  totalPaid        Float        @default(0) @map("total_paid")
+  balance          Float        @default(0)
+  lastUpdated      DateTime     @default(now()) @map("last_updated")
+
+  counterparty     Counterparty @relation(fields: [counterpartyId], references: [id])
+
+  @@map("counterparty_balances")
 }
 
 model ClientServicePrice {

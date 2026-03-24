@@ -1,0 +1,185 @@
+import { Router, type Request, type Response, type NextFunction } from "express";
+import { requireAuth } from "../auth/middleware.js";
+import { ApiError } from "../errors.js";
+import { prisma } from "../db/prisma.js";
+import {
+  importBankStatement,
+  matchTransaction,
+  ignoreTransaction,
+  getAllBalances,
+  getCounterpartyTransactions,
+  recalculateBalance,
+} from "../services/bank-import-service.js";
+
+const router = Router();
+router.use(requireAuth);
+
+// POST /admin/finance/import — upload and import bank statement file
+router.post("/import", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { fileContent, fileName } = req.body as {
+      fileContent: string;
+      fileName: string;
+    };
+
+    if (!fileContent || !fileName) {
+      throw new ApiError(400, "fileContent and fileName are required");
+    }
+
+    const result = await importBankStatement(fileContent, fileName, "manual");
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/finance/transactions — list all transactions with filters
+router.get("/transactions", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { status, counterpartyId, dateFrom, dateTo } = req.query as {
+      status?: string;
+      counterpartyId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    };
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (counterpartyId) where.counterpartyId = Number(counterpartyId);
+    if (dateFrom || dateTo) {
+      where.documentDate = {};
+      if (dateFrom) where.documentDate.gte = new Date(dateFrom);
+      if (dateTo) where.documentDate.lte = new Date(dateTo);
+    }
+
+    const transactions = await (prisma as any).bankTransaction.findMany({
+      where,
+      include: {
+        counterparty: {
+          select: { id: true, name: true, shortName: true, inn: true },
+        },
+      },
+      orderBy: { documentDate: "desc" },
+    });
+
+    res.json(transactions);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/finance/transactions/:id/match — manually match transaction to counterparty
+router.patch("/transactions/:id/match", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const { counterpartyId } = req.body as { counterpartyId: number };
+
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid transaction id");
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+
+    await matchTransaction(id, counterpartyId);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/finance/transactions/:id/ignore — mark transaction as ignored
+router.patch("/transactions/:id/ignore", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid transaction id");
+
+    await ignoreTransaction(id);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/finance/balances — get all counterparty balances
+router.get("/balances", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const balances = await getAllBalances();
+    res.json(balances);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/finance/counterparty/:id/transactions — transactions for specific org
+router.get("/counterparty/:id/transactions", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counterpartyId = Number(req.params.id);
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+
+    const transactions = await getCounterpartyTransactions(counterpartyId);
+    res.json(transactions);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/finance/counterparty/:id/summary — full financial summary for an org
+router.get("/counterparty/:id/summary", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counterpartyId = Number(req.params.id);
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+
+    // Get balance
+    const balance = await (prisma as any).counterpartyBalance.findUnique({
+      where: { counterpartyId },
+    });
+
+    // Get invoices
+    const invoices = await (prisma as any).invoice.findMany({
+      where: { counterpartyId },
+      include: { items: true },
+      orderBy: { date: "desc" },
+    });
+
+    // Get matched payments
+    const payments = await (prisma as any).bankTransaction.findMany({
+      where: { counterpartyId, status: "matched" },
+      orderBy: { documentDate: "desc" },
+    });
+
+    res.json({
+      balance: balance || { totalBilled: 0, totalPaid: 0, balance: 0 },
+      invoices,
+      payments,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/finance/recalculate/:id — force recalculate balance for a counterparty
+router.post("/recalculate/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counterpartyId = Number(req.params.id);
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+
+    await recalculateBalance(counterpartyId);
+    const balance = await (prisma as any).counterpartyBalance.findUnique({
+      where: { counterpartyId },
+    });
+    res.json(balance);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/finance/import-history — list all import batches
+router.get("/import-history", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const batches = await (prisma as any).bankImportBatch.findMany({
+      orderBy: { importedAt: "desc" },
+    });
+    res.json(batches);
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
