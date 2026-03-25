@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import QRCode from "qrcode";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +53,36 @@ function formatDate(dateStr: string): string {
 
 function formatMoney(n: number): string {
   return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Generate QR payment string according to GOST R 56042-2014
+ */
+function generateQRPaymentString(params: {
+  name: string;
+  personalAcc: string;
+  bankName: string;
+  bic: string;
+  correspAcc: string;
+  inn?: string;
+  sum?: number;
+  purpose?: string;
+}): string {
+  const fields: string[] = [];
+  
+  // Required fields
+  fields.push(`Name=${params.name}`);
+  fields.push(`PersonalAcc=${params.personalAcc}`);
+  fields.push(`BankName=${params.bankName}`);
+  fields.push(`BIC=${params.bic}`);
+  fields.push(`CorrespAcc=${params.correspAcc}`);
+  
+  // Optional fields
+  if (params.inn) fields.push(`PayeeINN=${params.inn}`);
+  if (params.sum) fields.push(`Sum=${(params.sum * 100).toFixed(0)}`); // в копейках
+  if (params.purpose) fields.push(`Purpose=${params.purpose}`);
+  
+  return `ST00012|${fields.join('|')}`;
 }
 
 function numberToWordsRu(n: number): string {
@@ -146,7 +177,32 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)),
   );
 
-  // No QR code needed
+  // Generate QR code for payment
+  const qrString = generateQRPaymentString({
+    name: SELLER.name,
+    personalAcc: SELLER.account,
+    bankName: SELLER.bank,
+    bic: SELLER.bik,
+    correspAcc: SELLER.correspondentAccount,
+    inn: SELLER.inn,
+    sum: total,
+    purpose: `Оплата по счету №${invoiceNumber} от ${formatDate(invoiceDate)}`,
+  });
+
+  let qrImageBuffer: Buffer | null = null;
+  try {
+    const qrDataUrl = await QRCode.toDataURL(qrString, {
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      width: 150,
+      margin: 1,
+    });
+    // Convert data URL to buffer
+    const base64Data = qrDataUrl.replace(/^data:image\/png;base64,/, '');
+    qrImageBuffer = Buffer.from(base64Data, 'base64');
+  } catch (err) {
+    console.error('Failed to generate QR code:', err);
+  }
 
   return await new Promise<Buffer>((resolve, reject) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
@@ -228,13 +284,20 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.fillColor("#000");
     y = tableY + row1H + row2H + row3H + 4;
 
-    // ============ TITLE ============
+    // ============ TITLE + QR CODE ============
     y += 8;
+    const titleY = y;
     doc.font("Bold").fontSize(14).fillColor("#000");
     doc.text(`Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, y, {
-      width: W,
+      width: W - 160,
       align: "left",
     });
+    
+    // Add QR code in top-right corner
+    if (qrImageBuffer) {
+      doc.image(qrImageBuffer, M + W - 150, titleY - 5, { width: 150, height: 150 });
+    }
+    
     y = doc.y + 6;
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
