@@ -293,11 +293,6 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
       align: "left",
     });
     
-    // Add QR code in top-right corner
-    if (qrImageBuffer) {
-      doc.image(qrImageBuffer, M + W - 150, titleY - 5, { width: 150, height: 150 });
-    }
-    
     y = doc.y + 6;
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
@@ -414,8 +409,13 @@ doc.strokeOpacity(1);
       doc.image(stampPath, sigMid + 90, lineY - 50, { width: 100, height: 100 });
     }
 
+    // Add QR code in top-right corner
+    if (qrImageBuffer) {
+      doc.image(qrImageBuffer, M + W - 150, titleY - 5, { width: 150, height: 150 });
+    }
+    
+
     y = lineY + 60;
     doc.end();
   });
 }
-
