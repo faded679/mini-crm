@@ -411,7 +411,7 @@ doc.strokeOpacity(1);
 
     // Add QR code in top-right corner
     if (qrImageBuffer) {
-      doc.image(qrImageBuffer, M + W - 150, lineY + 30, { width: 150, height: 150 });
+      doc.image(qrImageBuffer, M + W - 150, lineY + 50, { width: 150, height: 150 });
     }
     
 
