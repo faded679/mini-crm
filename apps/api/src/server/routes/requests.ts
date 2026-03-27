@@ -50,7 +50,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       const message = 
         `💳 <b>Ссылка на оплату счета №${invoice.number}</b>\n\n` +
         `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
-        `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}`;
+        `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
 
       await notifyClient(client.telegramId, message);
 
@@ -128,7 +128,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     const message = 
       `💳 <b>Ссылка на оплату счета №${invoice.number}</b>\n\n` +
       `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
-      `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}`;
+      `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}\n\nСсылка на оплату действует 24 часа.`;
 
     await notifyClient(client.telegramId, message);
 
