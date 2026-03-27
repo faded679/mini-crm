@@ -123,7 +123,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       const message = `💳 <b>Счет на оплату</b>\n\n` +
         `Счет №${invoice.number}\n` +
         `Сумма: ${invoice.amount.toLocaleString("ru-RU")} ₽\n\n` +
-        `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}`;
+        `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}\n\nСсылка на оплату действует 24 часа.`;
 
       await notifyClient(client.telegramId, message);
     } catch (notifErr) {
