@@ -7,7 +7,8 @@ function WarehouseWorkerName({ telegramId }: { telegramId: string }) {
   
   useEffect(() => {
     // Fetch warehouse worker name from API
-    fetch(`/api/warehouse/worker/${telegramId}`)
+    const apiUrl = import.meta.env.VITE_API_URL || "https://test.ved31.ru/api";
+    fetch(`${apiUrl}/warehouse/worker/${telegramId}`)
       .then(res => res.json())
       .then(data => setName(data.name || telegramId))
       .catch(() => setName(telegramId));
