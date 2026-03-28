@@ -150,6 +150,7 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
     const isFBS = req.deliveryType?.name === "FBS";
     
     let text = `📦 *Заявка #${req.id}*\n\n`;
+    text += `Организация: ${req.cityRef?.shortName || 'Не указано'}\n`;
     text += `👤 Клиент: ${clientName}\n`;
     text += `📞 Телефон: ${req.client.phone || "не указан"}\n`;
     text += `🏢 ${req.cityRef?.shortName || 'Не указано'}\n`;
@@ -158,7 +159,6 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
 
     if (isFBS) {
       text += `📏 Объем: ${req.volume ? req.volume + " м³" : "❌ не указан"}\n`;
-      text += `⚖️ Вес: ${req.weight ? req.weight + " кг" : "не указан"}\n`;
     } else {
       text += `📦 Количество: ${req.boxCount} ${req.boxType?.name || "коробок"}\n`;
     }
