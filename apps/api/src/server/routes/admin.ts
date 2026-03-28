@@ -2275,7 +2275,7 @@ router.get("/requests/:id/photo/:photoId", async (req: Request, res: Response, n
     const fileResponse = await fetch(
       `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${photo.fileId}`
     );
-    const fileData = await fileResponse.json();
+    const fileData = await fileResponse.json() as any;
     
     if (!fileData.ok) {
       throw new ApiError(500, "Failed to get file from Telegram");
