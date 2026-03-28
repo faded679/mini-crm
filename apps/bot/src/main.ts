@@ -82,7 +82,7 @@ bot.command("cancel", async (ctx) => {
 });
 
 // Warehouse command - show menu for warehouse workers
-bot.command("warehouse", async (ctx) => {
+bot.command("sklad", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
