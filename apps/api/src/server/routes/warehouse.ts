@@ -118,12 +118,6 @@ router.get("/requests/:id", requireWarehouseWorker, async (req: Request, res: Re
             phone: true,
           },
         },
-        cityRef: {
-          select: {
-            shortName: true,
-            fullName: true,
-          },
-        },
         boxType: {
           select: {
             name: true,
@@ -141,9 +135,31 @@ router.get("/requests/:id", requireWarehouseWorker, async (req: Request, res: Re
       },
     });
 
-    if (!request) {
-      throw new ApiError(404, "Request not found");
+    if (!request) throw new ApiError(404, "Request not found");
+
+    // Handle cityRef separately for FBS requests with fallback logic
+    let cityRef;
+    if (request.deliveryType?.name === "FBS") {
+      // Try cityFbs first for FBS
+      cityRef = await (prisma as any).cityFbs.findUnique({ 
+        where: { shortName: request.city },
+        select: { shortName: true, fullName: true }
+      });
+      // If not found in cityFbs, fallback to cities
+      if (!cityRef) {
+        cityRef = await (prisma as any).city.findUnique({ 
+          where: { shortName: request.city },
+          select: { shortName: true, fullName: true }
+        });
+      }
+    } else {
+      cityRef = await (prisma as any).city.findUnique({ 
+        where: { shortName: request.city },
+        select: { shortName: true, fullName: true }
+      });
     }
+
+    (request as any).cityRef = cityRef || { shortName: request.city, fullName: request.city };
 
     res.json(request);
   } catch (err) {
