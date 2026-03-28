@@ -117,6 +117,14 @@ export type UpdateShipmentRequestPayload = {
   mpAccountDate?: string | null;
 };
 
+export interface RequestPhoto {
+  id: number;
+  fileId: string;
+  fileUrl?: string | null;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
 export interface ShipmentRequest {
   id: number;
   city: string;
@@ -136,6 +144,7 @@ export interface ShipmentRequest {
   createdAt: string;
   client: Client;
   services?: RequestService[];
+  photos?: RequestPhoto[];
 }
 
 export interface StatusHistoryEntry {

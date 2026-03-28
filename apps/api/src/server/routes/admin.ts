@@ -201,7 +201,7 @@ router.get("/requests", async (_req: Request, res: Response, next: NextFunction)
   try {
     const requests = await (prisma as any).shipmentRequest.findMany({
       where: { status: { not: "archived" } },
-      include: { client: true, boxType: true, services: true, deliveryType: true },
+      include: { client: true, boxType: true, services: true, deliveryType: true, photos: true },
       orderBy: { createdAt: "desc" },
     });
     res.json(requests);

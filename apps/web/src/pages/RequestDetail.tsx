@@ -518,6 +518,23 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                 <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
               )}
             </div>
+            {request.photos && request.photos.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Фото груза</p>
+                <div className="mt-2">
+                  {request.photos.map((photo) => (
+                    <div key={photo.id} className="mb-2">
+                      <p className="text-xs text-gray-500 mb-1">
+                        Загружено: {new Date(photo.uploadedAt).toLocaleString("ru-RU")}
+                      </p>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        📸 Фото добавлено кладовщиком (ID: {photo.fileId.slice(0, 20)}...)
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Тип поставки</p>
               {editing ? (
