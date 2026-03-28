@@ -5,6 +5,28 @@ import { ApiError } from "../errors.js";
 const router = Router();
 
 /**
+ * GET /warehouse/worker/:telegramId - Получить имя кладовщика (публичный endpoint)
+ */
+router.get("/worker/:telegramId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const telegramId = req.params.telegramId;
+    
+    const worker = await (prisma as any).warehouseWorker.findUnique({
+      where: { telegramId },
+      select: { name: true },
+    });
+    
+    if (!worker) {
+      return res.json({ name: null });
+    }
+    
+    res.json({ name: worker.name });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * Middleware для проверки что пользователь является кладовщиком
  */
 async function requireWarehouseWorker(req: Request, res: Response, next: NextFunction) {
@@ -369,28 +391,6 @@ router.patch("/requests/:id/status", requireWarehouseWorker, async (req: Request
     });
 
     res.json(updated);
-  } catch (err) {
-    next(err);
-  }
-});
-
-/**
- * GET /warehouse/worker/:telegramId - Получить имя кладовщика по telegram ID
- */
-router.get("/worker/:telegramId", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const telegramId = req.params.telegramId;
-    
-    const worker = await (prisma as any).warehouseWorker.findUnique({
-      where: { telegramId },
-      select: { name: true },
-    });
-    
-    if (!worker) {
-      return res.json({ name: null });
-    }
-    
-    res.json({ name: worker.name });
   } catch (err) {
     next(err);
   }
