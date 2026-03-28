@@ -107,12 +107,25 @@ if (isFbs && comment) {
   if (simpleVolumeMatch) {
     extractedVolume = Number(simpleVolumeMatch[1]); // Total volume as specified
   } else {
-    // Try pattern like "0.1 x 4" where 0.1 is unit volume and 4 is quantity
-    const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+    // Try pattern like "0.1 x 5 = 10000₽" where 0.1 is price per m³ and 5 is volume in m³
+    const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*=\s*\d+/);
     if (volumeMatch) {
-      const unitVolume = Number(volumeMatch[1]);
+      const pricePerUnit = Number(volumeMatch[1]);
       const quantity = Number(volumeMatch[2]);
-      extractedVolume = unitVolume * quantity; // Total volume = unit volume × quantity
+      extractedVolume = quantity; // Take quantity as total volume (5 m³)
+    } else {
+      // Fallback for simple "0.1 x 4" format (without = amount)
+      const simpleMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+      if (simpleMatch) {
+        const unitVolume = Number(simpleMatch[1]);
+        const quantity = Number(simpleMatch[2]);
+        // If first number is small (likely price) and second is reasonable volume, take second
+        if (unitVolume < 1 && quantity >= 0.5 && quantity <= 1000) {
+          extractedVolume = quantity; // Take quantity as volume
+        } else {
+          extractedVolume = unitVolume * quantity; // Traditional multiplication
+        }
+      }
     }
   }
 }
@@ -779,12 +792,25 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
       if (simpleVolumeMatch) {
         extractedVolume = Number(simpleVolumeMatch[1]); // Total volume as specified
       } else {
-        // Try pattern like "0.1 x 4" where 0.1 is unit volume and 4 is quantity
-        const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+        // Try pattern like "0.1 x 5 = 10000₽" where 0.1 is price per m³ and 5 is volume in m³
+        const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*=\s*\d+/);
         if (volumeMatch) {
-          const unitVolume = Number(volumeMatch[1]);
+          const pricePerUnit = Number(volumeMatch[1]);
           const quantity = Number(volumeMatch[2]);
-          extractedVolume = unitVolume * quantity; // Total volume = unit volume × quantity
+          extractedVolume = quantity; // Take quantity as total volume (5 m³)
+        } else {
+          // Fallback for simple "0.1 x 4" format (without = amount)
+          const simpleMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+          if (simpleMatch) {
+            const unitVolume = Number(simpleMatch[1]);
+            const quantity = Number(simpleMatch[2]);
+            // If first number is small (likely price) and second is reasonable volume, take second
+            if (unitVolume < 1 && quantity >= 0.5 && quantity <= 1000) {
+              extractedVolume = quantity; // Take quantity as volume
+            } else {
+              extractedVolume = unitVolume * quantity; // Traditional multiplication
+            }
+          }
         }
       }
     }
