@@ -520,7 +520,7 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
 // GET /bot/cities — list available cities/directions
 router.get("/cities", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const cities = await (prisma as any).city.findMany({ orderBy: { shortName: "asc" } });
+    const cities = await (prisma as any).city.findMany({ orderBy: { short_name: "asc" } });
     res.json(cities);
   } catch (err) {
     next(err);
@@ -573,7 +573,7 @@ router.get("/schedule", async (req: Request, res: Response, next: NextFunction) 
 // GET /bot/cities-fbs — list available FBS cities/directions
 router.get("/cities-fbs", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const cities = await (prisma as any).cityFbs.findMany({ orderBy: { shortName: "asc" } });
+    const cities = await (prisma as any).citiesFbs.findMany({ orderBy: { short_name: "asc" } });
     res.json(cities);
   } catch (err) {
     next(err);
@@ -741,9 +741,17 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
     }
 
     const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
-    const cityRecord = isFbs
-      ? await (prisma as any).cityFbs.findUnique({ where: { shortName: city } })
-      : await (prisma as any).city.findUnique({ where: { shortName: city } });
+    let cityRecord;
+    if (isFbs) {
+      // Try cities_fbs first for FBS
+      cityRecord = await (prisma as any).citiesFbs.findUnique({ where: { short_name: city } });
+      // If not found in cities_fbs, fallback to cities
+      if (!cityRecord) {
+        cityRecord = await (prisma as any).city.findUnique({ where: { short_name: city } });
+      }
+    } else {
+      cityRecord = await (prisma as any).city.findUnique({ where: { short_name: city } });
+    }
     if (!cityRecord) throw new ApiError(400, `City not found: ${city}`);
 
     const parsedWeight =
