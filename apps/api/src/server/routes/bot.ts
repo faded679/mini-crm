@@ -102,17 +102,17 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 // Extract volume from comment for FBS requests
 let extractedVolume: number | undefined;
 if (isFbs && comment) {
-  // First try pattern like "0.1 x 4" where 0.1 is unit volume and 4 is quantity
-  const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
-  if (volumeMatch) {
-    const unitVolume = Number(volumeMatch[1]);
-    const quantity = Number(volumeMatch[2]);
-    extractedVolume = unitVolume * quantity; // Total volume = unit volume × quantity
+  // First try simple pattern like "100 кубов" or "100 м³" - this is total volume
+  const simpleVolumeMatch = comment.match(/(\d+\.?\d*)\s*(?:куба|кубов|м³|м3)/i);
+  if (simpleVolumeMatch) {
+    extractedVolume = Number(simpleVolumeMatch[1]); // Total volume as specified
   } else {
-    // Try simple pattern like "3 куба" or "3 м³"
-    const simpleVolumeMatch = comment.match(/(\d+\.?\d*)\s*(?:куба|кубов|м³|м3)/i);
-    if (simpleVolumeMatch) {
-      extractedVolume = Number(simpleVolumeMatch[1]);
+    // Try pattern like "0.1 x 4" where 0.1 is unit volume and 4 is quantity
+    const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+    if (volumeMatch) {
+      const unitVolume = Number(volumeMatch[1]);
+      const quantity = Number(volumeMatch[2]);
+      extractedVolume = unitVolume * quantity; // Total volume = unit volume × quantity
     }
   }
 }
@@ -771,6 +771,24 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
       if (!exists) throw new ApiError(400, "Invalid boxTypeId");
     }
 
+    // Extract volume from comment for FBS requests (same logic as first block)
+    let extractedVolume: number | undefined;
+    if (isFbs && comment) {
+      // First try simple pattern like "100 кубов" or "100 м³" - this is total volume
+      const simpleVolumeMatch = comment.match(/(\d+\.?\d*)\s*(?:куба|кубов|м³|м3)/i);
+      if (simpleVolumeMatch) {
+        extractedVolume = Number(simpleVolumeMatch[1]); // Total volume as specified
+      } else {
+        // Try pattern like "0.1 x 4" where 0.1 is unit volume and 4 is quantity
+        const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+        if (volumeMatch) {
+          const unitVolume = Number(volumeMatch[1]);
+          const quantity = Number(volumeMatch[2]);
+          extractedVolume = unitVolume * quantity; // Total volume = unit volume × quantity
+        }
+      }
+    }
+
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
@@ -783,6 +801,7 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
         packagingType,
         comment: comment || null,
         status: "new",
+        ...(extractedVolume !== undefined ? { volume: extractedVolume } : {}),
         ...(parsedWeight !== undefined ? { weight: parsedWeight } : {}),
         ...(deliveryTypeId !== undefined && deliveryTypeId !== null ? { deliveryTypeId: Number(deliveryTypeId) } : {}),
         ...(mpAccountDate ? { mpAccountDate: new Date(mpAccountDate) } : {}),
