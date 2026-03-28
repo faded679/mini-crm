@@ -70,9 +70,17 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
     });
 
     const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
-    const cityRecord = isFbs
-      ? await (prisma as any).cityFbs.findUnique({ where: { shortName: city } })
-      : await (prisma as any).city.findUnique({ where: { shortName: city } });
+    let cityRecord;
+    if (isFbs) {
+      // Try cities_fbs first for FBS
+      cityRecord = await (prisma as any).citiesFbs.findUnique({ where: { short_name: city } });
+      // If not found in cities_fbs, fallback to cities
+      if (!cityRecord) {
+        cityRecord = await (prisma as any).city.findUnique({ where: { short_name: city } });
+      }
+    } else {
+      cityRecord = await (prisma as any).city.findUnique({ where: { short_name: city } });
+    }
     if (!cityRecord) throw new ApiError(400, `City not found: ${city}`);
 
     const parsedWeight =
