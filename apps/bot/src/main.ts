@@ -3,6 +3,21 @@ import { env } from "./env.js";
 import { handleStart } from "./handlers/start.js";
 import { getSession, clearSession } from "./handlers/new-request.js";
 import { acceptConsent, checkConsent, savePhone, saveEmail, linkInn } from "./api.js";
+import {
+  isWarehouseWorker,
+  showWarehouseMenu,
+  showNewRequests,
+  showRequestDetails,
+  startEditVolume,
+  startEditBoxes,
+  startAddPhoto,
+  handleWarehouseInput,
+  handleWarehousePhoto,
+  deletePhoto,
+  moveToWarehouse,
+  clearWarehouseConversation,
+  showWarehouseHelp,
+} from "./handlers/warehouse.js";
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -59,8 +74,75 @@ bot.callbackQuery(/^packaging:(pallets|boxes)$/, async (ctx) => {
 
 bot.command("cancel", async (ctx) => {
   const userId = ctx.from?.id;
-  if (userId) clearSession(userId);
+  if (userId) {
+    clearSession(userId);
+    clearWarehouseConversation(userId);
+  }
   await ctx.reply("Действие отменено.");
+});
+
+// Warehouse command - show menu for warehouse workers
+bot.command("warehouse", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+
+  const isWorker = await isWarehouseWorker(String(userId));
+  if (!isWorker) {
+    await ctx.reply("❌ У вас нет доступа к функциям кладовщика.");
+    return;
+  }
+
+  await showWarehouseMenu(ctx);
+});
+
+// Warehouse callback handlers
+bot.callbackQuery("warehouse:menu", async (ctx) => {
+  await showWarehouseMenu(ctx);
+});
+
+bot.callbackQuery("warehouse:new_requests", async (ctx) => {
+  await showNewRequests(ctx);
+});
+
+bot.callbackQuery(/^warehouse:view:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  await showRequestDetails(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:edit_volume:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  await startEditVolume(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:edit_boxes:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  await startEditBoxes(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:add_photo:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  await startAddPhoto(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:delete_photo:(\d+):(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const photoId = Number(match[2]);
+  await deletePhoto(ctx, requestId, photoId);
+});
+
+bot.callbackQuery(/^warehouse:to_warehouse:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  await moveToWarehouse(ctx, requestId);
+});
+
+bot.callbackQuery("warehouse:help", async (ctx) => {
+  await showWarehouseHelp(ctx);
 });
 
 // Handle consent callback
@@ -99,6 +181,15 @@ bot.callbackQuery("consent_accept", async (ctx) => {
   }
 });
 
+// Handle photo from warehouse workers
+bot.on("message:photo", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+
+  const warehouseHandled = await handleWarehousePhoto(ctx);
+  if (warehouseHandled) return;
+});
+
 // Handle shared contact (phone number)
 bot.on("message:contact", async (ctx) => {
   const user = ctx.from;
@@ -127,6 +218,10 @@ bot.on("message:contact", async (ctx) => {
 bot.on("message:text", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
+
+  // Check if warehouse worker is in conversation
+  const warehouseHandled = await handleWarehouseInput(ctx);
+  if (warehouseHandled) return;
 
   const { consentGiven, hasPhone, hasEmail, hasInn } = await checkConsent(String(userId));
 

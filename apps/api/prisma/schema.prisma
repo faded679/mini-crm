@@ -129,6 +129,7 @@ model ShipmentRequest {
   history      RequestStatusHistory[]
   fieldHistory RequestFieldHistory[]
   services     RequestService[]
+  photos       RequestPhoto[]
 
   @@map("shipment_requests")
 }
@@ -441,4 +442,28 @@ model ClientServicePrice {
   deliveryType   DeliveryType @relation(fields: [deliveryTypeId], references: [id])
 
   @@map("client_service_prices")
+}
+
+model WarehouseWorker {
+  id         Int      @id @default(autoincrement())
+  telegramId String   @unique @map("telegram_id")
+  name       String
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("warehouse_workers")
+}
+
+model RequestPhoto {
+  id         Int             @id @default(autoincrement())
+  requestId  Int             @map("request_id")
+  fileId     String          @map("file_id")
+  fileUrl    String?         @map("file_url")
+  uploadedAt DateTime        @default(now()) @map("uploaded_at")
+  uploadedBy String          @map("uploaded_by")
+
+  request    ShipmentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@map("request_photos")
 }

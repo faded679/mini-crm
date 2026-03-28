@@ -11,3 +11,5 @@ export const env = {
   API_URL: process.env.API_URL ?? "http://mini-crm-api:3000",
   MINI_APP_URL: process.env.MINI_APP_URL ?? "http://localhost:8080",
 };
+
+export const API_BASE_URL = env.API_URL;
