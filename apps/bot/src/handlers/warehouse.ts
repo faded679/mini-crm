@@ -104,7 +104,7 @@ export async function showNewRequests(ctx: Context) {
         ? `${req.client.firstName} ${req.client.lastName || ""}`.trim()
         : req.client.username || "Клиент";
       
-      const label = `#${req.id} - ${clientName} (${req.packagingType === "boxes" ? "FBS" : "FBO"})`;
+      const label = `#${req.id} - ${clientName} (${req.deliveryType?.name || "FBO"})`;
       keyboard.text(label, `warehouse:view:${req.id}`).row();
     }
 
@@ -147,14 +147,14 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
       ? `${req.client.firstName} ${req.client.lastName || ""}`.trim()
       : req.client.username || "Клиент";
 
-    const isFBS = req.packagingType === "boxes";
+    const isFBS = req.deliveryType?.name === "FBS";
     
     let text = `📦 *Заявка #${req.id}*\n\n`;
     text += `👤 Клиент: ${clientName}\n`;
     text += `📞 Телефон: ${req.client.phone || "не указан"}\n`;
     text += `📍 Город: ${req.cityRef.fullName}\n`;
     text += `📅 Дата доставки: ${new Date(req.deliveryDate).toLocaleDateString("ru-RU")}\n`;
-    text += `📦 Тип: ${isFBS ? "FBS (коробки)" : "FBO (паллеты)"}\n\n`;
+    text += `📦 Тип: ${req.deliveryType?.name || "FBO"} ${isFBS ? "(объем)" : req.packagingType === "pallets" ? "(паллеты)" : "(коробки)"}\n\n`;
 
     if (isFBS) {
       text += `📏 Объем: ${req.volume ? req.volume + " м³" : "❌ не указан"}\n`;
@@ -463,12 +463,12 @@ async function showRequestDetailsInNewMessage(ctx: Context, requestId: number) {
       ? `${req.client.firstName} ${req.client.lastName || ""}`.trim()
       : req.client.username || "Клиент";
 
-    const isFBS = req.packagingType === "boxes";
+    const isFBS = req.deliveryType?.name === "FBS";
     
     let text = `📦 *Заявка #${req.id}*\n\n`;
     text += `👤 Клиент: ${clientName}\n`;
     text += `📍 Город: ${req.cityRef.fullName}\n`;
-    text += `📦 Тип: ${isFBS ? "FBS (коробки)" : "FBO (паллеты)"}\n\n`;
+    text += `📦 Тип: ${req.deliveryType?.name || "FBO"} ${isFBS ? "(объем)" : req.packagingType === "pallets" ? "(паллеты)" : "(коробки)"}\n\n`;
 
     if (isFBS) {
       text += `📏 Объем: ${req.volume ? req.volume + " м³" : "не указан"}\n`;
