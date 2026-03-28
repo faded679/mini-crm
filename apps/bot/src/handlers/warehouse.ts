@@ -150,7 +150,7 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
     const isFBS = req.deliveryType?.name === "FBS";
     
     let text = `📦 *Заявка #${req.id}*\n\n`;
-    text += `Организация: \n`;
+    text += `Организация:\n`;
     text += `👤 Клиент: ${clientName}\n`;
     text += `📞 Телефон: ${req.client.phone || "не указан"}\n`;
     text += `🏢 ${req.cityRef?.shortName || 'Не указано'}\n`;
