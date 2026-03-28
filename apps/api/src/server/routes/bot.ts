@@ -91,11 +91,20 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       const exists = await (prisma as any).boxType.findUnique({ where: { id: parsedBoxTypeId } });
       if (!exists) throw new ApiError(400, "Invalid boxTypeId");
     }
-
+// Extract volume from comment for FBS requests
+let extractedVolume: number | undefined;
+if (isFbs && comment) {
+  // Look for pattern like "0.1 x0.3" or "0.1x0.3" in comment
+  const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
+  if (volumeMatch) {
+    extractedVolume = Number(volumeMatch[1]);
+  }
+}
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
         cityId: cityRecord.id,
+...(extractedVolume !== undefined ? { volume: extractedVolume } : {}),
         city,
         deliveryDate: new Date(deliveryDate),
         size: size ?? "-",
