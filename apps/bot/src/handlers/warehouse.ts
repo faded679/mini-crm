@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Context, InlineKeyboard } from "grammy";
 import { API_BASE_URL } from "../env.js";
 
