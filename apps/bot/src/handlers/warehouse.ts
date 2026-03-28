@@ -152,7 +152,7 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
     let text = `📦 *Заявка #${req.id}*\n\n`;
     text += `👤 Клиент: ${clientName}\n`;
     text += `📞 Телефон: ${req.client.phone || "не указан"}\n`;
-    text += `📍 Город: ${req.cityRef.fullName}\n`;
+    text += `📍 Город: ${req.cityRef.shortName}\n`;
     text += `📅 Дата доставки: ${new Date(req.deliveryDate).toLocaleDateString("ru-RU")}\n`;
     text += `📦 Тип: ${req.deliveryType?.name || "FBO"} ${isFBS ? "(объем)" : req.packagingType === "pallets" ? "(паллеты)" : "(коробки)"}\n\n`;
 
