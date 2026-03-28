@@ -468,7 +468,7 @@ async function showRequestDetailsInNewMessage(ctx: Context, requestId: number) {
     const isFBS = req.deliveryType?.name === "FBS";
     
     let text = `📦 *Заявка #${req.id}*\n\n`;
-    text += `🏢 ${JSON.stringify(req.cityRef)}\n`;
+    text += `🏢 ${req.cityRef?.shortName || 'Не указано'}\n`;
     text += `👤 Клиент: ${clientName}\n`;
     text += `📍 Город: ${req.cityRef.fullName}\n`;
     text += `📦 Тип: ${req.deliveryType?.name || "FBO"} ${isFBS ? "(объем)" : req.packagingType === "pallets" ? "(паллеты)" : "(коробки)"}\n\n`;
