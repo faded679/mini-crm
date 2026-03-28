@@ -231,6 +231,7 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
         services: { orderBy: { id: "asc" } },
+        photos: true,  // <- добавить эту строку
       },
     });
     if (!request) throw new ApiError(404, "Request not found");
