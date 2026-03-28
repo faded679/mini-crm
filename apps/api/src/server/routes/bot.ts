@@ -94,10 +94,12 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 // Extract volume from comment for FBS requests
 let extractedVolume: number | undefined;
 if (isFbs && comment) {
-  // Look for pattern like "0.1 x0.3" or "0.1x0.3" in comment
+  // Look for pattern like "0.1 x 4" where 0.1 is unit volume and 4 is quantity
   const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
   if (volumeMatch) {
-    extractedVolume = Number(volumeMatch[1]);
+    const unitVolume = Number(volumeMatch[1]);
+    const quantity = Number(volumeMatch[2]);
+    extractedVolume = unitVolume * quantity; // Total volume = unit volume × quantity
   }
 }
     const request = await prisma.shipmentRequest.create({
