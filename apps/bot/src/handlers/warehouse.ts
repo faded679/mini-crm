@@ -177,9 +177,9 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
 
     const keyboard = new InlineKeyboard();
 
-    if (isFBS && !req.volume) {
-      keyboard.text("✏️ Указать объем", `warehouse:edit_volume:${req.id}`).row();
-    }
+    if (isFBS) {
+  keyboard.text("✏️ Указать объем", `warehouse:edit_volume:${req.id}`).row();
+ }
 
     if (!isFBS) {
       keyboard.text("✏️ Изменить кол-во", `warehouse:edit_boxes:${req.id}`).row();
@@ -482,7 +482,7 @@ async function showRequestDetailsInNewMessage(ctx: Context, requestId: number) {
 
     const keyboard = new InlineKeyboard();
     
-    if (isFBS && !req.volume) {
+    if (isFBS) {
       keyboard.text("✏️ Указать объем", `warehouse:edit_volume:${req.id}`).row();
     }
     
