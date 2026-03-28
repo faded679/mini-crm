@@ -7,6 +7,7 @@ import { sendClientDocument } from "../services/telegram-notifier.js";
 import { RequestStatus } from "@prisma/client";
 import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
 import { generateActPdfBuffer } from "../services/act-pdf.js";
+import { env } from "../env.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -2252,6 +2253,41 @@ router.post("/broadcast", async (req: Request, res: Response, next: NextFunction
     }
 
     res.json({ ok: true, sent, failed, total: clients.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/requests/:id/photo/:photoId - получить фото от Telegram
+router.get("/requests/:id/photo/:photoId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const photoId = Number(req.params.photoId);
+    
+    const photo = await (prisma as any).requestPhoto.findUnique({
+      where: { id: photoId },
+    });
+    
+    if (!photo) {
+      throw new ApiError(404, "Photo not found");
+    }
+    
+    // Получаем файл от Telegram
+    const fileResponse = await fetch(
+      `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${photo.fileId}`
+    );
+    const fileData = await fileResponse.json();
+    
+    if (!fileData.ok) {
+      throw new ApiError(500, "Failed to get file from Telegram");
+    }
+    
+    // Скачиваем файл
+    const fileUrl = `https://api.telegram.org/file/bot${env.TELEGRAM_BOT_TOKEN}/${fileData.result.file_path}`;
+    const imageResponse = await fetch(fileUrl);
+    const imageBuffer = await imageResponse.arrayBuffer();
+    
+    res.setHeader("Content-Type", "image/jpeg");
+    res.send(Buffer.from(imageBuffer));
   } catch (err) {
     next(err);
   }

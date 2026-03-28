@@ -1,5 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+
+// Component to fetch and display warehouse worker name
+function WarehouseWorkerName({ telegramId }: { telegramId: string }) {
+  const [name, setName] = useState<string>("Загрузка...");
+  
+  useEffect(() => {
+    // Fetch warehouse worker name from API
+    fetch(`/api/warehouse/worker/${telegramId}`)
+      .then(res => res.json())
+      .then(data => setName(data.name || telegramId))
+      .catch(() => setName(telegramId));
+  }, [telegramId]);
+  
+  return <span>{name}</span>;
+}
 import {
   getToken,
   getInvoicePdfUrlById,
@@ -521,15 +536,20 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
             {request.photos && request.photos.length > 0 && (
               <div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Фото груза</p>
-                <div className="mt-2">
+                <div className="mt-2 space-y-3">
                   {request.photos.map((photo) => (
-                    <div key={photo.id} className="mb-2">
-                      <p className="text-xs text-gray-500 mb-1">
+                    <div key={photo.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                      <img 
+                        src={`/api/admin/requests/${request.id}/photo/${photo.id}`}
+                        alt="Фото груза"
+                        className="max-w-md w-full rounded-lg mb-2"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Загружено: {new Date(photo.uploadedAt).toLocaleString("ru-RU")}
                       </p>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        📸 Фото добавлено кладовщиком (ID: {photo.fileId.slice(0, 20)}...)
-                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Кладовщик: <WarehouseWorkerName telegramId={photo.uploadedBy} />
+                      </p>
                     </div>
                   ))}
                 </div>
