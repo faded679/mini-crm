@@ -740,7 +740,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                         if (!request || !fbsPriceId || !fbsQtyNum || !pricePerM3) return;
                         setAddingFbsService(true);
                         try {
-                          const desc = `Транспортные услуги по маршруту ${cityFbs?.fullName || request.city} (FBS)`;
+                          const desc = cityFbs?.fullName ? `${cityFbs.fullName} (FBS)` : `Транспортные услуги по маршруту ${request.city} (FBS)`;
                           const svc = await createRequestService(request.id, {
                             description: desc,
                             unit: "м³",
