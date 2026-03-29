@@ -721,7 +721,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                         value={addQty}
                         onChange={(e) => {
                           const val = e.target.value;
-                          // Allow empty, numbers, decimal point and comma
+                          // Allow only valid decimal input: empty, digits, and at most one comma or dot
                           if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
                             setAddQty(val);
                           }
@@ -903,11 +903,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                               value={svc.quantity === 0 ? "0" : (svc.quantity || "")}
                               onChange={(e) => {
                                 const val = e.target.value;
-                                // Allow empty, numbers, decimal point and comma
+                                // Allow only valid decimal input: empty, digits, and at most one comma or dot
                                 if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
-                                  // Convert comma to dot for calculation
+                                  // Convert comma to dot and calculate
                                   const normalizedVal = val.replace(",", ".");
-                                  const q = normalizedVal === "" ? 0 : Number(normalizedVal);
+                                  const q = normalizedVal === "" || normalizedVal === "." ? 0 : (parseFloat(normalizedVal) || 0);
                                   setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
                                 }
                               }}
