@@ -110,6 +110,8 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
   // Services
   const [services, setServices] = useState<RequestService[]>([]);
   const [savingServiceId, setSavingServiceId] = useState<number | null>(null);
+  const [editingQtyId, setEditingQtyId] = useState<number | null>(null);
+  const [editingQtyValue, setEditingQtyValue] = useState<string>("");
 
   // Price list data for inline add
   const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
@@ -811,21 +813,27 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                 <div className="w-20">
                   <label className="block text-[11px] text-gray-400 mb-0.5">Кол-во</label>
                   <input
+                    type="text"
                     value={serviceQty}
-                    onChange={(e) => setServiceQty(e.target.value)}
-                    inputMode="numeric"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
+                        setServiceQty(val);
+                      }
+                    }}
+                    inputMode="decimal"
                     className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
                   />
                 </div>
                 <button
-                  disabled={!selectedServicePriceId || !serviceQty || Number(serviceQty) <= 0 || addingAdditionalService || !request}
+                  disabled={!selectedServicePriceId || !serviceQty || Number(serviceQty.replace(",", ".")) <= 0 || addingAdditionalService || !request}
                   onClick={async () => {
-                    if (!request || !selectedServicePriceId || !serviceQty || Number(serviceQty) <= 0) return;
+                    if (!request || !selectedServicePriceId || !serviceQty || Number(serviceQty.replace(",", ".")) <= 0) return;
                     setAddingAdditionalService(true);
                     try {
                       const selectedService = servicePrices.find((sp) => String(sp.id) === selectedServicePriceId);
                       if (!selectedService) return;
-                      const qty = Number(serviceQty);
+                      const qty = Number(serviceQty.replace(",", "."));
                       const svc = await createRequestService(request.id, {
                         description: selectedService.name,
                         unit: selectedService.unit || "шт",
@@ -843,7 +851,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   }}
                   className={cn(
                     "px-3 py-1.5 text-xs rounded-lg font-medium transition",
-                    selectedServicePriceId && serviceQty && Number(serviceQty) > 0
+                    selectedServicePriceId && serviceQty && Number(serviceQty.replace(",", ".")) > 0
                       ? "bg-blue-600 hover:bg-blue-700 text-white"
                       : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
                   )}
@@ -900,18 +908,24 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                             <input
                               type="text"
                               inputMode="decimal"
-                              value={svc.quantity === 0 ? "0" : (svc.quantity || "")}
+                              value={editingQtyId === svc.id ? editingQtyValue : (svc.quantity != null ? String(svc.quantity) : "")}
+                              onFocus={() => {
+                                setEditingQtyId(svc.id);
+                                setEditingQtyValue(svc.quantity != null ? String(svc.quantity) : "");
+                              }}
                               onChange={(e) => {
                                 const val = e.target.value;
-                                // Allow only valid decimal input: empty, digits, and at most one comma or dot
                                 if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
-                                  // Convert comma to dot and calculate
+                                  setEditingQtyValue(val);
                                   const normalizedVal = val.replace(",", ".");
                                   const q = normalizedVal === "" || normalizedVal === "." ? 0 : (parseFloat(normalizedVal) || 0);
                                   setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
                                 }
                               }}
-                              onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { quantity: svc.quantity, price: svc.price }).finally(() => setSavingServiceId(null)); } }}
+                              onBlur={() => {
+                                setEditingQtyId(null);
+                                if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { quantity: svc.quantity, price: svc.price }).finally(() => setSavingServiceId(null)); }
+                              }}
                               className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-right"
                             />
                           </td>
