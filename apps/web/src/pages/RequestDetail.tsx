@@ -893,12 +893,12 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                             <input
                               type="text"
                               inputMode="decimal"
-                              value={svc.quantity || ""}
+                              value={svc.quantity === 0 ? "0" : (svc.quantity || "")}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 // Allow empty, numbers, and decimal point
                                 if (val === "" || /^\d*\.?\d*$/.test(val)) {
-                                  const q = val === "" ? 0 : Number(val) || 0;
+                                  const q = val === "" ? 0 : Number(val);
                                   setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
                                 }
                               }}
