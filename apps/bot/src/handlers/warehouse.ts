@@ -8,6 +8,7 @@ interface WarehouseConversation {
   requestId?: number;
   data?: any;
   photoCount?: number;
+  messageId?: number;
 }
 
 // API Response types
@@ -257,12 +258,7 @@ export async function startAddPhoto(ctx: Context, requestId: number) {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  warehouseConversations.set(userId, {
-    state: "uploading_photo",
-    requestId,
-  });
-
-  await ctx.editMessageText(
+  const message = await ctx.editMessageText(
     `📸 Отправьте фото груза для заявки #${requestId}\n\n` +
     "Вы можете отправить несколько фотографий.\n" +
     "Когда закончите, нажмите кнопку 'Готово'",
@@ -273,6 +269,12 @@ export async function startAddPhoto(ctx: Context, requestId: number) {
         .text("◀️ Отмена", "warehouse:new_requests")
     }
   );
+
+  warehouseConversations.set(userId, {
+    state: "uploading_photo",
+    requestId,
+    messageId: message.message_id,
+  });
 
   await ctx.answerCallbackQuery();
 }
@@ -389,16 +391,35 @@ export async function handleWarehousePhoto(ctx: Context) {
     const photoCount = (conversation.photoCount || 0) + 1;
     conversation.photoCount = photoCount;
     
-    await ctx.reply(
-      `✅ Фото ${photoCount} добавлено\n\n` +
-      "Отправьте еще фото или нажмите 'Готово'",
-      {
-        reply_markup: new InlineKeyboard()
-          .text("✅ Готово", `warehouse:photo_done:${conversation.requestId}`)
-          .row()
-          .text("◀️ Отмена", "warehouse:new_requests")
+    // Редактируем существующее сообщение вместо создания нового
+    if (conversation.messageId) {
+      try {
+        await ctx.api.editMessageText(
+          ctx.chat?.id!,
+          conversation.messageId,
+          `✅ Фото загружено: ${photoCount}\n\n` +
+          "Отправьте еще фото или нажмите 'Готово'",
+          {
+            reply_markup: new InlineKeyboard()
+              .text("✅ Готово", `warehouse:photo_done:${conversation.requestId}`)
+              .row()
+              .text("◀️ Отмена", "warehouse:new_requests")
+          }
+        );
+      } catch (err) {
+        // Если не удалось отредактировать, отправляем новое сообщение
+        await ctx.reply(
+          `✅ Фото ${photoCount} добавлено\n\n` +
+          "Отправьте еще фото или нажмите 'Готово'",
+          {
+            reply_markup: new InlineKeyboard()
+              .text("✅ Готово", `warehouse:photo_done:${conversation.requestId}`)
+              .row()
+              .text("◀️ Отмена", "warehouse:new_requests")
+          }
+        );
       }
-    );
+    }
     return true;
   } catch (err) {
     console.error("Error uploading photo:", err);
