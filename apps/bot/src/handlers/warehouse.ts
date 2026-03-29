@@ -104,36 +104,36 @@ export async function showNewRequests(ctx: Context) {
       return;
     }
 
-    // Показываем список заявок с кнопками
-    const keyboard = new InlineKeyboard();
-    
-    for (const req of requests.slice(0, 10)) { // Показываем первые 10
-      // Формируем название организации
-      let orgName = "—";
-      if (req.client.counterparties && req.client.counterparties.length > 0) {
-        const cp = req.client.counterparties[0].counterparty;
-        const fullName = cp.name || "";
-        const shortName = cp.shortName || "";
-        
-        // Определяем название для отображения
-        const nameToProcess = shortName || fullName;
-        
-        if (nameToProcess) {
-          // Для ИП извлекаем только "ИП Фамилия"
-          const ipMatch = nameToProcess.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
-          if (ipMatch) {
-            orgName = `${ipMatch[1]} ${ipMatch[2]}`; // ИП Иванов
-          } else {
-            // Для ООО и остальных используем полное название
-            orgName = nameToProcess;
+      // Показываем список заявок с кнопками
+      const keyboard = new InlineKeyboard();
+      
+      for (const req of requests) { // Показываем все заявки
+        // Формируем название организации
+        let orgName = "—";
+        if (req.client.counterparties && req.client.counterparties.length > 0) {
+          const cp = req.client.counterparties[0].counterparty;
+          const fullName = cp.name || "";
+          const shortName = cp.shortName || "";
+          
+          // Определяем название для отображения
+          const nameToProcess = shortName || fullName;
+          
+          if (nameToProcess) {
+            // Для ИП извлекаем только "ИП Фамилия"
+            const ipMatch = nameToProcess.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
+            if (ipMatch) {
+              orgName = `${ipMatch[1]} ${ipMatch[2]}`; // ИП Иванов
+            } else {
+              // Для ООО и остальных используем полное название
+              orgName = nameToProcess;
+            }
           }
         }
+        
+        const deliveryType = req.deliveryType?.name || "FBO";
+        const label = `#${req.id} - ${orgName} (${deliveryType})`;
+        keyboard.text(label, `warehouse:view:${req.id}`).row();
       }
-      
-      const deliveryType = req.deliveryType?.name || "FBO";
-      const label = `#${req.id} - ${orgName} (${deliveryType})`;
-      keyboard.text(label, `warehouse:view:${req.id}`).row();
-    }
 
     keyboard.text("◀️ Назад", "warehouse:menu");
 
