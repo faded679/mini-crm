@@ -312,11 +312,7 @@ router.post("/requests/:id/photo", requireWarehouseWorker, async (req: Request, 
       throw new ApiError(404, "Request not found");
     }
 
-    // Проверяем что уже не добавлено фото (максимум 1)
-    if (request.photos && request.photos.length >= 1) {
-      throw new ApiError(400, "Maximum 1 photo per request");
-    }
-
+    // Разрешаем загружать несколько фото
     const photo = await (prisma as any).requestPhoto.create({
       data: {
         requestId: id,
