@@ -681,7 +681,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   )
                 : null;
               const unitPrice = matchedRate?.price ?? 0;
-              const qty = Number(addQty) || 0;
+              const qty = Number(addQty.replace(",", ".")) || 0;
               const lineTotal = unitPrice * qty;
               const selectedTypeName = typeOptions.find((t) => String(t.id) === addTypeId)?.name ?? "";
 
@@ -717,9 +717,16 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     <div className="w-20">
                       <label className="block text-[11px] text-gray-400 mb-0.5">Кол-во</label>
                       <input
+                        type="text"
                         value={addQty}
-                        onChange={(e) => setAddQty(e.target.value)}
-                        inputMode="numeric"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          // Allow empty, numbers, decimal point and comma
+                          if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
+                            setAddQty(val);
+                          }
+                        }}
+                        inputMode="decimal"
                         className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
                       />
                     </div>
