@@ -32,10 +32,12 @@ interface ShipmentRequest {
     lastName?: string;
     username?: string;
     phone?: string;
-    counterparty?: {
-      name: string;
-      shortName?: string;
-    } | null;
+    counterparties?: Array<{
+      counterparty: {
+        name: string;
+        shortName?: string;
+      };
+    }>;
   };
   cityRef: {
     shortName: string;
@@ -108,9 +110,10 @@ export async function showNewRequests(ctx: Context) {
     for (const req of requests.slice(0, 10)) { // Показываем первые 10
       // Формируем название организации
       let orgName = "—";
-      if (req.client.counterparty) {
-        const fullName = req.client.counterparty.name || "";
-        const shortName = req.client.counterparty.shortName || "";
+      if (req.client.counterparties && req.client.counterparties.length > 0) {
+        const cp = req.client.counterparties[0].counterparty;
+        const fullName = cp.name || "";
+        const shortName = cp.shortName || "";
         
         // Если есть краткое название, используем его
         if (shortName) {

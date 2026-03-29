@@ -38,10 +38,10 @@ async function requireWarehouseWorker(req: Request, res: Response, next: NextFun
     }
 
     const worker = await (prisma as any).warehouseWorker.findUnique({
-      where: { telegramId: String(telegramId), isActive: true },
+      where: { telegramId: String(telegramId) },
     });
 
-    if (!worker) {
+    if (!worker || !worker.isActive) {
       throw new ApiError(403, "Access denied: not a warehouse worker");
     }
 
@@ -65,11 +65,16 @@ router.get("/requests/new", requireWarehouseWorker, async (req: Request, res: Re
             firstName: true,
             lastName: true,
             username: true,
-            counterparty: {
+            counterparties: {
               select: {
-                name: true,
-                shortName: true,
+                counterparty: {
+                  select: {
+                    name: true,
+                    shortName: true,
+                  },
+                },
               },
+              take: 1,
             },
           },
         },
