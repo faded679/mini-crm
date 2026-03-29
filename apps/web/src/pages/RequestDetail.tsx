@@ -21,6 +21,7 @@ import {
   getInvoicePdfUrlById,
   getActPdfUrlById,
   getCities,
+  getCitiesFbs,
   getBoxTypes,
   getPalletTypes,
   getRates,
@@ -39,6 +40,7 @@ import {
   getInvoices,
   getServicePrices,
   type City,
+  type CityFbs,
   type PackagingType,
   type ShipmentRequestDetail,
   type RequestStatus,
@@ -78,6 +80,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
   const [updating, setUpdating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [cities, setCities] = useState<City[]>([]);
+  const [citiesFbs, setCitiesFbs] = useState<CityFbs[]>([]);
   const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [editCity, setEditCity] = useState("");
   const [editDeliveryDate, setEditDeliveryDate] = useState("");
@@ -126,6 +129,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
 
   useEffect(() => {
     getCities().then(setCities).catch(() => setCities([]));
+    getCitiesFbs().then(setCitiesFbs).catch(() => setCitiesFbs([]));
   }, []);
 
   useEffect(() => {
@@ -418,7 +422,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Выберите...</option>
-                  {cities.map((c) => (
+                  {(request.deliveryTypeId === 1 ? citiesFbs : cities).map((c) => (
                     <option key={c.id} value={c.shortName}>{c.shortName}</option>
                   ))}
                 </select>
@@ -887,13 +891,15 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           </td>
                           <td className="py-1.5 px-1">
                             <input
+                              type="number"
+                              step="0.01"
+                              min="0"
                               value={svc.quantity || ""}
                               onChange={(e) => {
-                                const q = Number(e.target.value) || 0;
+                                const q = e.target.value === "" ? 0 : Number(e.target.value);
                                 setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
                               }}
                               onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { quantity: svc.quantity, price: svc.price }).finally(() => setSavingServiceId(null)); } }}
-                              inputMode="numeric"
                               className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-right"
                             />
                           </td>
