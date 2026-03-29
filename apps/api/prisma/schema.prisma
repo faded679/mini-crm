@@ -130,6 +130,7 @@ model ShipmentRequest {
   fieldHistory RequestFieldHistory[]
   services     RequestService[]
   photos       RequestPhoto[]
+  invoices     Invoice[]
 
   @@map("shipment_requests")
 }
@@ -229,7 +230,8 @@ model Invoice {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  counterparty    Counterparty  @relation(fields: [counterpartyId], references: [id])
+  counterparty    Counterparty     @relation(fields: [counterpartyId], references: [id])
+  request         ShipmentRequest? @relation(fields: [requestId], references: [id])
   items           InvoiceItem[]
 
   @@map("invoices")

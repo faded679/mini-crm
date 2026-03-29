@@ -125,6 +125,14 @@ export interface RequestPhoto {
   uploadedBy: string;
 }
 
+export interface ShipmentRequestInvoice {
+  id: number;
+  number: string;
+  isPaid: boolean;
+  status: string;
+  amount: number;
+}
+
 export interface ShipmentRequest {
   id: number;
   city: string;
@@ -145,6 +153,7 @@ export interface ShipmentRequest {
   client: Client;
   services?: RequestService[];
   photos?: RequestPhoto[];
+  invoices?: ShipmentRequestInvoice[];
 }
 
 export interface StatusHistoryEntry {

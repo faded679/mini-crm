@@ -567,6 +567,9 @@ export default function Requests() {
                   </button>
                 </th>
                 <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  Счёт
+                </th>
+                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("status")} className="hover:text-gray-900 dark:hover:text-white">
                     Статус {sortIndicator("status")}
                   </button>
@@ -628,6 +631,17 @@ export default function Requests() {
                     {(() => {
                       const total = getRequestTotal(r);
                       return total == null ? "-" : `${total.toLocaleString("ru-RU")} ₽`;
+                    })()}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {(() => {
+                      const inv = r.invoices;
+                      if (!inv || inv.length === 0) return <span className="text-xs text-gray-400">—</span>;
+                      const allPaid = inv.every((i) => i.isPaid);
+                      const anyPaid = inv.some((i) => i.isPaid);
+                      if (allPaid) return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Оплачен</span>;
+                      if (anyPaid) return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Частично</span>;
+                      return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">Выставлен</span>;
                     })()}
                   </td>
                   <td className="px-4 py-3 text-center">
