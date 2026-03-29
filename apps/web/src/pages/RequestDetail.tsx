@@ -896,9 +896,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                               value={svc.quantity === 0 ? "0" : (svc.quantity || "")}
                               onChange={(e) => {
                                 const val = e.target.value;
-                                // Allow empty, numbers, and decimal point
-                                if (val === "" || /^\d*\.?\d*$/.test(val)) {
-                                  const q = val === "" ? 0 : Number(val);
+                                // Allow empty, numbers, decimal point and comma
+                                if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
+                                  // Convert comma to dot for calculation
+                                  const normalizedVal = val.replace(",", ".");
+                                  const q = normalizedVal === "" ? 0 : Number(normalizedVal);
                                   setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
                                 }
                               }}
