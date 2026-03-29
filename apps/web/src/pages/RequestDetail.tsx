@@ -891,13 +891,16 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           </td>
                           <td className="py-1.5 px-1">
                             <input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                              type="text"
+                              inputMode="decimal"
                               value={svc.quantity || ""}
                               onChange={(e) => {
-                                const q = e.target.value === "" ? 0 : Number(e.target.value);
-                                setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
+                                const val = e.target.value;
+                                // Allow empty, numbers, and decimal point
+                                if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                  const q = val === "" ? 0 : Number(val) || 0;
+                                  setServices((prev) => prev.map((s) => s.id === svc.id ? { ...s, quantity: q, amount: q * s.price } : s));
+                                }
                               }}
                               onBlur={() => { if (request) { setSavingServiceId(svc.id); updateRequestService(request.id, svc.id, { quantity: svc.quantity, price: svc.price }).finally(() => setSavingServiceId(null)); } }}
                               className="w-full px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-right"

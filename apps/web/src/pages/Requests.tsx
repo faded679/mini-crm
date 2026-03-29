@@ -649,8 +649,9 @@ export default function Requests() {
           if (!selectedFbsPrice || !fbsQty || Number(fbsQty) <= 0) return 0;
           const priceNum = parseFloat(selectedFbsPrice.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
           const volNum = parseFloat(selectedFbsPrice.volume.replace(/[^\d.,]/g, "").replace(",", ".")) || 1;
-          const units = Number(fbsQty) / volNum;
-          return Math.round(priceNum * units * 100) / 100;
+          // Calculate price per 1 m³, then multiply by ordered quantity
+          const pricePerM3 = priceNum / volNum;
+          return Math.round(pricePerM3 * Number(fbsQty) * 100) / 100;
         })();
         const canCreateFbs = !!newReq.clientId && !!fbsCityId && !!fbsDate && !!fbsPriceId && !!fbsQty && Number(fbsQty) > 0;
 
@@ -898,6 +899,8 @@ export default function Requests() {
                       setCreating(true);
                       try {
                         const priceNum = parseFloat(selectedFbsPrice.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+                        const volNum = parseFloat(selectedFbsPrice.volume.replace(/[^\d.,]/g, "").replace(",", ".")) || 1;
+                        const pricePerM3 = priceNum / volNum;
                         await createAdminRequest({
                           clientId: Number(newReq.clientId),
                           cityId: fbsCityId!,
@@ -910,7 +913,7 @@ export default function Requests() {
                             description: `${selectedFbsCity.fullName}`,
                             unit: "м³",
                             quantity: Number(fbsQty),
-                            price: priceNum,
+                            price: pricePerM3,
                             amount: fbsAmount,
                           }],
                         });
