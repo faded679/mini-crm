@@ -39,6 +39,7 @@ import {
   getDeliveryTypes,
   getInvoices,
   getServicePrices,
+  getPriceFbs,
   type City,
   type CityFbs,
   type PackagingType,
@@ -52,6 +53,7 @@ import {
   type Invoice,
   type DeliveryType,
   type ServicePrice,
+  type PriceFbsEntry,
 } from "../api";
 import { cn } from "../lib/utils";
 import { ArrowLeft, FileText, Plus, Trash2 } from "lucide-react";
@@ -123,6 +125,12 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
   const [addTypeId, setAddTypeId] = useState<string>("");
   const [addQty, setAddQty] = useState<string>("1");
   const [addingService, setAddingService] = useState(false);
+
+  // FBS add-service form state
+  const [pricesFbs, setPricesFbs] = useState<PriceFbsEntry[]>([]);
+  const [fbsPriceId, setFbsPriceId] = useState<string>("");
+  const [fbsAddQty, setFbsAddQty] = useState<string>("1");
+  const [addingFbsService, setAddingFbsService] = useState(false);
   
   // Additional services form state
   const [selectedServicePriceId, setSelectedServicePriceId] = useState<string>("");
@@ -132,6 +140,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
   useEffect(() => {
     getCities().then(setCities).catch(() => setCities([]));
     getCitiesFbs().then(setCitiesFbs).catch(() => setCitiesFbs([]));
+    getPriceFbs().then(setPricesFbs).catch(() => setPricesFbs([]));
   }, []);
 
   useEffect(() => {
@@ -667,8 +676,105 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
 
             </div>
 
-            {/* Add from price list (moved under statuses) */}
-            {(() => {
+            {/* Add from price list — FBO: boxes/pallets, FBS: transport service */}
+            {request.deliveryTypeId === 1 ? (() => {
+              // FBS: add transport service from FBS price list
+              const cityFbs = citiesFbs.find((c) => c.shortName === request.city);
+              const cityPrices = cityFbs ? pricesFbs.filter((p) => p.destination === cityFbs.shortName) : [];
+              const selectedPrice = cityPrices.find((p) => String(p.id) === fbsPriceId);
+              const priceNum = selectedPrice ? (parseFloat(selectedPrice.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0) : 0;
+              const volNum = selectedPrice ? (parseFloat(selectedPrice.volume.replace(/[^\d.,]/g, "").replace(",", ".")) || 1) : 1;
+              const pricePerM3 = priceNum / volNum;
+              const fbsQtyNum = Number(fbsAddQty.replace(",", ".")) || 0;
+              const fbsTotal = Math.round(pricePerM3 * fbsQtyNum * 100) / 100;
+
+              return (
+                <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-300 dark:border-gray-600">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Транспортная услуга FBS</p>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="min-w-[200px] flex-1">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Тариф</label>
+                      <select
+                        value={fbsPriceId}
+                        onChange={(e) => setFbsPriceId(e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      >
+                        <option value="">Выберите тариф...</option>
+                        {cityPrices.map((p) => (
+                          <option key={p.id} value={String(p.id)}>
+                            {p.volume} — {p.price}₽{p.comment ? ` (${p.comment})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-20">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Объём, м³</label>
+                      <input
+                        type="text"
+                        value={fbsAddQty}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
+                            setFbsAddQty(val);
+                          }
+                        }}
+                        inputMode="decimal"
+                        className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center"
+                      />
+                    </div>
+                    <div className="w-24 text-center">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Цена/м³</label>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 py-1.5">
+                        {pricePerM3 ? pricePerM3.toLocaleString("ru-RU") : "—"}
+                      </p>
+                    </div>
+                    <div className="w-28 text-center">
+                      <label className="block text-[11px] text-gray-400 mb-0.5">Сумма</label>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 py-1.5">
+                        {fbsTotal ? fbsTotal.toLocaleString("ru-RU") : "—"}
+                      </p>
+                    </div>
+                    <button
+                      disabled={!fbsPriceId || !fbsQtyNum || !pricePerM3 || addingFbsService || !request}
+                      onClick={async () => {
+                        if (!request || !fbsPriceId || !fbsQtyNum || !pricePerM3) return;
+                        setAddingFbsService(true);
+                        try {
+                          const desc = `Транспортные услуги по маршруту ${cityFbs?.fullName || request.city} (FBS)`;
+                          const svc = await createRequestService(request.id, {
+                            description: desc,
+                            unit: "м³",
+                            quantity: fbsQtyNum,
+                            price: pricePerM3,
+                          });
+                          setServices((prev) => [...prev, svc]);
+                          setFbsPriceId("");
+                          setFbsAddQty("1");
+                        } catch {
+                          alert("Ошибка при добавлении позиции");
+                        } finally {
+                          setAddingFbsService(false);
+                        }
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 text-xs rounded-lg font-medium transition",
+                        fbsPriceId && fbsQtyNum && pricePerM3
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                      )}
+                    >
+                      {addingFbsService ? "..." : "Добавить"}
+                    </button>
+                  </div>
+                  {cityPrices.length === 0 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Тарифы FBS не найдены для {request.city}
+                    </p>
+                  )}
+                </div>
+              );
+            })() : (() => {
+              // FBO: add from boxes/pallets price list
               const requestCity = request ? cities.find((c) => c.shortName === request.city) : null;
               const typeOptions = addPkgType === "boxes"
                 ? boxTypes.map((bt) => ({ id: bt.id, name: bt.name }))
@@ -723,7 +829,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                         value={addQty}
                         onChange={(e) => {
                           const val = e.target.value;
-                          // Allow only valid decimal input: empty, digits, and at most one comma or dot
                           if (val === "" || /^\d*[.,]?\d*$/.test(val)) {
                             setAddQty(val);
                           }
