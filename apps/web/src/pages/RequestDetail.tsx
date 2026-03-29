@@ -536,17 +536,20 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
             </div>
             {request.photos && request.photos.length > 0 && (
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Фото груза</p>
-                <div className="mt-2 space-y-3">
+                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">
+                  Фото груза ({request.photos.length})
+                </p>
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {request.photos.map((photo) => (
-                    <div key={photo.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                    <div key={photo.id} className="group relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                       <img 
                         src={`/api/admin/requests/${request.id}/photo/${photo.id}`}
                         alt="Фото груза"
-                        className="max-w-md w-full rounded-lg mb-2"
+                        className="w-full h-48 object-cover cursor-pointer"
+                        onClick={() => window.open(`/api/admin/requests/${request.id}/photo/${photo.id}`, '_blank')}
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Загружено: {new Date(photo.uploadedAt).toLocaleString("ru-RU")}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 p-2 bg-white dark:bg-gray-800">
+                        {new Date(photo.uploadedAt).toLocaleString("ru-RU", { dateStyle: 'short', timeStyle: 'short' })}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">
                         Кладовщик: <WarehouseWorkerName telegramId={photo.uploadedBy} />

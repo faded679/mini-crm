@@ -128,6 +128,20 @@ bot.callbackQuery(/^warehouse:add_photo:(\d+)$/, async (ctx) => {
   await startAddPhoto(ctx, requestId);
 });
 
+bot.callbackQuery(/^warehouse:photo_done:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const userId = ctx.from?.id;
+  if (userId) {
+    const { warehouseConversations, showRequestDetails } = await import("./handlers/warehouse.js");
+    const conversation = warehouseConversations.get(userId);
+    const photoCount = conversation?.photoCount || 0;
+    warehouseConversations.delete(userId);
+    await ctx.answerCallbackQuery({ text: `✅ Загружено ${photoCount} фото` });
+    await showRequestDetails(ctx, requestId);
+  }
+});
+
 bot.callbackQuery(/^warehouse:delete_photo:(\d+):(\d+)$/, async (ctx) => {
   const match = ctx.match as RegExpMatchArray;
   const requestId = Number(match[1]);

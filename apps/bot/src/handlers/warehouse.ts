@@ -7,6 +7,7 @@ interface WarehouseConversation {
   state: "editing_volume" | "editing_boxes" | "uploading_photo" | "idle";
   requestId?: number;
   data?: any;
+  photoCount?: number;
 }
 
 // API Response types
@@ -41,7 +42,7 @@ interface ShipmentRequest {
   photos?: RequestPhoto[];
 }
 
-const warehouseConversations = new Map<number, WarehouseConversation>();
+export const warehouseConversations = new Map<number, WarehouseConversation>();
 
 /**
  * Проверка является ли пользователь кладовщиком
@@ -188,7 +189,8 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
     if (!req.photos || req.photos.length === 0) {
       keyboard.text("📸 Добавить фото", `warehouse:add_photo:${req.id}`).row();
     } else {
-      keyboard.text("🗑 Удалить фото", `warehouse:delete_photo:${req.id}:${req.photos[0].id}`).row();
+      keyboard.text(`📸 Добавить еще (${req.photos.length})`, `warehouse:add_photo:${req.id}`);
+      keyboard.text("🗑 Удалить последнее", `warehouse:delete_photo:${req.id}:${req.photos[req.photos.length - 1].id}`).row();
     }
 
     keyboard.text("✅ На склад", `warehouse:to_warehouse:${req.id}`).row();
@@ -262,7 +264,14 @@ export async function startAddPhoto(ctx: Context, requestId: number) {
 
   await ctx.editMessageText(
     `📸 Отправьте фото груза для заявки #${requestId}\n\n` +
-    "Для отмены используйте /cancel"
+    "Вы можете отправить несколько фотографий.\n" +
+    "Когда закончите, нажмите кнопку 'Готово'",
+    {
+      reply_markup: new InlineKeyboard()
+        .text("✅ Готово", `warehouse:photo_done:${requestId}`)
+        .row()
+        .text("◀️ Отмена", "warehouse:new_requests")
+    }
   );
 
   await ctx.answerCallbackQuery();
@@ -376,10 +385,20 @@ export async function handleWarehousePhoto(ctx: Context) {
       return true;
     }
 
-    warehouseConversations.delete(userId);
-    await ctx.reply("✅ Фото добавлено");
+    // Не удаляем conversation, чтобы можно было загрузить еще фото
+    const photoCount = (conversation.photoCount || 0) + 1;
+    conversation.photoCount = photoCount;
     
-    await showRequestDetailsInNewMessage(ctx, conversation.requestId);
+    await ctx.reply(
+      `✅ Фото ${photoCount} добавлено\n\n` +
+      "Отправьте еще фото или нажмите 'Готово'",
+      {
+        reply_markup: new InlineKeyboard()
+          .text("✅ Готово", `warehouse:photo_done:${conversation.requestId}`)
+          .row()
+          .text("◀️ Отмена", "warehouse:new_requests")
+      }
+    );
     return true;
   } catch (err) {
     console.error("Error uploading photo:", err);
@@ -480,7 +499,7 @@ async function showRequestDetailsInNewMessage(ctx: Context, requestId: number) {
     }
 
     if (req.photos && req.photos.length > 0) {
-      text += `📸 Фото: загружено\n`;
+      text += `📸 Фото: загружено (${req.photos.length})\n`;
     }
 
     const keyboard = new InlineKeyboard();
@@ -496,7 +515,8 @@ async function showRequestDetailsInNewMessage(ctx: Context, requestId: number) {
     if (!req.photos || req.photos.length === 0) {
       keyboard.text("📸 Добавить фото", `warehouse:add_photo:${req.id}`).row();
     } else {
-      keyboard.text("🗑 Удалить фото", `warehouse:delete_photo:${req.id}:${req.photos[0].id}`).row();
+      keyboard.text(`📸 Добавить еще (${req.photos.length})`, `warehouse:add_photo:${req.id}`);
+      keyboard.text("🗑 Удалить последнее", `warehouse:delete_photo:${req.id}:${req.photos[req.photos.length - 1].id}`).row();
     }
     
     keyboard.text("✅ На склад", `warehouse:to_warehouse:${req.id}`).row();
