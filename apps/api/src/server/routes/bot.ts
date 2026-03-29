@@ -533,7 +533,7 @@ router.post("/link-inn", async (req: Request, res: Response, next: NextFunction)
 // GET /bot/cities — list available cities/directions
 router.get("/cities", async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const cities = await (prisma as any).city.findMany({ orderBy: { short_name: "asc" } });
+    const cities = await (prisma as any).city.findMany({ orderBy: { shortName: "asc" } });
     res.json(cities);
   } catch (err) {
     next(err);
