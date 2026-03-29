@@ -32,6 +32,10 @@ interface ShipmentRequest {
     lastName?: string;
     username?: string;
     phone?: string;
+    counterparty?: {
+      name: string;
+      shortName?: string;
+    } | null;
   };
   cityRef: {
     shortName: string;
@@ -102,11 +106,32 @@ export async function showNewRequests(ctx: Context) {
     const keyboard = new InlineKeyboard();
     
     for (const req of requests.slice(0, 10)) { // Показываем первые 10
-      const clientName = req.client.firstName 
-        ? `${req.client.firstName} ${req.client.lastName || ""}`.trim()
-        : req.client.username || "Клиент";
+      // Формируем название организации
+      let orgName = "—";
+      if (req.client.counterparty) {
+        const fullName = req.client.counterparty.name || "";
+        const shortName = req.client.counterparty.shortName || "";
+        
+        // Если есть краткое название, используем его
+        if (shortName) {
+          orgName = shortName;
+        } else if (fullName) {
+          // Если полное название содержит ООО/ИП и ФИО, сокращаем
+          const ipMatch = fullName.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
+          if (ipMatch) {
+            orgName = `${ipMatch[1]} ${ipMatch[2]}`; // ИП Иванов
+          } else if (/^ООО\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+/i.test(fullName)) {
+            // Если ООО + имя человека, берем полностью
+            orgName = fullName;
+          } else {
+            // Иначе используем полное название
+            orgName = fullName;
+          }
+        }
+      }
       
-      const label = `#${req.id} - ${clientName} (${req.deliveryType?.name || "FBO"})`;
+      const deliveryType = req.deliveryType?.name || "FBO";
+      const label = `#${req.id} - ${orgName} (${deliveryType})`;
       keyboard.text(label, `warehouse:view:${req.id}`).row();
     }
 

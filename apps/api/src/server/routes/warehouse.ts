@@ -65,6 +65,12 @@ router.get("/requests/new", requireWarehouseWorker, async (req: Request, res: Re
             firstName: true,
             lastName: true,
             username: true,
+            counterparty: {
+              select: {
+                name: true,
+                shortName: true,
+              },
+            },
           },
         },
         cityRef: {
