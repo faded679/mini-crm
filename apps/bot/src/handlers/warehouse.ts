@@ -115,20 +115,17 @@ export async function showNewRequests(ctx: Context) {
         const fullName = cp.name || "";
         const shortName = cp.shortName || "";
         
-        // Если есть краткое название, используем его
-        if (shortName) {
-          orgName = shortName;
-        } else if (fullName) {
-          // Если полное название содержит ООО/ИП и ФИО, сокращаем
-          const ipMatch = fullName.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
+        // Определяем название для отображения
+        const nameToProcess = shortName || fullName;
+        
+        if (nameToProcess) {
+          // Для ИП извлекаем только "ИП Фамилия"
+          const ipMatch = nameToProcess.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
           if (ipMatch) {
             orgName = `${ipMatch[1]} ${ipMatch[2]}`; // ИП Иванов
-          } else if (/^ООО\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+/i.test(fullName)) {
-            // Если ООО + имя человека, берем полностью
-            orgName = fullName;
           } else {
-            // Иначе используем полное название
-            orgName = fullName;
+            // Для ООО и остальных используем полное название
+            orgName = nameToProcess;
           }
         }
       }
