@@ -792,32 +792,31 @@ export async function showAddService(ctx: Context, requestId: number) {
 
     const allServices = await response.json();
     
-    // Фильтруем только 3 нужные услуги
-    const allowedServices = [
-      "Помощь на выгрузке",
-      "Распечатка ШК",
-      "Гофрокартон 60x40x40"
-    ];
-    
-    const services = allServices.filter((s: any) => {
-      const serviceName = s.name || "";
-      return allowedServices.some(allowed => {
-        // Точное совпадение или частичное для гофрокартона
-        if (allowed === "Распечатка ШК") {
-          return serviceName.includes("Распечатка ШК") || serviceName.includes("распечатка шк");
-        }
-        return serviceName.includes(allowed);
-      });
-    });
-    
     const keyboard = new InlineKeyboard();
 
-    // Убираем дубликаты по ID
-    const uniqueServices = services.filter((service: any, index: number, self: any[]) => 
-      index === self.findIndex((s: any) => s.id === service.id)
-    );
+    // Ищем конкретные услуги по приоритету
+    const serviceCategories = [
+      { pattern: /Помощь на выгрузке от 0,6м до 1м³/i, found: false },
+      { pattern: /Распечатка ШК \(коробов или поставки\)/i, found: false },
+      { pattern: /Гофрокартон 60x40x40/i, found: false }
+    ];
 
-    for (const service of uniqueServices) {
+    const selectedServices: any[] = [];
+
+    // Для каждой категории находим первое совпадение
+    for (const category of serviceCategories) {
+      const service = allServices.find((s: any) => {
+        const serviceName = s.name || "";
+        return category.pattern.test(serviceName);
+      });
+      
+      if (service && !category.found) {
+        selectedServices.push(service);
+        category.found = true;
+      }
+    }
+
+    for (const service of selectedServices) {
       const label = `${service.name} (${service.price} ₽)`;
       keyboard.text(label, `warehouse:confirm_service:${requestId}:${service.id}`).row();
     }
