@@ -101,7 +101,16 @@ bot.callbackQuery("warehouse:menu", async (ctx) => {
 });
 
 bot.callbackQuery("warehouse:new_requests", async (ctx) => {
-  await showNewRequests(ctx);
+  const { showDeliveryTypeMenu } = await import("./handlers/warehouse.js");
+  await showDeliveryTypeMenu(ctx);
+});
+
+bot.callbackQuery("warehouse:new_requests:FBO", async (ctx) => {
+  await showNewRequests(ctx, "FBO");
+});
+
+bot.callbackQuery("warehouse:new_requests:FBS", async (ctx) => {
+  await showNewRequests(ctx, "FBS");
 });
 
 // Text message handlers for warehouse keyboard buttons
@@ -109,7 +118,7 @@ bot.hears("📋 Новые заявки", async (ctx) => {
   const telegramId = ctx.from?.id;
   if (!telegramId) return;
 
-  const { isWarehouseWorker } = await import("./handlers/warehouse.js");
+  const { isWarehouseWorker, showDeliveryTypeMenu } = await import("./handlers/warehouse.js");
   const isWorker = await isWarehouseWorker(String(telegramId));
   
   if (!isWorker) {
@@ -117,7 +126,7 @@ bot.hears("📋 Новые заявки", async (ctx) => {
     return;
   }
 
-  await showNewRequests(ctx);
+  await showDeliveryTypeMenu(ctx);
 });
 
 bot.hears("ℹ️ Помощь", async (ctx) => {

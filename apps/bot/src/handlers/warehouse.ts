@@ -97,9 +97,34 @@ export async function showWarehouseMenu(ctx: Context) {
 }
 
 /**
- * Показать список новых заявок
+ * Показать меню выбора типа доставки
  */
-export async function showNewRequests(ctx: Context) {
+export async function showDeliveryTypeMenu(ctx: Context) {
+  const keyboard = new InlineKeyboard()
+    .text("📦 FBO", "warehouse:new_requests:FBO").row()
+    .text("🚚 FBS", "warehouse:new_requests:FBS").row()
+    .text("◀️ Назад", "warehouse:menu");
+
+  const messageText = "📋 *Новые заявки*\n\nВыберите тип доставки:";
+  
+  if (ctx.callbackQuery) {
+    await ctx.editMessageText(messageText, {
+      parse_mode: "Markdown",
+      reply_markup: keyboard,
+    });
+    await ctx.answerCallbackQuery();
+  } else {
+    await ctx.reply(messageText, {
+      parse_mode: "Markdown",
+      reply_markup: keyboard,
+    });
+  }
+}
+
+/**
+ * Показать список новых заявок с фильтром по типу доставки
+ */
+export async function showNewRequests(ctx: Context, deliveryTypeFilter?: string) {
   const telegramId = ctx.from?.id;
   if (!telegramId) return;
 
@@ -115,10 +140,20 @@ export async function showNewRequests(ctx: Context) {
       return;
     }
 
-    const requests = await response.json() as ShipmentRequest[];
+    let requests = await response.json() as ShipmentRequest[];
+
+    // Фильтруем по типу доставки, если указан
+    if (deliveryTypeFilter) {
+      requests = requests.filter(req => {
+        const deliveryType = req.deliveryType?.name || "FBO";
+        return deliveryType === deliveryTypeFilter;
+      });
+    }
 
     if (!requests || requests.length === 0) {
-      const message = "📋 Нет новых заявок";
+      const message = deliveryTypeFilter 
+        ? `📋 Нет новых заявок типа ${deliveryTypeFilter}`
+        : "📋 Нет новых заявок";
       if (ctx.callbackQuery) {
         await ctx.editMessageText(message);
         await ctx.answerCallbackQuery();
@@ -131,7 +166,7 @@ export async function showNewRequests(ctx: Context) {
     // Показываем список заявок с кнопками
     const keyboard = new InlineKeyboard();
     
-    for (const req of requests) { // Показываем все заявки
+    for (const req of requests) { // Показываем отфильтрованные заявки
       // Формируем название организации
       let orgName = "—";
       if (req.client.counterparties && req.client.counterparties.length > 0) {
@@ -159,9 +194,10 @@ export async function showNewRequests(ctx: Context) {
       keyboard.text(label, `warehouse:view:${req.id}`).row();
     }
 
-    keyboard.text("◀️ Назад", "warehouse:menu");
+    keyboard.text("◀️ Назад", "warehouse:new_requests");
 
-    const messageText = `📋 *Новые заявки* (${requests.length})\n\n` +
+    const deliveryTypeLabel = deliveryTypeFilter ? ` ${deliveryTypeFilter}` : "";
+    const messageText = `📋 *Новые заявки${deliveryTypeLabel}* (${requests.length})\n\n` +
       "Выберите заявку для просмотра:";
     
     if (ctx.callbackQuery) {
