@@ -794,11 +794,11 @@ export async function showAddService(ctx: Context, requestId: number) {
     
     const keyboard = new InlineKeyboard();
 
-    // Ищем конкретные услуги по приоритету
+    // Ищем конкретные услуги по приоритету (точные названия из прайс-листа)
     const serviceCategories = [
-      { pattern: /Помощь на выгрузке от 0,6м до 1м³/i, found: false },
-      { pattern: /Распечатка ШК \(коробов или поставки\)/i, found: false },
-      { pattern: /Гофрокартон 60x40x40/i, found: false }
+      { pattern: /Распечатка \(шк коробов или поставки\)/i, found: false },
+      { pattern: /Гофрокартон 60х40х40 \(б\/у 5ти слойные\)/i, found: false },
+      { pattern: /Помощь на выгрузке/i, found: false }
     ];
 
     const selectedServices: any[] = [];
