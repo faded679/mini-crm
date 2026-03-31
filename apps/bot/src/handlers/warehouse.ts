@@ -107,63 +107,82 @@ export async function showNewRequests(ctx: Context) {
     const response = await fetch(`${API_BASE_URL}/warehouse/requests/new?telegramId=${telegramId}`);
     
     if (!response.ok) {
-      await ctx.answerCallbackQuery({ text: "Ошибка загрузки заявок" });
+      if (ctx.callbackQuery) {
+        await ctx.answerCallbackQuery({ text: "Ошибка загрузки заявок" });
+      } else {
+        await ctx.reply("❌ Ошибка загрузки заявок");
+      }
       return;
     }
 
     const requests = await response.json() as ShipmentRequest[];
 
     if (!requests || requests.length === 0) {
-      await ctx.editMessageText("📋 Нет новых заявок");
+      const message = "📋 Нет новых заявок";
+      if (ctx.callbackQuery) {
+        await ctx.editMessageText(message);
+        await ctx.answerCallbackQuery();
+      } else {
+        await ctx.reply(message);
+      }
       return;
     }
 
-      // Показываем список заявок с кнопками
-      const keyboard = new InlineKeyboard();
-      
-      for (const req of requests) { // Показываем все заявки
-        // Формируем название организации
-        let orgName = "—";
-        if (req.client.counterparties && req.client.counterparties.length > 0) {
-          const cp = req.client.counterparties[0].counterparty;
-          const fullName = cp.name || "";
-          const shortName = cp.shortName || "";
-          
-          // Определяем название для отображения
-          const nameToProcess = shortName || fullName;
-          
-          if (nameToProcess) {
-            // Для ИП извлекаем только "ИП Фамилия"
-            const ipMatch = nameToProcess.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
-            if (ipMatch) {
-              orgName = `${ipMatch[1]} ${ipMatch[2]}`; // ИП Иванов
-            } else {
-              // Для ООО и остальных используем полное название
-              orgName = nameToProcess;
-            }
+    // Показываем список заявок с кнопками
+    const keyboard = new InlineKeyboard();
+    
+    for (const req of requests) { // Показываем все заявки
+      // Формируем название организации
+      let orgName = "—";
+      if (req.client.counterparties && req.client.counterparties.length > 0) {
+        const cp = req.client.counterparties[0].counterparty;
+        const fullName = cp.name || "";
+        const shortName = cp.shortName || "";
+        
+        // Определяем название для отображения
+        const nameToProcess = shortName || fullName;
+        
+        if (nameToProcess) {
+          // Для ИП извлекаем только "ИП Фамилия"
+          const ipMatch = nameToProcess.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
+          if (ipMatch) {
+            orgName = `${ipMatch[1]} ${ipMatch[2]}`; // ИП Иванов
+          } else {
+            // Для ООО и остальных используем полное название
+            orgName = nameToProcess;
           }
         }
-        
-        const deliveryType = req.deliveryType?.name || "FBO";
-        const label = `#${req.id} - ${orgName} (${deliveryType})`;
-        keyboard.text(label, `warehouse:view:${req.id}`).row();
       }
+      
+      const deliveryType = req.deliveryType?.name || "FBO";
+      const label = `#${req.id} - ${orgName} (${deliveryType})`;
+      keyboard.text(label, `warehouse:view:${req.id}`).row();
+    }
 
     keyboard.text("◀️ Назад", "warehouse:menu");
 
-    await ctx.editMessageText(
-      `📋 *Новые заявки* (${requests.length})\n\n` +
-      "Выберите заявку для просмотра:",
-      {
+    const messageText = `📋 *Новые заявки* (${requests.length})\n\n` +
+      "Выберите заявку для просмотра:";
+    
+    if (ctx.callbackQuery) {
+      await ctx.editMessageText(messageText, {
         parse_mode: "Markdown",
         reply_markup: keyboard,
-      }
-    );
-
-    await ctx.answerCallbackQuery();
+      });
+      await ctx.answerCallbackQuery();
+    } else {
+      await ctx.reply(messageText, {
+        parse_mode: "Markdown",
+        reply_markup: keyboard,
+      });
+    }
   } catch (err) {
     console.error("Error loading requests:", err);
-    await ctx.answerCallbackQuery({ text: "Ошибка загрузки" });
+    if (ctx.callbackQuery) {
+      await ctx.answerCallbackQuery({ text: "Ошибка загрузки" });
+    } else {
+      await ctx.reply("❌ Ошибка загрузки");
+    }
   }
 }
 
@@ -633,12 +652,18 @@ export async function showWarehouseHelp(ctx: Context) {
 
   const keyboard = new InlineKeyboard().text("◀️ Назад", "warehouse:menu");
 
-  await ctx.editMessageText(text, {
-    parse_mode: "Markdown",
-    reply_markup: keyboard,
-  });
-
-  await ctx.answerCallbackQuery();
+  if (ctx.callbackQuery) {
+    await ctx.editMessageText(text, {
+      parse_mode: "Markdown",
+      reply_markup: keyboard,
+    });
+    await ctx.answerCallbackQuery();
+  } else {
+    await ctx.reply(text, {
+      parse_mode: "Markdown",
+      reply_markup: keyboard,
+    });
+  }
 }
 
 /**
