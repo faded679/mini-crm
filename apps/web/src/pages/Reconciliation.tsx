@@ -142,7 +142,7 @@ export default function Reconciliation() {
         </div>
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-            {bal.balance >= 0 ? "Долг контрагента" : "Переплата"}
+            {bal.balance > 0 ? "Долг контрагента" : bal.balance < 0 ? "Переплата" : "Баланс"}
           </div>
           <div className={`text-xl font-bold ${
             bal.balance > 0

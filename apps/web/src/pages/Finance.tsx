@@ -349,9 +349,9 @@ export default function Finance() {
                         </td>
                         <td className={`py-2.5 pr-3 text-right whitespace-nowrap font-semibold ${
                           b.balance > 0
-                            ? "text-green-600 dark:text-green-400"
-                            : b.balance < 0
                             ? "text-red-600 dark:text-red-400"
+                            : b.balance < 0
+                            ? "text-green-600 dark:text-green-400"
                             : "text-gray-500"
                         }`}>
                           {b.balance > 0 ? "+" : ""}{fmtMoney(b.balance)}

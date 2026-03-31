@@ -151,18 +151,25 @@ export async function importBankStatement(
 }
 
 /**
- * Recalculate balance for a counterparty based on:
- * - totalBilled: sum of all invoice amounts
+ * Recalculate balance for a counterparty
+ * - totalBilled: sum of all invoice item amounts (not invoice.amount field)
  * - totalPaid: sum of all matched incoming bank transactions
- * - balance: totalPaid - totalBilled (positive = prepaid, negative = debt)
+ * - balance: totalBilled - totalPaid (positive = debt, negative = prepaid)
  */
 export async function recalculateBalance(counterpartyId: number): Promise<void> {
-  // Sum of all invoices for this counterparty
-  const invoiceAgg = await (prisma as any).invoice.aggregate({
+  // Get all invoices for this counterparty with their items
+  const invoices = await (prisma as any).invoice.findMany({
     where: { counterpartyId },
-    _sum: { amount: true },
+    include: { items: true },
   });
-  const totalBilled = invoiceAgg._sum.amount || 0;
+
+  // Sum all invoice items (this is the actual billed amount)
+  const totalBilled = invoices.reduce((sum: number, invoice: any) => {
+    const invoiceTotal = invoice.items.reduce((itemSum: number, item: any) => {
+      return itemSum + (Number(item.amount) || 0);
+    }, 0);
+    return sum + invoiceTotal;
+  }, 0);
 
   // Sum of all matched incoming transactions
   const txAgg = await (prisma as any).bankTransaction.aggregate({
@@ -175,7 +182,8 @@ export async function recalculateBalance(counterpartyId: number): Promise<void> 
   });
   const totalPaid = txAgg._sum.amount || 0;
 
-  const balance = totalPaid - totalBilled;
+  // Balance = what they owe us (positive = debt, negative = prepaid)
+  const balance = totalBilled - totalPaid;
 
   await (prisma as any).counterpartyBalance.upsert({
     where: { counterpartyId },
