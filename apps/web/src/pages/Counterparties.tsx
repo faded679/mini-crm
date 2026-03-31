@@ -88,6 +88,19 @@ export default function Counterparties() {
     setError("");
     try {
       const [cp, cl] = await Promise.all([getCounterparties(), getClients()]);
+      
+      // Sort counterparties alphabetically by name (extract surname from "ИП Фамилия" format)
+      cp.sort((a, b) => {
+        const nameA = a.shortName || a.name || "";
+        const nameB = b.shortName || b.name || "";
+        
+        // Extract surname from "ИП Фамилия" format
+        const surnameA = nameA.match(/^ИП\s+([А-ЯЁ][а-яё]+)/i)?.[1] || nameA;
+        const surnameB = nameB.match(/^ИП\s+([А-ЯЁ][а-яё]+)/i)?.[1] || nameB;
+        
+        return surnameA.localeCompare(surnameB, 'ru');
+      });
+      
       setCounterparties(cp);
       setClients(cl);
     } catch (e: any) {

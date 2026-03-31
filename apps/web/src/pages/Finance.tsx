@@ -78,7 +78,19 @@ export default function Finance() {
   const loadBalances = useCallback(async () => {
     setBalLoading(true);
     try {
-      setBalances(await getFinanceBalances());
+      const data = await getFinanceBalances();
+      // Sort alphabetically by counterparty name (extract surname from "ИП Фамилия" format)
+      data.sort((a, b) => {
+        const nameA = a.counterparty.shortName || a.counterparty.name || "";
+        const nameB = b.counterparty.shortName || b.counterparty.name || "";
+        
+        // Extract surname from "ИП Фамилия" format
+        const surnameA = nameA.match(/^ИП\s+([А-ЯЁ][а-яё]+)/i)?.[1] || nameA;
+        const surnameB = nameB.match(/^ИП\s+([А-ЯЁ][а-яё]+)/i)?.[1] || nameB;
+        
+        return surnameA.localeCompare(surnameB, 'ru');
+      });
+      setBalances(data);
     } catch { /* ignore */ }
     setBalLoading(false);
   }, []);
