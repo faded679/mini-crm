@@ -104,6 +104,37 @@ bot.callbackQuery("warehouse:new_requests", async (ctx) => {
   await showNewRequests(ctx);
 });
 
+// Text message handlers for warehouse keyboard buttons
+bot.hears("📋 Новые заявки", async (ctx) => {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  const { isWarehouseWorker } = await import("./handlers/warehouse.js");
+  const isWorker = await isWarehouseWorker(String(telegramId));
+  
+  if (!isWorker) {
+    await ctx.reply("❌ У вас нет доступа к функциям кладовщика.");
+    return;
+  }
+
+  await showNewRequests(ctx);
+});
+
+bot.hears("ℹ️ Помощь", async (ctx) => {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  const { isWarehouseWorker, showWarehouseHelp } = await import("./handlers/warehouse.js");
+  const isWorker = await isWarehouseWorker(String(telegramId));
+  
+  if (!isWorker) {
+    await ctx.reply("❌ У вас нет доступа к функциям кладовщика.");
+    return;
+  }
+
+  await showWarehouseHelp(ctx);
+});
+
 bot.callbackQuery(/^warehouse:view:(\d+)$/, async (ctx) => {
   const match = ctx.match as RegExpMatchArray;
   const requestId = Number(match[1]);

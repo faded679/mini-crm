@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Context, InlineKeyboard } from "grammy";
+import { Context, InlineKeyboard, Keyboard } from "grammy";
 import { API_BASE_URL } from "../env.js";
 
 // State management для кладовщиков
@@ -79,10 +79,12 @@ export async function isWarehouseWorker(telegramId: string): Promise<boolean> {
  * Главное меню кладовщика
  */
 export async function showWarehouseMenu(ctx: Context) {
-  const keyboard = new InlineKeyboard()
-    .text("📋 Новые заявки", "warehouse:new_requests")
+  const keyboard = new Keyboard()
+    .text("📋 Новые заявки")
     .row()
-    .text("ℹ️ Помощь", "warehouse:help");
+    .text("ℹ️ Помощь")
+    .resized()
+    .persistent();
 
   await ctx.reply(
     "🏢 *Меню кладовщика*\n\n" +
