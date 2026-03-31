@@ -48,7 +48,8 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     // Если ссылка уже создана и счет ожидает оплату, просто отправляем существующую
     if (invoice.status === "awaiting_payment" && invoice.tbankPaymentUrl) {
       const message = 
-        `💳 <b>Ссылка на оплату счета №${invoice.number}</b>\n\n` +
+        `💳 <b>Счет на оплату №${invoice.number}</b>\n` +
+        `Заявка №${requestId}\n\n` +
         `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
         `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
 
@@ -126,7 +127,8 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
 
     // Отправляем ссылку клиенту
     const message = 
-      `💳 <b>Ссылка на оплату счета №${invoice.number}</b>\n\n` +
+      `💳 <b>Счет на оплату №${invoice.number}</b>\n` +
+      `Заявка №${requestId}\n\n` +
       `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
       `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}\n\nСсылка на оплату действует 24 часа.`;
 
