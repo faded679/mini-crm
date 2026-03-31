@@ -4,7 +4,7 @@ import { API_BASE_URL } from "../env.js";
 
 // State management для кладовщиков
 interface WarehouseConversation {
-  state: "editing_volume" | "editing_boxes" | "uploading_photo" | "idle";
+  state: "editing_volume" | "editing_boxes" | "uploading_photo" | "selecting_box_type" | "selecting_pallet_type" | "selecting_service" | "idle";
   requestId?: number;
   data?: any;
   photoCount?: number;
@@ -44,6 +44,9 @@ interface ShipmentRequest {
     fullName: string;
   };
   boxType?: {
+    name: string;
+  };
+  deliveryType?: {
     name: string;
   };
   photos?: RequestPhoto[];
@@ -170,28 +173,37 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
 
     const req = await response.json();
 
-    const clientName = req.client.firstName 
-      ? `${req.client.firstName} ${req.client.lastName || ""}`.trim()
-      : req.client.username || "Клиент";
+    // Формируем название организации
+    let orgName = "—";
+    if (req.client.counterparties && req.client.counterparties.length > 0) {
+      const cp = req.client.counterparties[0].counterparty;
+      const fullName = cp.name || "";
+      const shortName = cp.shortName || "";
+      const nameToProcess = shortName || fullName;
+      
+      if (nameToProcess) {
+        const ipMatch = nameToProcess.match(/^(ИП)\s+([А-ЯЁ][а-яё]+)/i);
+        if (ipMatch) {
+          orgName = `${ipMatch[1]} ${ipMatch[2]}`;
+        } else {
+          orgName = nameToProcess;
+        }
+      }
+    }
 
     const isFBS = req.deliveryType?.name === "FBS";
+    const packagingTypeRu = req.packagingType === "pallets" ? "палеты" : "коробки";
     
-    let text = `📦 *Заявка #${req.id}*\n\n`;
-    text += `Организация:\n`;
-    text += `👤 Клиент: ${clientName}\n`;
-    text += `📞 Телефон: ${req.client.phone || "не указан"}\n`;
+    let text = `📦 *Заявка #${req.id}*\n`;
+    text += `📦 Тип: ${req.deliveryType?.name || "FBO"} (${isFBS ? "объем" : packagingTypeRu})\n\n`;
+    text += `� ${orgName}\n`;
     text += `🏢 ${req.cityRef?.shortName || 'Не указано'}\n`;
-    text += `📅 Дата доставки: ${new Date(req.deliveryDate).toLocaleDateString("ru-RU")}\n`;
-    text += `📦 Тип: ${req.deliveryType?.name || "FBO"} ${isFBS ? "(объем)" : req.packagingType === "pallets" ? "(паллеты)" : "(коробки)"}\n\n`;
+    text += `📅 Дата доставки: ${new Date(req.deliveryDate).toLocaleDateString("ru-RU")}\n\n`;
 
     if (isFBS) {
       text += `📏 Объем: ${req.volume ? req.volume + " м³" : "❌ не указан"}\n`;
     } else {
-      text += `📦 Количество: ${req.boxCount} ${req.boxType?.name || "коробок"}\n`;
-    }
-
-    if (req.comment) {
-      text += `💬 Комментарий: ${req.comment}\n`;
+      text += `📦 Количество: ${req.boxCount} ${req.boxType?.name || packagingTypeRu}\n`;
     }
 
     if (req.photos && req.photos.length > 0) {
@@ -200,17 +212,20 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
       text += `\n📸 Фото: не загружено\n`;
     }
 
-    text += `\n📊 Статус: ${req.status === "new" ? "Новый" : req.status}`;
-
     const keyboard = new InlineKeyboard();
 
     if (isFBS) {
-  keyboard.text("✏️ Указать объем", `warehouse:edit_volume:${req.id}`).row();
- }
-
-    if (!isFBS) {
+      keyboard.text("✏️ Указать объем", `warehouse:edit_volume:${req.id}`).row();
+    } else {
+      // Для FBO: изменение типа упаковки и размера
+      const currentType = req.packagingType === "pallets" ? "Палеты" : "Коробки";
+      keyboard.text(`📦 ${currentType}`, `warehouse:change_packaging:${req.id}`).row();
+      keyboard.text("✏️ Изменить размер", `warehouse:change_size:${req.id}`).row();
       keyboard.text("✏️ Изменить кол-во", `warehouse:edit_boxes:${req.id}`).row();
     }
+
+    // Добавление доп. услуг
+    keyboard.text("➕ Добавить услугу", `warehouse:add_service:${req.id}`).row();
 
     if (!req.photos || req.photos.length === 0) {
       keyboard.text("📸 Добавить фото", `warehouse:add_photo:${req.id}`).row();
@@ -605,4 +620,207 @@ export async function showWarehouseHelp(ctx: Context) {
   });
 
   await ctx.answerCallbackQuery();
+}
+
+/**
+ * Изменить тип упаковки (коробки/палеты)
+ */
+export async function changePackagingType(ctx: Context, requestId: number) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/warehouse/requests/${requestId}?telegramId=${telegramId}`);
+    if (!response.ok) {
+      await ctx.answerCallbackQuery({ text: "Заявка не найдена" });
+      return;
+    }
+
+    const req = await response.json();
+    const currentType = req.packagingType;
+    const newType = currentType === "boxes" ? "pallets" : "boxes";
+    const newTypeRu = newType === "pallets" ? "палеты" : "коробки";
+
+    const keyboard = new InlineKeyboard();
+    keyboard.text(`✅ Изменить на ${newTypeRu}`, `warehouse:confirm_packaging:${requestId}:${newType}`).row();
+    keyboard.text("❌ Отмена", `warehouse:view:${requestId}`);
+
+    await ctx.editMessageText(
+      `Изменить тип упаковки для заявки #${requestId}?\n\nТекущий: ${currentType === "boxes" ? "коробки" : "палеты"}\nНовый: ${newTypeRu}`,
+      { reply_markup: keyboard }
+    );
+    await ctx.answerCallbackQuery();
+  } catch (err) {
+    console.error("Error changing packaging type:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
+}
+
+/**
+ * Подтвердить изменение типа упаковки
+ */
+export async function confirmPackagingType(ctx: Context, requestId: number, packagingType: string) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/warehouse/requests/${requestId}/packaging-type`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ telegramId: String(telegramId), packagingType }),
+    });
+
+    if (!response.ok) {
+      await ctx.answerCallbackQuery({ text: "Ошибка изменения" });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: "✅ Тип упаковки изменен" });
+    await showRequestDetails(ctx, requestId);
+  } catch (err) {
+    console.error("Error confirming packaging type:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
+}
+
+/**
+ * Изменить размер коробок/палет
+ */
+export async function changeSize(ctx: Context, requestId: number) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  try {
+    const reqResponse = await fetch(`${API_BASE_URL}/warehouse/requests/${requestId}?telegramId=${telegramId}`);
+    if (!reqResponse.ok) {
+      await ctx.answerCallbackQuery({ text: "Заявка не найдена" });
+      return;
+    }
+
+    const req = await reqResponse.json();
+    const isBoxes = req.packagingType === "boxes";
+    const endpoint = isBoxes ? "/warehouse/box-types" : "/warehouse/pallet-types";
+
+    const typesResponse = await fetch(`${API_BASE_URL}${endpoint}?telegramId=${telegramId}`);
+    if (!typesResponse.ok) {
+      await ctx.answerCallbackQuery({ text: "Ошибка загрузки типов" });
+      return;
+    }
+
+    const types = await typesResponse.json();
+    const keyboard = new InlineKeyboard();
+
+    for (const type of types) {
+      const label = isBoxes ? type.name : `${type.name} (${type.minValue}-${type.maxValue})`;
+      keyboard.text(label, `warehouse:set_size:${requestId}:${type.id}:${isBoxes ? 'box' : 'pallet'}`).row();
+    }
+
+    keyboard.text("❌ Отмена", `warehouse:view:${requestId}`);
+
+    await ctx.editMessageText(
+      `Выберите ${isBoxes ? "размер коробки" : "тип палеты"} для заявки #${requestId}:`,
+      { reply_markup: keyboard }
+    );
+    await ctx.answerCallbackQuery();
+  } catch (err) {
+    console.error("Error changing size:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
+}
+
+/**
+ * Установить размер коробки/палеты
+ */
+export async function setSize(ctx: Context, requestId: number, typeId: number, sizeType: string) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/warehouse/requests/${requestId}/packaging`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        telegramId: String(telegramId), 
+        boxCount: 1,
+        boxTypeId: typeId
+      }),
+    });
+
+    if (!response.ok) {
+      await ctx.answerCallbackQuery({ text: "Ошибка изменения" });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: "✅ Размер изменен" });
+    await showRequestDetails(ctx, requestId);
+  } catch (err) {
+    console.error("Error setting size:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
+}
+
+/**
+ * Показать список доп. услуг
+ */
+export async function showAddService(ctx: Context, requestId: number) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/warehouse/service-prices?telegramId=${telegramId}`);
+    if (!response.ok) {
+      await ctx.answerCallbackQuery({ text: "Ошибка загрузки услуг" });
+      return;
+    }
+
+    const services = await response.json();
+    const keyboard = new InlineKeyboard();
+
+    for (const service of services) {
+      const label = `${service.name} (${service.price} ₽)`;
+      keyboard.text(label, `warehouse:confirm_service:${requestId}:${service.id}`).row();
+    }
+
+    keyboard.text("❌ Отмена", `warehouse:view:${requestId}`);
+
+    await ctx.editMessageText(
+      `Выберите услугу для добавления к заявке #${requestId}:`,
+      { reply_markup: keyboard }
+    );
+    await ctx.answerCallbackQuery();
+  } catch (err) {
+    console.error("Error showing services:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
+}
+
+/**
+ * Добавить услугу к заявке
+ */
+export async function addServiceToRequest(ctx: Context, requestId: number, servicePriceId: number) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/warehouse/requests/${requestId}/services`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        telegramId: String(telegramId), 
+        servicePriceId,
+        quantity: 1
+      }),
+    });
+
+    if (!response.ok) {
+      await ctx.answerCallbackQuery({ text: "Ошибка добавления услуги" });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: "✅ Услуга добавлена" });
+    await showRequestDetails(ctx, requestId);
+  } catch (err) {
+    console.error("Error adding service:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
 }

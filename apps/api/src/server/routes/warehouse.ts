@@ -419,4 +419,116 @@ router.patch("/requests/:id/status", requireWarehouseWorker, async (req: Request
   }
 });
 
+/**
+ * GET /warehouse/box-types - Получить типы коробок
+ */
+router.get("/box-types", requireWarehouseWorker, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).boxType.findMany({
+      orderBy: { maxVolumeM3: "asc" },
+    });
+    res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /warehouse/pallet-types - Получить типы палет
+ */
+router.get("/pallet-types", requireWarehouseWorker, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const types = await (prisma as any).palletType.findMany({
+      orderBy: { minValue: "asc" },
+    });
+    res.json(types);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /warehouse/service-prices - Получить доп. услуги
+ */
+router.get("/service-prices", requireWarehouseWorker, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const services = await (prisma as any).servicePrice.findMany({
+      orderBy: { id: "asc" },
+    });
+    res.json(services);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /warehouse/requests/:id/packaging-type - Изменить тип упаковки
+ */
+router.patch("/requests/:id/packaging-type", requireWarehouseWorker, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const { packagingType } = req.body;
+
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid request ID");
+    if (packagingType !== "boxes" && packagingType !== "pallets") {
+      throw new ApiError(400, "Invalid packaging type");
+    }
+
+    const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
+    if (!request) throw new ApiError(404, "Request not found");
+    if (request.status !== "new") throw new ApiError(400, "Can only edit requests with status 'new'");
+
+    const updated = await (prisma as any).shipmentRequest.update({
+      where: { id },
+      data: { packagingType },
+      include: { client: true, cityRef: true, boxType: true, photos: true, deliveryType: true },
+    });
+
+    await (prisma as any).requestFieldHistory.create({
+      data: { requestId: id, managerId: 1, field: "packagingType", oldValue: request.packagingType, newValue: packagingType },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /warehouse/requests/:id/services - Добавить доп. услугу
+ */
+router.post("/requests/:id/services", requireWarehouseWorker, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const { servicePriceId, quantity } = req.body;
+
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid request ID");
+    if (!servicePriceId || !Number.isFinite(Number(servicePriceId))) throw new ApiError(400, "Invalid service price ID");
+
+    const qty = quantity ? Number(quantity) : 1;
+    if (!Number.isFinite(qty) || qty <= 0) throw new ApiError(400, "Invalid quantity");
+
+    const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
+    if (!request) throw new ApiError(404, "Request not found");
+    if (request.status !== "new") throw new ApiError(400, "Can only edit requests with status 'new'");
+
+    const servicePrice = await (prisma as any).servicePrice.findUnique({ where: { id: Number(servicePriceId) } });
+    if (!servicePrice) throw new ApiError(404, "Service price not found");
+
+    const service = await (prisma as any).requestService.create({
+      data: {
+        requestId: id,
+        description: servicePrice.name,
+        quantity: qty,
+        price: servicePrice.price,
+        amount: qty * servicePrice.price,
+      },
+    });
+
+    res.status(201).json(service);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

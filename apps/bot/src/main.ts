@@ -159,6 +159,52 @@ bot.callbackQuery("warehouse:help", async (ctx) => {
   await showWarehouseHelp(ctx);
 });
 
+bot.callbackQuery(/^warehouse:change_packaging:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const { changePackagingType } = await import("./handlers/warehouse.js");
+  await changePackagingType(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:confirm_packaging:(\d+):(boxes|pallets)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const packagingType = match[2];
+  const { confirmPackagingType } = await import("./handlers/warehouse.js");
+  await confirmPackagingType(ctx, requestId, packagingType);
+});
+
+bot.callbackQuery(/^warehouse:change_size:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const { changeSize } = await import("./handlers/warehouse.js");
+  await changeSize(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:set_size:(\d+):(\d+):(box|pallet)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const typeId = Number(match[2]);
+  const sizeType = match[3];
+  const { setSize } = await import("./handlers/warehouse.js");
+  await setSize(ctx, requestId, typeId, sizeType);
+});
+
+bot.callbackQuery(/^warehouse:add_service:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const { showAddService } = await import("./handlers/warehouse.js");
+  await showAddService(ctx, requestId);
+});
+
+bot.callbackQuery(/^warehouse:confirm_service:(\d+):(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const requestId = Number(match[1]);
+  const servicePriceId = Number(match[2]);
+  const { addServiceToRequest } = await import("./handlers/warehouse.js");
+  await addServiceToRequest(ctx, requestId, servicePriceId);
+});
+
 // Handle consent callback
 bot.callbackQuery("consent_accept", async (ctx) => {
   const user = ctx.from;
