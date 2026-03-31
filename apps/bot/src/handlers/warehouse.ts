@@ -15,7 +15,15 @@ interface WarehouseConversation {
 interface RequestPhoto {
   id: number;
   fileId: string;
-  fileUrl?: string;
+  url: string;
+}
+
+interface RequestService {
+  id: number;
+  description: string;
+  quantity: number;
+  price: number;
+  amount: number;
 }
 
 interface ShipmentRequest {
@@ -50,6 +58,7 @@ interface ShipmentRequest {
     name: string;
   };
   photos?: RequestPhoto[];
+  services?: RequestService[];
 }
 
 export const warehouseConversations = new Map<number, WarehouseConversation>();
@@ -210,6 +219,14 @@ export async function showRequestDetails(ctx: Context, requestId: number) {
       text += `\n📸 Фото: загружено (${req.photos.length})\n`;
     } else {
       text += `\n📸 Фото: не загружено\n`;
+    }
+
+    // Отображаем добавленные услуги
+    if (req.services && req.services.length > 0) {
+      text += `\n✨ Доп. услуги:\n`;
+      for (const service of req.services) {
+        text += `  • ${service.description} x${service.quantity} - ${service.amount} ₽\n`;
+      }
     }
 
     const keyboard = new InlineKeyboard();

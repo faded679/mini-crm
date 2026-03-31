@@ -127,6 +127,17 @@ router.get("/requests/:id", requireWarehouseWorker, async (req: Request, res: Re
             lastName: true,
             username: true,
             phone: true,
+            counterparties: {
+              select: {
+                counterparty: {
+                  select: {
+                    name: true,
+                    shortName: true,
+                  },
+                },
+              },
+              take: 1,
+            },
           },
         },
         boxType: {
