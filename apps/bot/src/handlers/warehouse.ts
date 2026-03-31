@@ -773,7 +773,19 @@ export async function showAddService(ctx: Context, requestId: number) {
       return;
     }
 
-    const services = await response.json();
+    const allServices = await response.json();
+    
+    // Фильтруем только 3 нужные услуги
+    const allowedServices = [
+      "Помощь на выгрузке",
+      "Печать Штрихкода",
+      "Гофрокартон 60x40x40"
+    ];
+    
+    const services = allServices.filter((s: any) => 
+      allowedServices.some(allowed => s.name.includes(allowed) || allowed.includes(s.name))
+    );
+    
     const keyboard = new InlineKeyboard();
 
     for (const service of services) {
