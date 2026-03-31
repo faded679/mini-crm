@@ -795,17 +795,29 @@ export async function showAddService(ctx: Context, requestId: number) {
     // Фильтруем только 3 нужные услуги
     const allowedServices = [
       "Помощь на выгрузке",
-      "Печать Штрихкода",
+      "Распечатка ШК",
       "Гофрокартон 60x40x40"
     ];
     
-    const services = allServices.filter((s: any) => 
-      allowedServices.some(allowed => s.name.includes(allowed) || allowed.includes(s.name))
-    );
+    const services = allServices.filter((s: any) => {
+      const serviceName = s.name || "";
+      return allowedServices.some(allowed => {
+        // Точное совпадение или частичное для гофрокартона
+        if (allowed === "Распечатка ШК") {
+          return serviceName.includes("Распечатка ШК") || serviceName.includes("распечатка шк");
+        }
+        return serviceName.includes(allowed);
+      });
+    });
     
     const keyboard = new InlineKeyboard();
 
-    for (const service of services) {
+    // Убираем дубликаты по ID
+    const uniqueServices = services.filter((service: any, index: number, self: any[]) => 
+      index === self.findIndex((s: any) => s.id === service.id)
+    );
+
+    for (const service of uniqueServices) {
       const label = `${service.name} (${service.price} ₽)`;
       keyboard.text(label, `warehouse:confirm_service:${requestId}:${service.id}`).row();
     }
