@@ -1010,3 +1010,9 @@ export function getCounterpartyFinanceSummary(counterpartyId: number) {
 export function getFinanceImportHistory() {
   return request<BankImportBatch[]>("/admin/finance/import-history");
 }
+
+export function recalculateAllBalances() {
+  return request<{ success: boolean; recalculated: number }>("/admin/finance/recalculate-all", {
+    method: "POST",
+  });
+}

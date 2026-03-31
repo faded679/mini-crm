@@ -8,6 +8,7 @@ import {
   matchBankTransaction,
   ignoreBankTransaction,
   getCounterparties,
+  recalculateAllBalances,
   type BankTransaction,
   type CounterpartyBalance,
   type BankImportBatch,
@@ -316,7 +317,28 @@ export default function Finance() {
                 Нет данных о балансах. Импортируйте банковскую выписку.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Пересчитать балансы всех контрагентов?")) return;
+                      try {
+                        setBalLoading(true);
+                        const result = await recalculateAllBalances();
+                        alert(`Пересчитано балансов: ${result.recalculated}`);
+                        loadBalances();
+                      } catch (e: any) {
+                        alert("Ошибка: " + (e.message || "Неизвестная ошибка"));
+                      } finally {
+                        setBalLoading(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  >
+                    🔄 Пересчитать все балансы
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
@@ -390,6 +412,7 @@ export default function Finance() {
                   </span>
                 </div>
               </div>
+              </>
             )}
           </div>
         )}

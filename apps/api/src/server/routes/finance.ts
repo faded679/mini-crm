@@ -178,6 +178,26 @@ router.post("/recalculate/:id", async (req: Request, res: Response, next: NextFu
   }
 });
 
+// POST /admin/finance/recalculate-all — recalculate balances for all counterparties
+router.post("/recalculate-all", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get all counterparties
+    const counterparties = await (prisma as any).counterparty.findMany({
+      select: { id: true },
+    });
+
+    let recalculated = 0;
+    for (const cp of counterparties) {
+      await recalculateBalance(cp.id);
+      recalculated++;
+    }
+
+    res.json({ success: true, recalculated });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/finance/import-history — list all import batches
 router.get("/import-history", async (_req: Request, res: Response, next: NextFunction) => {
   try {
