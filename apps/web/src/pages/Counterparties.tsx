@@ -618,7 +618,7 @@ export default function Counterparties() {
 
             <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <button
-                onClick={() => { setFinanceOpen(false); navigate(`/finance/reconciliation/${financeCp.id}`); }}
+                onClick={() => { setFinanceOpen(false); navigate(`/admin/finance/reconciliation/${financeCp.id}`); }}
                 className="px-4 py-2 rounded-lg text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 font-medium"
               >
                 Полная сверка →

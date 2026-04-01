@@ -18,7 +18,7 @@ export default function Login() {
     try {
       const data = await login(email, password);
       setAuth(data.token, data.manager);
-      navigate("/");
+      navigate("/admin");
     } catch (err: any) {
       setError(err.message || "Ошибка входа");
     } finally {

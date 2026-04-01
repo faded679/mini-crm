@@ -366,7 +366,7 @@ export default function Finance() {
                     {balances.map((b) => (
                       <tr
                         key={b.id}
-                        onClick={() => navigate(`/finance/reconciliation/${b.counterpartyId}`)}
+                        onClick={() => navigate(`/admin/finance/reconciliation/${b.counterpartyId}`)}
                         className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
                       >
                         <td className="py-2.5 pr-3 font-medium text-blue-700 dark:text-blue-400 hover:underline">

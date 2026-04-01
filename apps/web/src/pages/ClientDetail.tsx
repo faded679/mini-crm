@@ -58,7 +58,7 @@ export default function ClientDetail() {
     setDeleting(true);
     try {
       await deleteClient(client.id);
-      navigate("/clients");
+      navigate("/admin/clients");
     } catch (err) {
       alert("Ошибка при удалении клиента: " + (err instanceof Error ? err.message : "Неизвестная ошибка"));
     } finally {
@@ -212,7 +212,7 @@ export default function ClientDetail() {
               {client.requests.filter((r) => r.status !== "archived").map((r) => (
                 <tr
                   key={r.id}
-                  onClick={() => navigate(`/requests/${r.id}`)}
+                  onClick={() => navigate(`/admin/requests/${r.id}`)}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
                 >
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">#{r.id}</td>
