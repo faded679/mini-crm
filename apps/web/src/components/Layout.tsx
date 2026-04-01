@@ -53,7 +53,7 @@ export default function Layout() {
             <div className="flex items-center gap-8">
               <span className="text-lg font-bold text-gray-900 dark:text-white">CRM</span>
               <nav className="flex items-center gap-1">
-                <NavLink to="/" end className={linkClass}>
+                <NavLink to="/admin" end className={linkClass}>
                   <Package size={18} />
                   <span className="inline-flex items-center gap-1">
                     <span>Заявки</span>
@@ -64,31 +64,31 @@ export default function Layout() {
                     )}
                   </span>
                 </NavLink>
-                <NavLink to="/clients" className={linkClass}>
+                <NavLink to="/admin/clients" className={linkClass}>
                   <Users size={18} />
                   Клиенты
                 </NavLink>
-                <NavLink to="/schedule" className={linkClass}>
+                <NavLink to="/admin/schedule" className={linkClass}>
                   <Calendar size={18} />
                   Расписание
                 </NavLink>
-                <NavLink to="/counterparties" className={linkClass}>
+                <NavLink to="/admin/counterparties" className={linkClass}>
                   <Building2 size={18} />
                   Организации
                 </NavLink>
-                <NavLink to="/invoices" className={linkClass}>
+                <NavLink to="/admin/invoices" className={linkClass}>
                   <FileText size={18} />
                   Счета
                 </NavLink>
-                <NavLink to="/prices" className={linkClass}>
+                <NavLink to="/admin/prices" className={linkClass}>
                   <DollarSign size={18} />
                   Прайс
                 </NavLink>
-                <NavLink to="/broadcast" className={linkClass}>
+                <NavLink to="/admin/broadcast" className={linkClass}>
                   <Megaphone size={18} />
                   Рассылка
                 </NavLink>
-                <NavLink to="/finance" className={linkClass}>
+                <NavLink to="/admin/finance" className={linkClass}>
                   <Wallet size={18} />
                   Финансы
                 </NavLink>
