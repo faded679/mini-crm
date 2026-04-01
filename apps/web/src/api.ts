@@ -1016,3 +1016,76 @@ export function recalculateAllBalances() {
     method: "POST",
   });
 }
+
+// ===== Warehouse Web API =====
+
+export interface WarehouseWorker {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface WarehouseLoginResponse {
+  token: string;
+  worker: WarehouseWorker;
+}
+
+export interface WarehouseStats {
+  inWarehouse: number;
+  shippedToday: number;
+}
+
+export function getWarehouseToken(): string | null {
+  return localStorage.getItem("warehouse_token");
+}
+
+export function setWarehouseToken(token: string) {
+  localStorage.setItem("warehouse_token", token);
+}
+
+export function clearWarehouseToken() {
+  localStorage.removeItem("warehouse_token");
+}
+
+async function warehouseRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getWarehouseToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as any).message || `HTTP ${res.status}`);
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export function warehouseLogin(email: string, password: string) {
+  return warehouseRequest<WarehouseLoginResponse>("/warehouse-web/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function getWarehouseRequests(deliveryType?: string) {
+  const params = deliveryType ? `?deliveryType=${deliveryType}` : "";
+  return warehouseRequest<ShipmentRequest[]>(`/warehouse-web/my-requests${params}`);
+}
+
+export function bulkShipRequests(requestIds: number[]) {
+  return warehouseRequest<{ success: boolean; shipped: number }>("/warehouse-web/requests/bulk-ship", {
+    method: "PATCH",
+    body: JSON.stringify({ requestIds }),
+  });
+}
+
+export function getWarehouseStats() {
+  return warehouseRequest<WarehouseStats>("/warehouse-web/stats");
+}
