@@ -75,12 +75,12 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-// GET /warehouse-web/my-requests — получить заявки в статусе "in_warehouse"
+// GET /warehouse-web/my-requests — получить заявки в статусе "warehouse"
 router.get("/my-requests", requireWarehouseAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { deliveryType } = req.query as { deliveryType?: string };
 
-    const where: any = { status: "in_warehouse" };
+    const where: any = { status: "warehouse" };
     
     if (deliveryType && (deliveryType === "FBO" || deliveryType === "FBS")) {
       where.deliveryType = { name: deliveryType };
@@ -125,7 +125,7 @@ router.patch("/requests/bulk-ship", requireWarehouseAuth, async (req: Request, r
     const result = await (prisma as any).shipmentRequest.updateMany({
       where: {
         id: { in: requestIds },
-        status: "in_warehouse",
+        status: "warehouse",
       },
       data: {
         status: "shipped",
@@ -158,7 +158,7 @@ router.get("/stats", requireWarehouseAuth, async (req: Request, res: Response, n
 
     const [inWarehouse, shippedToday] = await Promise.all([
       (prisma as any).shipmentRequest.count({
-        where: { status: "in_warehouse" },
+        where: { status: "warehouse" },
       }),
       (prisma as any).shipmentRequest.count({
         where: {
