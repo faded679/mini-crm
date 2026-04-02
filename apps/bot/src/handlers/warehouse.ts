@@ -4,11 +4,13 @@ import { API_BASE_URL } from "../env.js";
 
 // State management для кладовщиков
 interface WarehouseConversation {
-  state: "editing_volume" | "editing_boxes" | "uploading_photo" | "selecting_box_type" | "selecting_pallet_type" | "selecting_service" | "idle";
+  state: "editing_volume" | "editing_boxes" | "uploading_photo" | "selecting_box_type" | "selecting_pallet_type" | "selecting_service" | "entering_service_quantity" | "idle";
   requestId?: number;
   data?: any;
   photoCount?: number;
   messageId?: number;
+  servicePriceId?: number;
+  serviceName?: string;
 }
 
 // API Response types
@@ -461,6 +463,26 @@ export async function handleWarehouseInput(ctx: Context) {
       await showRequestDetailsInNewMessage(ctx, conversation.requestId);
       return true;
     }
+
+    if (conversation.state === "entering_service_quantity") {
+      const quantity = parseInt(text, 10);
+      
+      if (isNaN(quantity) || quantity <= 0) {
+        await ctx.reply("❌ Введите корректное количество (например: 5)");
+        return true;
+      }
+
+      const { requestId, servicePriceId } = conversation;
+      if (!requestId || !servicePriceId) {
+        await ctx.reply("❌ Ошибка: данные не найдены");
+        warehouseConversations.delete(userId);
+        return true;
+      }
+
+      warehouseConversations.delete(userId);
+      await addServiceToRequest(ctx, requestId, servicePriceId, quantity);
+      return true;
+    }
   } catch (err) {
     console.error("Error handling warehouse input:", err);
     await ctx.reply("❌ Произошла ошибка");
@@ -898,9 +920,54 @@ export async function showAddService(ctx: Context, requestId: number) {
 }
 
 /**
- * Добавить услугу к заявке
+ * Начать процесс добавления услуги - запросить количество
  */
-export async function addServiceToRequest(ctx: Context, requestId: number, servicePriceId: number) {
+export async function startAddServiceQuantity(ctx: Context, requestId: number, servicePriceId: number) {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+
+  try {
+    // Получаем информацию об услуге
+    const response = await fetch(`${API_BASE_URL}/warehouse/service-prices?telegramId=${userId}`);
+    if (!response.ok) {
+      await ctx.answerCallbackQuery({ text: "Ошибка загрузки услуги" });
+      return;
+    }
+
+    const services = await response.json();
+    const service = services.find((s: any) => s.id === servicePriceId);
+    
+    if (!service) {
+      await ctx.answerCallbackQuery({ text: "Услуга не найдена" });
+      return;
+    }
+
+    warehouseConversations.set(userId, {
+      state: "entering_service_quantity",
+      requestId,
+      servicePriceId,
+      serviceName: service.name,
+    });
+
+    await ctx.editMessageText(
+      `✏️ Введите количество для услуги:\n\n` +
+      `📋 ${service.name}\n` +
+      `💰 Цена: ${service.price} ₽\n\n` +
+      `Например: 5\n\n` +
+      `Для отмены используйте /cancel`
+    );
+
+    await ctx.answerCallbackQuery();
+  } catch (err) {
+    console.error("Error starting service quantity:", err);
+    await ctx.answerCallbackQuery({ text: "Ошибка" });
+  }
+}
+
+/**
+ * Добавить услугу к заявке с указанным количеством
+ */
+export async function addServiceToRequest(ctx: Context, requestId: number, servicePriceId: number, quantity: number) {
   const telegramId = ctx.from?.id;
   if (!telegramId) return;
 
@@ -911,19 +978,19 @@ export async function addServiceToRequest(ctx: Context, requestId: number, servi
       body: JSON.stringify({ 
         telegramId: String(telegramId), 
         servicePriceId,
-        quantity: 1
+        quantity
       }),
     });
 
     if (!response.ok) {
-      await ctx.answerCallbackQuery({ text: "Ошибка добавления услуги" });
+      await ctx.reply("❌ Ошибка добавления услуги");
       return;
     }
 
-    await ctx.answerCallbackQuery({ text: "✅ Услуга добавлена" });
-    await showRequestDetails(ctx, requestId);
+    await ctx.reply(`✅ Услуга добавлена (количество: ${quantity})`);
+    await showRequestDetailsInNewMessage(ctx, requestId);
   } catch (err) {
     console.error("Error adding service:", err);
-    await ctx.answerCallbackQuery({ text: "Ошибка" });
+    await ctx.reply("❌ Произошла ошибка");
   }
 }

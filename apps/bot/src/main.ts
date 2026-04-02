@@ -241,8 +241,8 @@ bot.callbackQuery(/^warehouse:confirm_service:(\d+):(\d+)$/, async (ctx) => {
   const match = ctx.match as RegExpMatchArray;
   const requestId = Number(match[1]);
   const servicePriceId = Number(match[2]);
-  const { addServiceToRequest } = await import("./handlers/warehouse.js");
-  await addServiceToRequest(ctx, requestId, servicePriceId);
+  const { startAddServiceQuantity } = await import("./handlers/warehouse.js");
+  await startAddServiceQuantity(ctx, requestId, servicePriceId);
 });
 
 // Handle consent callback
