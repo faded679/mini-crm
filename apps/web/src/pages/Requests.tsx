@@ -286,10 +286,10 @@ export default function Requests() {
     }
 
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
-    const counterpartyId = selectedRequests[0]?.client?.counterparties?.[0]?.id;
+    const counterpartyId = selectedRequests[0]?.client?.counterparties?.[0]?.counterparty?.id;
     
     if (!counterpartyId) {
-      alert("Не найдена организация для клиента");
+      alert("Не найдена организация для клиента. Убедитесь, что клиент привязан к организации.");
       return;
     }
 
