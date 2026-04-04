@@ -466,7 +466,13 @@ export default function Counterparties() {
                         className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0 text-sm text-gray-900 dark:text-gray-100"
                       >
                         <input type="checkbox" checked={checked} onChange={() => toggleContact(c.id)} />
-                        <span>{label}</span>
+                        <div className="flex-1 flex items-center justify-between">
+                          <span>{label}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {c.phone && <span className="mr-3">📱 {c.phone}</span>}
+                            <span>TG: {c.telegramId}</span>
+                          </span>
+                        </div>
                       </label>
                     );
                   })}
