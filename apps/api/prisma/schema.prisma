@@ -130,7 +130,7 @@ model ShipmentRequest {
   fieldHistory RequestFieldHistory[]
   services     RequestService[]
   photos       RequestPhoto[]
-  invoices     Invoice[]
+  invoices     InvoiceRequest[]
 
   @@map("shipment_requests")
 }
@@ -216,7 +216,6 @@ model Invoice {
   number          String        @unique
   date            DateTime      @default(now())
   counterpartyId  Int           @map("counterparty_id")
-  requestId       Int?          @map("request_id")
   status          InvoiceStatus @default(new)
   isPaid          Boolean       @default(false) @map("is_paid")
   paidAt          DateTime?     @map("paid_at")
@@ -231,10 +230,23 @@ model Invoice {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   counterparty    Counterparty     @relation(fields: [counterpartyId], references: [id])
-  request         ShipmentRequest? @relation(fields: [requestId], references: [id])
   items           InvoiceItem[]
+  requests        InvoiceRequest[]
 
   @@map("invoices")
+}
+
+model InvoiceRequest {
+  id        Int      @id @default(autoincrement())
+  invoiceId Int      @map("invoice_id")
+  requestId Int      @map("request_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  invoice   Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  request   ShipmentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, requestId])
+  @@map("invoice_requests")
 }
 
 model InvoiceItem {

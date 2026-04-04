@@ -328,6 +328,13 @@ export interface InvoiceItem extends InvoiceItemPayload {
   invoiceId: number;
 }
 
+export interface InvoiceRequest {
+  id: number;
+  invoiceId: number;
+  requestId: number;
+  request: ShipmentRequest;
+}
+
 export interface Invoice {
   id: number;
   number: string;
@@ -335,18 +342,19 @@ export interface Invoice {
   isPaid: boolean;
   paidAt: string | null;
   counterpartyId: number;
-  requestId?: number | null;
   createdAt: string;
   updatedAt: string;
   counterparty: Counterparty;
   items: InvoiceItem[];
+  requests?: InvoiceRequest[];
 }
 
 export interface CreateInvoicePayload {
   counterpartyId: number;
-  requestId?: number | null;
+  requestIds?: number[];
   date?: string;
   items: InvoiceItemPayload[];
+  number: string;
 }
 
 export function createInvoice(payload: CreateInvoicePayload) {

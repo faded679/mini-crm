@@ -9,7 +9,7 @@ const router = Router();
 // POST /admin/invoices — создать счет
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { number, counterpartyId, requestId, items } = req.body;
+    const { number, counterpartyId, requestIds, items } = req.body;
 
     if (!number || !counterpartyId || !Array.isArray(items) || items.length === 0) {
       throw new ApiError(400, "Missing required fields");
@@ -25,7 +25,6 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
       data: {
         number,
         counterpartyId: Number(counterpartyId),
-        requestId: requestId ? Number(requestId) : null,
         status: "new",
         amount: totalAmount,
         items: {
@@ -37,6 +36,12 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
             amount: Number(item.amount) || 0,
           })),
         },
+        // Связываем счет с заявками через промежуточную таблицу
+        requests: requestIds && Array.isArray(requestIds) && requestIds.length > 0 ? {
+          create: requestIds.map((requestId: number) => ({
+            requestId: Number(requestId),
+          })),
+        } : undefined,
       },
       include: {
         items: true,
@@ -47,6 +52,11 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
                 client: true,
               },
             },
+          },
+        },
+        requests: {
+          include: {
+            request: true,
           },
         },
       },
@@ -75,7 +85,11 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
             },
           },
         },
-        request: true,
+        requests: {
+          include: {
+            request: true,
+          },
+        },
       },
     });
 
@@ -122,8 +136,9 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     // Отправляем ссылку клиенту через бот
     try {
       let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
-      if (invoice.requestId) {
-        message += `Заявка №${invoice.requestId}\n`;
+      if (invoice.requests && invoice.requests.length > 0) {
+        const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
+        message += `Заявки: ${requestNumbers}\n`;
       }
       message += `\nСумма: ${invoice.amount.toLocaleString("ru-RU")} ₽\n\n` +
         `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}\n\nСсылка на оплату действует 24 часа.`;
@@ -158,6 +173,11 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       include: {
         counterparty: true,
         items: true,
+        requests: {
+          include: {
+            request: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -180,6 +200,11 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
       include: {
         counterparty: true,
         items: true,
+        requests: {
+          include: {
+            request: true,
+          },
+        },
       },
     });
 

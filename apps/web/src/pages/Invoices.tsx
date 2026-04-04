@@ -11,7 +11,7 @@ function getInvoiceTotal(inv: Invoice) {
   return inv.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
 }
 
-type SortKey = "id" | "number" | "date" | "counterparty" | "request" | "total";
+type SortKey = "id" | "number" | "date" | "counterparty" | "total";
 
 type SortDir = "asc" | "desc";
 
@@ -83,9 +83,6 @@ export default function Invoices() {
           res = compareStr(an, bn);
           break;
         }
-        case "request":
-          res = compareNum(a.requestId ?? -1, b.requestId ?? -1);
-          break;
         case "total":
           res = compareNum(getInvoiceTotal(a), getInvoiceTotal(b));
           break;
@@ -205,9 +202,7 @@ export default function Invoices() {
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
-                  <button onClick={() => toggleSort("request")} className="hover:text-gray-900 dark:hover:text-white">
-                    Заявка {sortIndicator("request")}
-                  </button>
+                  Заявки
                 </th>
                 <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400">
                   <button onClick={() => toggleSort("total")} className="hover:text-gray-900 dark:hover:text-white">
@@ -229,7 +224,11 @@ export default function Invoices() {
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">{inv.number}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatDateRu(inv.date)}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{cpName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{inv.requestId ? `#${inv.requestId}` : "—"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {inv.requests && inv.requests.length > 0 
+                        ? inv.requests.map(ir => `#${ir.request.id}`).join(", ")
+                        : "—"}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">
                       {total.toLocaleString("ru-RU")} ₽
                     </td>

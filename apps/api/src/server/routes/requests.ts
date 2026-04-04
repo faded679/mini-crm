@@ -11,16 +11,25 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
   try {
     const requestId = Number(req.params.id);
 
-    // Находим существующий счет для этой заявки
-    const invoice = await (prisma as any).invoice.findFirst({
+    // Находим существующий счет для этой заявки через промежуточную таблицу
+    const invoiceRequest = await (prisma as any).invoiceRequest.findFirst({
       where: { requestId },
       include: {
-        items: true,
-        counterparty: {
+        invoice: {
           include: {
-            contacts: {
+            items: true,
+            counterparty: {
               include: {
-                client: true,
+                contacts: {
+                  include: {
+                    client: true,
+                  },
+                },
+              },
+            },
+            requests: {
+              include: {
+                request: true,
               },
             },
           },
@@ -28,6 +37,8 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    const invoice = invoiceRequest?.invoice;
 
     if (!invoice) {
       throw new ApiError(404, "Invoice not found for this request. Please create invoice first.");
@@ -47,10 +58,12 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
 
     // Если ссылка уже создана и счет ожидает оплату, просто отправляем существующую
     if (invoice.status === "awaiting_payment" && invoice.tbankPaymentUrl) {
-      const message = 
-        `💳 <b>Счет на оплату №${invoice.number}</b>\n` +
-        `Заявка №${requestId}\n\n` +
-        `Сумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
+      let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
+      if (invoice.requests && invoice.requests.length > 0) {
+        const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
+        message += `Заявки: ${requestNumbers}\n`;
+      }
+      message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
         `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
 
       await notifyClient(client.telegramId, message);
