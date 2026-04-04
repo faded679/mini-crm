@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getCounterparties, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, type ShipmentRequest, type RequestStatus, type PackagingType, type Counterparty, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry } from "../api";
+import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getCounterparties, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, createInvoice, type ShipmentRequest, type RequestStatus, type PackagingType, type Counterparty, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry, type InvoiceItemPayload } from "../api";
 import { cn } from "../lib/utils";
 import RequestDetail from "./RequestDetail";
 
@@ -87,6 +87,12 @@ export default function Requests() {
   const [fbsDate, setFbsDate] = useState("");
   const [fbsPriceId, setFbsPriceId] = useState<number | null>(null);
   const [fbsQty, setFbsQty] = useState("");
+
+  // Invoice creation modal
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItemPayload[]>([]);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
 
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
@@ -226,6 +232,86 @@ export default function Requests() {
       alert("Ошибка при массовом обновлении статуса");
     } finally {
       setBulkUpdating(false);
+    }
+  };
+
+  const handleOpenInvoiceModal = () => {
+    if (selectedIds.size === 0) return;
+
+    // Получаем выбранные заявки
+    const selectedRequests = requests.filter(r => selectedIds.has(r.id));
+    
+    // Проверяем, что все заявки от одного клиента/организации
+    const clientIds = new Set(selectedRequests.map(r => r.client.id));
+    if (clientIds.size > 1) {
+      alert("Выберите заявки от одного клиента");
+      return;
+    }
+
+    // Автозаполняем позиции счета из услуг заявок
+    const items: InvoiceItemPayload[] = [];
+    selectedRequests.forEach(req => {
+      const services = (req as any).services as { description?: string; amount?: number; quantity?: number; price?: number }[] | undefined;
+      if (services && services.length > 0) {
+        services.forEach(service => {
+          items.push({
+            description: service.description || "Услуга",
+            quantity: service.quantity || 1,
+            unit: "шт",
+            price: service.price || 0,
+            amount: service.amount || 0,
+          });
+        });
+      }
+    });
+
+    // Генерируем номер счета
+    const now = new Date();
+    const invoiceNum = `СЧ-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    setInvoiceNumber(invoiceNum);
+    setInvoiceItems(items);
+    setShowInvoiceModal(true);
+  };
+
+  const handleCreateInvoice = async () => {
+    if (selectedIds.size === 0 || creatingInvoice) return;
+    if (!invoiceNumber.trim()) {
+      alert("Введите номер счета");
+      return;
+    }
+    if (invoiceItems.length === 0) {
+      alert("Добавьте хотя бы одну позицию в счет");
+      return;
+    }
+
+    const selectedRequests = requests.filter(r => selectedIds.has(r.id));
+    const counterpartyId = selectedRequests[0]?.client?.counterparties?.[0]?.id;
+    
+    if (!counterpartyId) {
+      alert("Не найдена организация для клиента");
+      return;
+    }
+
+    setCreatingInvoice(true);
+    try {
+      await createInvoice({
+        number: invoiceNumber,
+        counterpartyId,
+        requestIds: [...selectedIds],
+        items: invoiceItems,
+      });
+      
+      alert(`Счет ${invoiceNumber} успешно создан!`);
+      setShowInvoiceModal(false);
+      setSelectedIds(new Set());
+      setInvoiceNumber("");
+      setInvoiceItems([]);
+    } catch (err) {
+      console.error("Error creating invoice:", err);
+      alert("Ошибка при создании счета");
+    } finally {
+      setCreatingInvoice(false);
     }
   };
 
@@ -491,6 +577,12 @@ export default function Requests() {
             className="px-4 py-1.5 text-sm rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
           >
             {bulkUpdating ? "Обновление..." : "Применить"}
+          </button>
+          <button
+            onClick={handleOpenInvoiceModal}
+            className="px-4 py-1.5 text-sm rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 transition"
+          >
+            📄 Создать счет
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
@@ -951,6 +1043,88 @@ export default function Requests() {
         </div>
         );
       })()}
+
+      {showInvoiceModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowInvoiceModal(false); }}
+        >
+          <div className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Создать счет</h2>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Номер счета
+              </label>
+              <input
+                type="text"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+                placeholder="СЧ-2026-01-01-1234"
+              />
+            </div>
+
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Позиции счета
+                </label>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Выбрано заявок: {selectedIds.size}
+                </span>
+              </div>
+              
+              {invoiceItems.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                  Нет позиций. Добавьте услуги в заявки или добавьте позиции вручную.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {invoiceItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{item.description}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.quantity} {item.unit} × {item.price} ₽ = {item.amount} ₽
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setInvoiceItems(items => items.filter((_, i) => i !== idx))}
+                        className="px-2 py-1 text-xs rounded bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="mt-3 text-right">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Итого: {invoiceItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowInvoiceModal(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleCreateInvoice}
+                disabled={creatingInvoice || !invoiceNumber.trim() || invoiceItems.length === 0}
+                className="px-4 py-2 text-sm rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition"
+              >
+                {creatingInvoice ? "Создание..." : "Создать счет"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedRequestId !== null && (
         <div
