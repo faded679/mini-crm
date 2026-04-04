@@ -1506,8 +1506,9 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                       try {
                         const inv = await createInvoice({
                           counterpartyId: invoiceCounterpartyId as number,
-                          requestId: request.id,
+                          requestIds: [request.id],
                           items: invoiceItems,
+                          number: `СЧ-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getHours()).padStart(2, '0')}${String(new Date().getMinutes()).padStart(2, '0')}`,
                         });
                         setCreatedInvoice(inv);
                       } finally {
