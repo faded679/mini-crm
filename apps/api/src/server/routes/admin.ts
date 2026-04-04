@@ -437,7 +437,6 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
         number,
         date: date ? new Date(date) : new Date(),
         counterpartyId,
-        requestId: requestId ?? null,
         items: {
           create: items.map((it) => ({
             description: it.description,
@@ -447,8 +446,22 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
             amount: it.amount,
           })),
         },
+        // Связываем счет с заявкой через промежуточную таблицу (если requestId передан)
+        requests: requestId ? {
+          create: [{
+            requestId: Number(requestId),
+          }],
+        } : undefined,
       },
-      include: { items: true, counterparty: true },
+      include: { 
+        items: true, 
+        counterparty: true,
+        requests: {
+          include: {
+            request: true,
+          },
+        },
+      },
     });
 
     res.status(201).json(invoice);
@@ -464,12 +477,25 @@ router.get("/invoices", async (req: Request, res: Response, next: NextFunction) 
     
     const where: any = {};
     if (requestId !== undefined && Number.isFinite(requestId)) {
-      where.requestId = requestId;
+      // Фильтруем через промежуточную таблицу InvoiceRequest
+      where.requests = {
+        some: {
+          requestId: requestId,
+        },
+      };
     }
 
     const invoices = await (prisma as any).invoice.findMany({
       where,
-      include: { items: true, counterparty: true },
+      include: { 
+        items: true, 
+        counterparty: true,
+        requests: {
+          include: {
+            request: true,
+          },
+        },
+      },
       orderBy: { id: "desc" },
     });
     res.json(invoices);
