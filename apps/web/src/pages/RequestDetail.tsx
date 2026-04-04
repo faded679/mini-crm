@@ -1241,14 +1241,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
             {createdInvoice ? (
               <>
                 <div className="p-5 space-y-4">
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      <strong>По данной заявке есть действуюший счёт/акт {createdInvoice.number}.</strong>
-                    </p>
-                    <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
-                      Чтобы создать новый счёт, необходимо удалить существующий во вкладке <strong>Счета</strong>.
-                    </p>
-                  </div>
 
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент</label>
@@ -1502,6 +1494,13 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     disabled={!canCreateInvoice || invoiceCreating}
                     onClick={async () => {
                       if (!canCreateInvoice || invoiceCreating) return;
+                      
+                      // Проверяем, есть ли уже счет для этой заявки
+                      if (createdInvoice) {
+                        alert(`По данной заявке есть действующий счёт/акт ${createdInvoice.number}.\n\nЧтобы создать новый счёт, необходимо удалить существующий во вкладке Счета.`);
+                        return;
+                      }
+                      
                       setInvoiceCreating(true);
                       try {
                         const inv = await createInvoice({
