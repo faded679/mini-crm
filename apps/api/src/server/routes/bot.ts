@@ -327,9 +327,11 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         
         // Если есть позиции доставки, обновляем их
         if (deliveryItems.length > 0) {
-          // Для каждой позиции устанавливаем quantity = новый объём и пересчитываем amount
           for (const item of deliveryItems) {
-            const newAmount = item.price * vol;
+            // Вычисляем цену за 1 м³ из старой позиции
+            // Если quantity = 0.1 и price = 200, то pricePerCubic = 200 / 0.1 = 2000
+            const pricePerCubic = item.quantity > 0 ? item.amount / item.quantity : item.price;
+            const newAmount = pricePerCubic * vol;
             
             await (prisma as any).requestService.update({
               where: { id: item.id },
