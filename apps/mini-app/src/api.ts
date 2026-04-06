@@ -79,6 +79,7 @@ interface CreateRequestPayload {
   boxTypeId?: number;
   deliveryTypeId?: number;
   weight?: number;
+  volume?: number;
   boxCount: number;
   comment?: string;
   mpAccountDate?: string;

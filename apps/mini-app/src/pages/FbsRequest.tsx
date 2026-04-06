@@ -165,6 +165,7 @@ export default function FbsRequest() {
         city: selectedCity.shortName,
         deliveryDate: deliveryDate || new Date().toISOString(),
         packagingType: "boxes",
+        volume: totalQty,
         boxCount: totalQty,
         deliveryTypeId: 1, // FBS
         comment:

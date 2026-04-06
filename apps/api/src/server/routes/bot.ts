@@ -47,6 +47,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       deliveryDate,
       size,
       weight,
+      volume,
       boxCount,
       boxTypeId,
       packagingType,
@@ -99,31 +100,28 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       const exists = await (prisma as any).boxType.findUnique({ where: { id: parsedBoxTypeId } });
       if (!exists) throw new ApiError(400, "Invalid boxTypeId");
     }
-// Extract volume from comment for FBS requests
-let extractedVolume: number | undefined;
-if (isFbs && comment) {
-  // First try simple pattern like "100 кубов" or "100 м³" - this is total volume
+// Volume: use explicit field first, fallback to extraction from comment
+let finalVolume: number | undefined;
+if (volume !== undefined && volume !== null && Number.isFinite(Number(volume)) && Number(volume) > 0) {
+  finalVolume = Number(volume);
+} else if (isFbs && comment) {
+  // Extract volume from comment for FBS requests (legacy fallback)
   const simpleVolumeMatch = comment.match(/(\d+\.?\d*)\s*(?:куба|кубов|м³|м3)/i);
   if (simpleVolumeMatch) {
-    extractedVolume = Number(simpleVolumeMatch[1]); // Total volume as specified
+    finalVolume = Number(simpleVolumeMatch[1]);
   } else {
-    // Try pattern like "0.1 x 5 = 10000₽" where 0.1 is price per m³ and 5 is volume in m³
     const volumeMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)\s*=\s*\d+/);
     if (volumeMatch) {
-      const pricePerUnit = Number(volumeMatch[1]);
-      const quantity = Number(volumeMatch[2]);
-      extractedVolume = quantity; // Take quantity as total volume (5 m³)
+      finalVolume = Number(volumeMatch[2]);
     } else {
-      // Fallback for simple "0.1 x 4" format (without = amount)
       const simpleMatch = comment.match(/(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/);
       if (simpleMatch) {
         const unitVolume = Number(simpleMatch[1]);
         const quantity = Number(simpleMatch[2]);
-        // If first number is small (likely price) and second is reasonable volume, take second
         if (unitVolume < 1 && quantity >= 0.5 && quantity <= 1000) {
-          extractedVolume = quantity; // Take quantity as volume
+          finalVolume = quantity;
         } else {
-          extractedVolume = unitVolume * quantity; // Traditional multiplication
+          finalVolume = unitVolume * quantity;
         }
       }
     }
@@ -133,7 +131,7 @@ if (isFbs && comment) {
       data: {
         clientId: client.id,
         cityId: cityRecord.id,
-...(extractedVolume !== undefined ? { volume: extractedVolume } : {}),
+...(finalVolume !== undefined ? { volume: finalVolume } : {}),
         city,
         deliveryDate: new Date(deliveryDate),
         size: size ?? "-",
