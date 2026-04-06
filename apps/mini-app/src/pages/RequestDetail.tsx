@@ -32,6 +32,7 @@ export default function RequestDetail() {
     boxCount: 1,
     mpAccountDate: "",
   });
+  const [volumeInput, setVolumeInput] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -51,6 +52,7 @@ export default function RequestDetail() {
           boxCount: req.boxCount,
           mpAccountDate: req.mpAccountDate?.split("T")[0] || "",
         });
+        setVolumeInput(req.volume ? String(req.volume) : "");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Ошибка"))
       .finally(() => setLoading(false));
@@ -119,11 +121,14 @@ export default function RequestDetail() {
                 <input
                   type="text"
                   inputMode="decimal"
-                  value={editData.volume || ""}
+                  value={volumeInput}
                   onChange={(e) => {
                     const val = e.target.value.replace(",", ".");
+                    setVolumeInput(val);
                     const num = parseFloat(val);
-                    setEditData({ ...editData, volume: isNaN(num) ? 0 : num });
+                    if (!isNaN(num) && num > 0) {
+                      setEditData({ ...editData, volume: num });
+                    }
                   }}
                   placeholder="0.5"
                   className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint w-20 text-right"
