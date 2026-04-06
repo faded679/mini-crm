@@ -314,6 +314,34 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         throw new ApiError(400, "Invalid volume");
       }
       updateData.volume = vol;
+      
+      // Пересчитываем позиции доставки пропорционально новому объёму
+      if (existing.deliveryTypeId === 1 && existing.volume && existing.volume > 0) {
+        const oldVolume = existing.volume;
+        const ratio = vol / oldVolume;
+        
+        // Получаем все позиции доставки (unit = "м³")
+        const deliveryItems = await (prisma as any).requestService.findMany({
+          where: { 
+            requestId: id,
+            unit: "м³"
+          },
+        });
+        
+        // Обновляем каждую позицию доставки
+        for (const item of deliveryItems) {
+          const newQuantity = item.quantity * ratio;
+          const newAmount = item.price * newQuantity;
+          
+          await (prisma as any).requestService.update({
+            where: { id: item.id },
+            data: {
+              quantity: newQuantity,
+              amount: newAmount,
+            },
+          });
+        }
+      }
     }
     
     if (boxCount !== undefined) {
