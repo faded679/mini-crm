@@ -314,16 +314,6 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         throw new ApiError(400, "Invalid volume");
       }
       updateData.volume = vol;
-      
-      // При изменении объёма FBS заявки удаляем только позиции доставки (м³), сохраняя доп. услуги
-      if (existing.deliveryTypeId === 1) {
-        await (prisma as any).requestService.deleteMany({
-          where: { 
-            requestId: id,
-            unit: "м³"
-          },
-        });
-      }
     }
     
     if (boxCount !== undefined) {
