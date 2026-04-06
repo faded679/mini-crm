@@ -279,7 +279,7 @@ router.get("/request-detail/:id", async (req: Request, res: Response, next: Next
 router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    const { deliveryDate, packagingType, boxCount, mpAccountDate } = req.body;
+    const { deliveryDate, packagingType, volume, boxCount, mpAccountDate } = req.body;
 
     // Check if request exists and is editable
     const existing = await prisma.shipmentRequest.findUnique({
@@ -306,6 +306,14 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         throw new ApiError(400, "Invalid packagingType");
       }
       updateData.packagingType = packagingType;
+    }
+    
+    if (volume !== undefined && volume !== null) {
+      const vol = Number(volume);
+      if (!Number.isFinite(vol) || vol <= 0) {
+        throw new ApiError(400, "Invalid volume");
+      }
+      updateData.volume = vol;
     }
     
     if (boxCount !== undefined) {

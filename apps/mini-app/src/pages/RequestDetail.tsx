@@ -117,11 +117,15 @@ export default function RequestDetail() {
               <div className="flex justify-between items-center">
                 <span className="text-xs text-tg-hint">Объём (м³)</span>
                 <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={editData.volume}
-                  onChange={(e) => setEditData({ ...editData, volume: Number(e.target.value) })}
+                  type="text"
+                  inputMode="decimal"
+                  value={editData.volume || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(",", ".");
+                    const num = parseFloat(val);
+                    setEditData({ ...editData, volume: isNaN(num) ? 0 : num });
+                  }}
+                  placeholder="0.5"
                   className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint w-20 text-right"
                 />
               </div>
