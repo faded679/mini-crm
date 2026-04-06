@@ -315,10 +315,13 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       }
       updateData.volume = vol;
       
-      // При изменении объёма FBS заявки удаляем старые позиции, чтобы менеджер пересоздал их
+      // При изменении объёма FBS заявки удаляем только позиции доставки (м³), сохраняя доп. услуги
       if (existing.deliveryTypeId === 1) {
         await (prisma as any).requestService.deleteMany({
-          where: { requestId: id },
+          where: { 
+            requestId: id,
+            unit: "м³"
+          },
         });
       }
     }
