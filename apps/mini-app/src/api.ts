@@ -58,8 +58,10 @@ export interface ShipmentRequest {
   cityId: number;
   deliveryDate: string;
   boxTypeId?: number | null;
+  deliveryTypeId?: number | null;
   size?: string;
   weight?: number | null;
+  volume?: number | null;
   boxCount: number;
   packagingType: "pallets" | "boxes";
   comment: string | null;
