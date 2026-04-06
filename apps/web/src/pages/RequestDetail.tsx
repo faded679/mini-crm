@@ -1496,9 +1496,8 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                       if (!canCreateInvoice || invoiceCreating) return;
                       
                       // Проверяем, есть ли уже счет для этой заявки
-                      const existing = createdInvoice;
-                      if (existing) {
-                        alert(`По данной заявке есть действующий счёт/акт ${existing.number}.\n\nЧтобы создать новый счёт, необходимо удалить существующий во вкладке Счета.`);
+                      if (createdInvoice) {
+                        alert(`По данной заявке есть действующий счёт/акт ${(createdInvoice as any).number}.\n\nЧтобы создать новый счёт, необходимо удалить существующий во вкладке Счета.`);
                         return;
                       }
                       

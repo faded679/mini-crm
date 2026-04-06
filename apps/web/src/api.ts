@@ -339,7 +339,7 @@ export interface Invoice {
   id: number;
   number: string;
   date: string;
-  status: "new" | "sent" | "awaiting_payment" | "paid" | "cancelled";
+  status?: "new" | "sent" | "awaiting_payment" | "paid" | "cancelled";
   isPaid: boolean;
   paidAt: string | null;
   tbankPaymentUrl?: string | null;
