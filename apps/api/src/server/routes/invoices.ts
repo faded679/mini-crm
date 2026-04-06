@@ -87,7 +87,11 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
         },
         requests: {
           include: {
-            request: true,
+            request: {
+              include: {
+                client: true,
+              },
+            },
           },
         },
       },
@@ -101,18 +105,52 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       throw new ApiError(400, "Invoice already paid");
     }
 
-    // Получаем клиента
-    const client = invoice.counterparty.contacts[0]?.client;
+    // Получаем клиента — сначала из связанных заявок, потом из контактов контрагента
+    let client = invoice.requests?.[0]?.request?.client;
     if (!client?.telegramId) {
-      throw new ApiError(400, "Client telegram ID not found");
+      client = invoice.counterparty?.contacts?.[0]?.client;
+    }
+    if (!client?.telegramId) {
+      throw new ApiError(400, "Client telegram ID not found. Привяжите заявку к счету или добавьте контактное лицо к организации.");
+    }
+
+    // Вычисляем сумму из items если amount не заполнен
+    const items = await (prisma as any).invoiceItem.findMany({ where: { invoiceId } });
+    const totalAmount = invoice.amount > 0
+      ? invoice.amount
+      : items.reduce((sum: number, it: any) => sum + (Number(it.amount) || 0), 0);
+
+    if (totalAmount <= 0) {
+      throw new ApiError(400, "Сумма счета равна нулю. Проверьте позиции счета.");
     }
 
     // Создаем платеж в T-Bank
-    const amountInKopecks = Math.round(invoice.amount * 100);
-    const orderId = invoice.number;
-    const description = `Оплата счета №${invoice.number}`;
+    const amountInKopecks = Math.round(totalAmount * 100);
+    // OrderId: только латиница, цифры и дефис, макс 36 символов
+    const orderId = `INV-${invoice.id}-${Date.now()}`.slice(0, 36);
+    const description = `Oplata scheta ${invoice.number}`;
 
     const notificationURL = `${process.env.API_BASE_URL || "https://test.ved31.ru/api"}/webhooks/tbank`;
+
+    // Формируем чек (Receipt) для 54-ФЗ
+    const receiptItems = items.map((item: any) => ({
+      Name: (item.description || "Услуга").slice(0, 128),
+      Price: Math.round((Number(item.amount) || 0) * 100),
+      Quantity: 1,
+      Amount: Math.round((Number(item.amount) || 0) * 100),
+      Tax: "none",
+    }));
+
+    const receipt: any = {
+      Taxation: "usn_income",
+      Items: receiptItems,
+    };
+
+    if (client.email) {
+      receipt.Email = client.email;
+    } else if (client.phone) {
+      receipt.Phone = client.phone;
+    }
 
     const paymentResult = await tbankPayment.initPayment({
       amount: amountInKopecks,
@@ -120,6 +158,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       description,
       customerKey: client.telegramId,
       notificationURL,
+      ...(receipt.Email || receipt.Phone ? { receipt } : {}),
     });
 
     // Обновляем счет
@@ -140,7 +179,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
         const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
         message += `Заявки: ${requestNumbers}\n`;
       }
-      message += `\nСумма: ${invoice.amount.toLocaleString("ru-RU")} ₽\n\n` +
+      message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
         `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}\n\nСсылка на оплату действует 24 часа.`;
 
       await notifyClient(client.telegramId, message);
