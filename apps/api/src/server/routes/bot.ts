@@ -314,6 +314,13 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         throw new ApiError(400, "Invalid volume");
       }
       updateData.volume = vol;
+      
+      // При изменении объёма FBS заявки удаляем старые позиции, чтобы менеджер пересоздал их
+      if (existing.deliveryTypeId === 1) {
+        await (prisma as any).requestService.deleteMany({
+          where: { requestId: id },
+        });
+      }
     }
     
     if (boxCount !== undefined) {
