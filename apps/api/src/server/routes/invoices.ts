@@ -124,6 +124,37 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       throw new ApiError(400, "Сумма счета равна нулю. Проверьте позиции счета.");
     }
 
+    // Если есть старый платёж — проверяем его статус в T-Bank
+    if (invoice.tbankPaymentId && invoice.tbankPaymentUrl) {
+      try {
+        const state = await tbankPayment.getPaymentState(invoice.tbankPaymentId);
+        const activeStatuses = ["NEW", "FORM_SHOWED", "AUTHORIZING", "AUTHORIZED", "CONFIRMING"];
+        if (state.Success && activeStatuses.includes(state.Status)) {
+          // Платёж ещё активен — пересылаем существующую ссылку
+          let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
+          if (invoice.requests && invoice.requests.length > 0) {
+            const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
+            message += `Заявки: ${requestNumbers}\n`;
+          }
+          message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
+            `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
+
+          await notifyClient(client.telegramId, message);
+
+          return res.json({
+            success: true,
+            paymentUrl: invoice.tbankPaymentUrl,
+            paymentId: invoice.tbankPaymentId,
+          });
+        }
+        // Платёж истёк/отклонён — создадим новый ниже
+        console.log(`T-Bank payment ${invoice.tbankPaymentId} status: ${state.Status} — creating new payment`);
+      } catch (checkErr) {
+        console.error("Failed to check T-Bank payment state:", checkErr);
+        // Не смогли проверить — создадим новый
+      }
+    }
+
     // Создаем платеж в T-Bank
     const amountInKopecks = Math.round(totalAmount * 100);
     // OrderId: только латиница, цифры и дефис, макс 36 символов
@@ -166,7 +197,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       where: { id: invoiceId },
       data: {
         status: "awaiting_payment",
-        tbankPaymentId: paymentResult.PaymentId,
+        tbankPaymentId: String(paymentResult.PaymentId),
         tbankPaymentUrl: paymentResult.PaymentURL,
         tbankOrderId: paymentResult.OrderId,
       },

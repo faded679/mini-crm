@@ -56,30 +56,42 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       throw new ApiError(400, "Invoice amount is zero or negative");
     }
 
-    // Если ссылка уже создана и счет ожидает оплату, просто отправляем существующую
-    if (invoice.status === "awaiting_payment" && invoice.tbankPaymentUrl) {
-      let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
-      if (invoice.requests && invoice.requests.length > 0) {
-        const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
-        message += `Заявки: ${requestNumbers}\n`;
-      }
-      message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
-        `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
-
-      await notifyClient(client.telegramId, message);
-
-      return res.json({
-        success: true,
-        paymentUrl: invoice.tbankPaymentUrl,
-        paymentId: invoice.tbankPaymentId,
-        amount: totalAmount,
-        message: "Existing payment link sent",
-      });
-    }
-
     // Если счет уже оплачен
     if (invoice.status === "paid") {
       throw new ApiError(400, "Invoice already paid");
+    }
+
+    // Если есть старый платёж — проверяем его статус в T-Bank
+    if (invoice.tbankPaymentId && invoice.tbankPaymentUrl) {
+      try {
+        const state = await tbankPayment.getPaymentState(invoice.tbankPaymentId);
+        const activeStatuses = ["NEW", "FORM_SHOWED", "AUTHORIZING", "AUTHORIZED", "CONFIRMING"];
+        if (state.Success && activeStatuses.includes(state.Status)) {
+          // Платёж ещё активен — пересылаем существующую ссылку
+          let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
+          if (invoice.requests && invoice.requests.length > 0) {
+            const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
+            message += `Заявки: ${requestNumbers}\n`;
+          }
+          message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
+            `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
+
+          await notifyClient(client.telegramId, message);
+
+          return res.json({
+            success: true,
+            paymentUrl: invoice.tbankPaymentUrl,
+            paymentId: invoice.tbankPaymentId,
+            amount: totalAmount,
+            message: "Existing active payment link sent",
+          });
+        }
+        // Платёж истёк/отклонён — создадим новый ниже
+        console.log(`T-Bank payment ${invoice.tbankPaymentId} status: ${state.Status} — creating new payment`);
+      } catch (checkErr) {
+        console.error("Failed to check T-Bank payment state:", checkErr);
+        // Не смогли проверить — создадим новый
+      }
     }
 
     // Создаем новый платеж в T-Bank
