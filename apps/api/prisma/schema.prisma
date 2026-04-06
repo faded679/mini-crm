@@ -22,6 +22,7 @@ enum PackagingType {
 
 enum InvoiceStatus {
   new
+  sent
   awaiting_payment
   paid
   cancelled

@@ -175,7 +175,11 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         items: true,
         requests: {
           include: {
-            request: true,
+            request: {
+              include: {
+                client: true,
+              },
+            },
           },
         },
       },

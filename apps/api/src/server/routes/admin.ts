@@ -194,7 +194,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         clientId,
         cityId,
         city: cityName,
-        deliveryDate: new Date(deliveryDate),
+        deliveryDate: new Date(deliveryDate + "T12:00:00"),
         packagingType,
         boxCount,
         size: "-",
@@ -492,7 +492,11 @@ router.get("/invoices", async (req: Request, res: Response, next: NextFunction) 
         counterparty: true,
         requests: {
           include: {
-            request: true,
+            request: {
+              include: {
+                client: true,
+              },
+            },
           },
         },
       },
@@ -630,6 +634,14 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
       fileName,
       `Счёт ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
     );
+
+    // Обновляем статус счета на "sent" если он был "new"
+    if (invoice.status === "new") {
+      await (prisma as any).invoice.update({
+        where: { id },
+        data: { status: "sent" },
+      });
+    }
 
     res.json({ ok: true });
   } catch (err) {
@@ -2061,7 +2073,7 @@ router.post("/schedule", async (req: Request, res: Response, next: NextFunction)
     if (!acceptDays?.trim()) throw new ApiError(400, "acceptDays is required");
 
     const data: any = {
-      deliveryDate: new Date(deliveryDate),
+      deliveryDate: new Date(deliveryDate + "T12:00:00"),
       acceptDays: acceptDays.trim(),
     };
 
@@ -2095,7 +2107,7 @@ router.patch("/schedule/:id", async (req: Request, res: Response, next: NextFunc
     };
 
     const data: any = {};
-    if (deliveryDate !== undefined) data.deliveryDate = new Date(deliveryDate);
+    if (deliveryDate !== undefined) data.deliveryDate = new Date(deliveryDate + "T12:00:00");
     if (acceptDays !== undefined) {
       if (!acceptDays?.trim()) throw new ApiError(400, "acceptDays is required");
       data.acceptDays = acceptDays.trim();
@@ -2155,7 +2167,7 @@ router.post("/schedule-fbs", async (req: Request, res: Response, next: NextFunct
     if (!acceptDays?.trim()) throw new ApiError(400, "acceptDays is required");
 
     const data: any = {
-      deliveryDate: new Date(deliveryDate),
+      deliveryDate: new Date(deliveryDate + "T12:00:00"),
       acceptDays: acceptDays.trim(),
     };
 
@@ -2189,7 +2201,7 @@ router.patch("/schedule-fbs/:id", async (req: Request, res: Response, next: Next
     };
 
     const data: any = {};
-    if (deliveryDate !== undefined) data.deliveryDate = new Date(deliveryDate);
+    if (deliveryDate !== undefined) data.deliveryDate = new Date(deliveryDate + "T12:00:00");
     if (acceptDays !== undefined) {
       if (!acceptDays?.trim()) throw new ApiError(400, "acceptDays is required");
       data.acceptDays = acceptDays.trim();

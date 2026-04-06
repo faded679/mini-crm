@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { deleteInvoice, getInvoices, type Invoice } from "../api";
+import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, type Invoice } from "../api";
 import { cn } from "../lib/utils";
 
 function formatDateRu(iso: string) {
@@ -11,17 +11,35 @@ function getInvoiceTotal(inv: Invoice) {
   return inv.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
 }
 
-type SortKey = "id" | "number" | "date" | "counterparty" | "total";
+type SortKey = "id" | "number" | "date" | "counterparty" | "total" | "status";
 
 type SortDir = "asc" | "desc";
+
+const statusLabels: Record<string, string> = {
+  new: "Новый",
+  sent: "Отправлен",
+  awaiting_payment: "Ожидает оплаты",
+  paid: "Оплачен",
+  cancelled: "Отменён",
+};
+
+const statusColors: Record<string, string> = {
+  new: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+  sent: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  awaiting_payment: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+};
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [actionId, setActionId] = useState<number | null>(null);
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -49,13 +67,19 @@ export default function Invoices() {
   }, []);
 
   const filtered = useMemo(() => {
+    let list = invoices;
     const q = filterCounterparty.trim().toLowerCase();
-    if (!q) return invoices;
-    return invoices.filter((inv) => {
-      const name = (inv.counterparty?.shortName || inv.counterparty?.name || "").toLowerCase();
-      return name.includes(q) || (inv.counterparty?.inn || "").includes(q);
-    });
-  }, [invoices, filterCounterparty]);
+    if (q) {
+      list = list.filter((inv) => {
+        const name = (inv.counterparty?.shortName || inv.counterparty?.name || "").toLowerCase();
+        return name.includes(q) || (inv.counterparty?.inn || "").includes(q);
+      });
+    }
+    if (filterStatus) {
+      list = list.filter((inv) => inv.status === filterStatus);
+    }
+    return list;
+  }, [invoices, filterCounterparty, filterStatus]);
 
   const sorted = useMemo(() => {
     const dirFactor = sortDir === "asc" ? 1 : -1;
@@ -85,6 +109,9 @@ export default function Invoices() {
         }
         case "total":
           res = compareNum(getInvoiceTotal(a), getInvoiceTotal(b));
+          break;
+        case "status":
+          res = compareStr(a.status || "", b.status || "");
           break;
       }
 
@@ -177,6 +204,18 @@ export default function Invoices() {
           placeholder="Фильтр: организация / ИНН"
           className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
         />
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+        >
+          <option value="">Все статусы</option>
+          <option value="new">Новый</option>
+          <option value="sent">Отправлен</option>
+          <option value="awaiting_payment">Ожидает оплаты</option>
+          <option value="paid">Оплачен</option>
+          <option value="cancelled">Отменён</option>
+        </select>
       </div>
 
       {sorted.length === 0 ? (
@@ -209,9 +248,12 @@ export default function Invoices() {
                     Сумма {sortIndicator("total")}
                   </button>
                 </th>
-                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Акт</th>
-                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Оплата</th>
-                <th className="text-right px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Действия</th>
+                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  <button onClick={() => toggleSort("status")} className="hover:text-gray-900 dark:hover:text-white">
+                    Статус {sortIndicator("status")}
+                  </button>
+                </th>
+                <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -233,24 +275,12 @@ export default function Invoices() {
                       {total.toLocaleString("ru-RU")} ₽
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={cn(
-                        "inline-flex px-2 py-1 rounded-full text-xs font-medium",
-                        "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-                      )}>
-                        Нет
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
                       <div className="flex flex-col items-center gap-1">
-                        <span
-                          className={cn(
-                            "inline-flex px-2 py-1 rounded-full text-xs font-medium",
-                            inv.isPaid
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-                          )}
-                        >
-                          {inv.isPaid ? "Оплачен" : "Не оплачен"}
+                        <span className={cn(
+                          "inline-flex px-2 py-1 rounded-full text-xs font-medium",
+                          statusColors[inv.status] || statusColors.new
+                        )}>
+                          {statusLabels[inv.status] || inv.status}
                         </span>
                         {inv.isPaid && inv.paidAt && (
                           <span className="text-[11px] text-gray-400 dark:text-gray-500">
@@ -260,21 +290,93 @@ export default function Invoices() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-1">
                         <button
                           type="button"
                           onClick={() => handleDownloadPdf(inv)}
                           disabled={downloadingId === inv.id}
-                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 disabled:opacity-50 transition"
+                          className="px-2 py-1 text-xs rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 disabled:opacity-50 transition"
                         >
-                          {downloadingId === inv.id ? "PDF..." : "PDF"}
+                          {downloadingId === inv.id ? "..." : "Счёт PDF"}
                         </button>
+                        <button
+                          type="button"
+                          disabled={actionId === inv.id}
+                          onClick={async () => {
+                            if (actionId) return;
+                            setActionId(inv.id);
+                            try {
+                              const token = getToken();
+                              if (!token) throw new Error("Not authenticated");
+                              const url = getActPdfUrlById(inv.id);
+                              const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                              const blob = await res.blob();
+                              const objectUrl = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = objectUrl;
+                              a.download = `Акт_${inv.number}.pdf`;
+                              document.body.appendChild(a);
+                              a.click();
+                              a.remove();
+                              URL.revokeObjectURL(objectUrl);
+                            } catch { alert("Ошибка скачивания акта"); }
+                            finally { setActionId(null); }
+                          }}
+                          className="px-2 py-1 text-xs rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 disabled:opacity-50 transition"
+                        >
+                          Акт PDF
+                        </button>
+                        {inv.status !== "paid" && inv.status !== "cancelled" && (
+                          <button
+                            type="button"
+                            disabled={actionId === inv.id}
+                            onClick={async () => {
+                              if (actionId) return;
+                              const client = inv.requests?.[0]?.request?.client;
+                              const telegramId = (client as any)?.telegramId;
+                              if (!telegramId) {
+                                alert("Не найден Telegram ID клиента. Привяжите заявку к счету.");
+                                return;
+                              }
+                              setActionId(inv.id);
+                              try {
+                                await sendInvoicePdf(inv.id, telegramId);
+                                alert("Счёт отправлен клиенту!");
+                                await reload();
+                              } catch { alert("Ошибка отправки счёта"); }
+                              finally { setActionId(null); }
+                            }}
+                            className="px-2 py-1 text-xs rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                          >
+                            Отправить счёт
+                          </button>
+                        )}
+                        {inv.status !== "paid" && inv.status !== "cancelled" && (
+                          <button
+                            type="button"
+                            disabled={actionId === inv.id}
+                            onClick={async () => {
+                              if (actionId) return;
+                              setActionId(inv.id);
+                              try {
+                                await sendInvoicePaymentLink(inv.id);
+                                alert("Ссылка на оплату отправлена клиенту!");
+                                await reload();
+                              } catch (err) { alert(err instanceof Error ? err.message : "Ошибка отправки ссылки"); }
+                              finally { setActionId(null); }
+                            }}
+                            className="px-2 py-1 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+                          >
+                            QR/Оплата
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(inv.id)}
                           disabled={deletingId === inv.id || inv.isPaid}
-                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-red-600/[0.46] text-white hover:bg-red-700/[0.46] disabled:opacity-50 transition"
+                          className="px-2 py-1 text-xs rounded-lg font-medium bg-red-600/[0.46] text-white hover:bg-red-700/[0.46] disabled:opacity-50 transition"
                         >
-                          {deletingId === inv.id ? "Удаление..." : "Удалить"}
+                          {deletingId === inv.id ? "..." : "Удалить"}
                         </button>
                       </div>
                     </td>
