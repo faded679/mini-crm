@@ -278,9 +278,9 @@ export default function Invoices() {
                       <div className="flex flex-col items-center gap-1">
                         <span className={cn(
                           "inline-flex px-2 py-1 rounded-full text-xs font-medium",
-                          statusColors[inv.status] || statusColors.new
+                          statusColors[inv.status || "new"] || statusColors.new
                         )}>
-                          {statusLabels[inv.status] || inv.status}
+                          {statusLabels[inv.status || "new"] || inv.status}
                         </span>
                         {inv.isPaid && inv.paidAt && (
                           <span className="text-[11px] text-gray-400 dark:text-gray-500">
