@@ -141,6 +141,7 @@ export function createRequest(data: CreateRequestPayload) {
 export interface UpdateRequestPayload {
   deliveryDate?: string;
   packagingType?: "pallets" | "boxes";
+  volume?: number;
   boxCount?: number;
   mpAccountDate?: string;
 }

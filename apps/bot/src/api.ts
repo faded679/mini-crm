@@ -8,6 +8,7 @@ interface CreateRequestPayload {
   city: string;
   deliveryDate: string;
   packagingType: "pallets" | "boxes";
+  deliveryTypeId?: number;
   volume?: number;
   size?: string;
   weight?: number;

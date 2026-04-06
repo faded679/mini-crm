@@ -28,6 +28,7 @@ export default function RequestDetail() {
   const [editData, setEditData] = useState({
     deliveryDate: "",
     packagingType: "pallets" as "pallets" | "boxes",
+    volume: 0,
     boxCount: 1,
     mpAccountDate: "",
   });
@@ -46,6 +47,7 @@ export default function RequestDetail() {
         setEditData({
           deliveryDate: req.deliveryDate.split("T")[0],
           packagingType: req.packagingType,
+          volume: req.volume || 0,
           boxCount: req.boxCount,
           mpAccountDate: req.mpAccountDate?.split("T")[0] || "",
         });
@@ -58,10 +60,10 @@ export default function RequestDetail() {
     if (!id || !request) return;
     setSaving(true);
     try {
+      const isFBS = request.deliveryTypeId === 1;
       await updateRequest(Number(id), {
         deliveryDate: editData.deliveryDate,
-        packagingType: editData.packagingType,
-        boxCount: editData.boxCount,
+        ...(isFBS ? { volume: editData.volume } : { packagingType: editData.packagingType, boxCount: editData.boxCount }),
         mpAccountDate: editData.mpAccountDate || undefined,
       });
       await loadRequest();
@@ -111,27 +113,43 @@ export default function RequestDetail() {
         
         {editing ? (
           <>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-tg-hint">Упаковка</span>
-              <select
-                value={editData.packagingType}
-                onChange={(e) => setEditData({ ...editData, packagingType: e.target.value as "pallets" | "boxes" })}
-                className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint"
-              >
-                <option value="pallets">Палеты</option>
-                <option value="boxes">Коробки</option>
-              </select>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-tg-hint">Кол-во</span>
-              <input
-                type="number"
-                min="1"
-                value={editData.boxCount}
-                onChange={(e) => setEditData({ ...editData, boxCount: Number(e.target.value) })}
-                className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint w-20 text-right"
-              />
-            </div>
+            {request.deliveryTypeId === 1 ? (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-tg-hint">Объём (м³)</span>
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={editData.volume}
+                  onChange={(e) => setEditData({ ...editData, volume: Number(e.target.value) })}
+                  className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint w-20 text-right"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-tg-hint">Упаковка</span>
+                  <select
+                    value={editData.packagingType}
+                    onChange={(e) => setEditData({ ...editData, packagingType: e.target.value as "pallets" | "boxes" })}
+                    className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint"
+                  >
+                    <option value="pallets">Палеты</option>
+                    <option value="boxes">Коробки</option>
+                  </select>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-tg-hint">Кол-во</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editData.boxCount}
+                    onChange={(e) => setEditData({ ...editData, boxCount: Number(e.target.value) })}
+                    className="text-sm font-medium bg-tg-bg text-tg-text rounded px-2 py-1 border border-tg-hint w-20 text-right"
+                  />
+                </div>
+              </>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-xs text-tg-hint">Дата доставки</span>
               <input
@@ -153,9 +171,15 @@ export default function RequestDetail() {
           </>
         ) : (
           <>
-            <Row label="Упаковка" value={request.packagingType === "pallets" ? "Палеты" : "Коробки"} />
-            <Row label="Кол-во" value={String(request.boxCount)} />
-            {request.boxType && <Row label="Тип" value={request.boxType.name} />}
+            {request.deliveryTypeId === 1 ? (
+              <Row label="Объём" value={request.volume ? `${request.volume} м³` : "—"} />
+            ) : (
+              <>
+                <Row label="Упаковка" value={request.packagingType === "pallets" ? "Палеты" : "Коробки"} />
+                <Row label="Кол-во" value={String(request.boxCount)} />
+                {request.boxType && <Row label="Тип" value={request.boxType.name} />}
+              </>
+            )}
             {request.weight && <Row label="Вес" value={`${request.weight} кг`} />}
             <Row label="Дата доставки" value={formatDate(request.deliveryDate)} />
             {request.mpAccountDate && <Row label="Дата МП ЛК" value={formatDate(request.mpAccountDate)} />}
