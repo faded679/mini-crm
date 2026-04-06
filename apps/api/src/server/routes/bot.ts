@@ -315,11 +315,8 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       }
       updateData.volume = vol;
       
-      // Пересчитываем позиции доставки пропорционально новому объёму
-      if (existing.deliveryTypeId === 1 && existing.volume && existing.volume > 0) {
-        const oldVolume = existing.volume;
-        const ratio = vol / oldVolume;
-        
+      // Пересчитываем позиции доставки для нового объёма
+      if (existing.deliveryTypeId === 1) {
         // Получаем все позиции доставки (unit = "м³")
         const deliveryItems = await (prisma as any).requestService.findMany({
           where: { 
@@ -328,18 +325,20 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
           },
         });
         
-        // Обновляем каждую позицию доставки
-        for (const item of deliveryItems) {
-          const newQuantity = item.quantity * ratio;
-          const newAmount = item.price * newQuantity;
-          
-          await (prisma as any).requestService.update({
-            where: { id: item.id },
-            data: {
-              quantity: newQuantity,
-              amount: newAmount,
-            },
-          });
+        // Если есть позиции доставки, обновляем их
+        if (deliveryItems.length > 0) {
+          // Для каждой позиции устанавливаем quantity = новый объём и пересчитываем amount
+          for (const item of deliveryItems) {
+            const newAmount = item.price * vol;
+            
+            await (prisma as any).requestService.update({
+              where: { id: item.id },
+              data: {
+                quantity: vol,
+                amount: newAmount,
+              },
+            });
+          }
         }
       }
     }
