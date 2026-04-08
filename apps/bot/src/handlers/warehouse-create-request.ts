@@ -42,11 +42,20 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
   try {
     const response = await fetch(`${API_BASE_URL}/bot/clients`);
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Failed to load clients:", response.status, errorText);
       await ctx.editMessageText("❌ Ошибка загрузки списка организаций");
       return;
     }
 
     const allClients = await response.json();
+    console.log(`Loaded ${allClients?.length || 0} clients`);
+    
+    if (!Array.isArray(allClients)) {
+      console.error("Clients response is not an array:", allClients);
+      await ctx.editMessageText("❌ Некорректный формат данных организаций");
+      return;
+    }
     
     // Формируем список клиентов с их организациями
     const clients = allClients.map((client: any) => {
@@ -71,7 +80,11 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
     }
 
     // Сортируем по названию организации по алфавиту
-    clients.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    clients.sort((a, b) => {
+      const nameA = a.name || "";
+      const nameB = b.name || "";
+      return nameA.localeCompare(nameB, 'ru');
+    });
 
     // Создаём клавиатуру с клиентами (по 1 на строку для удобства)
     const keyboard = new InlineKeyboard();
