@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getCounterparties, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, createInvoice, type ShipmentRequest, type RequestStatus, type PackagingType, type Counterparty, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry, type InvoiceItemPayload } from "../api";
+import { getRequests, bulkUpdateRequestStatus, createAdminRequest, getCounterparties, getCities, getCitiesFbs, getAdminScheduleFbs, getPriceFbs, createInvoice, getBoxTypes, getPalletTypes, getRates, type ShipmentRequest, type RequestStatus, type PackagingType, type Counterparty, type City, type CityFbs, type ScheduleEntryFbs, type PriceFbsEntry, type InvoiceItemPayload, type BoxType, type PalletType, type PriceRate } from "../api";
 import { cn } from "../lib/utils";
 import RequestDetail from "./RequestDetail";
 
@@ -75,8 +75,13 @@ export default function Requests() {
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [orgSearch, setOrgSearch] = useState("");
   const [citiesList, setCitiesList] = useState<City[]>([]);
-  const [newReq, setNewReq] = useState({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "" });
+  const [newReq, setNewReq] = useState({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "", boxTypeId: "", palletTypeId: "" });
   const [creating, setCreating] = useState(false);
+  
+  // Box types, pallet types and rates for FBO
+  const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
+  const [palletTypes, setPalletTypes] = useState<PalletType[]>([]);
+  const [rates, setRates] = useState<PriceRate[]>([]);
 
   // FBS new request state
   const [newReqType, setNewReqType] = useState<"fbo" | "fbs">("fbo");
@@ -508,7 +513,10 @@ export default function Requests() {
               getCounterparties().then(setCounterparties).catch(() => {});
               getCities().then(setCitiesList).catch(() => {});
               getCitiesFbs().then(setCitiesFbs).catch(() => {});
-              setNewReq({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets", boxCount: "1", weight: "", comment: "" });
+              getBoxTypes().then(setBoxTypes).catch(() => {});
+              getPalletTypes().then(setPalletTypes).catch(() => {});
+              getRates().then(setRates).catch(() => {});
+              setNewReq({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets", boxCount: "1", weight: "", comment: "", boxTypeId: "", palletTypeId: "" });
               setNewReqType("fbo");
               setFbsCityId(null);
               setFbsDate("");
@@ -761,6 +769,28 @@ export default function Requests() {
         })();
         const canCreateFbs = !!newReq.clientId && !!fbsCityId && !!fbsDate && !!fbsPriceId && !!fbsQty && Number(fbsQty) > 0;
 
+        // Calculate FBO price based on selected city, size and quantity
+        const fboRate = (() => {
+          if (!newReq.cityId || !newReq.boxCount || Number(newReq.boxCount) <= 0) return null;
+          const cityId = Number(newReq.cityId);
+          const boxCount = Number(newReq.boxCount);
+          
+          if (newReq.packagingType === "boxes" && newReq.boxTypeId) {
+            const boxTypeId = Number(newReq.boxTypeId);
+            return rates.find(r => r.cityId === cityId && r.unit === "boxes" && r.boxTypeId === boxTypeId);
+          } else if (newReq.packagingType === "pallets" && newReq.palletTypeId) {
+            const palletTypeId = Number(newReq.palletTypeId);
+            return rates.find(r => r.cityId === cityId && r.unit === "pallet" && r.palletTypeId === palletTypeId);
+          }
+          return null;
+        })();
+        
+        const fboAmount = fboRate && newReq.boxCount ? fboRate.price * Number(newReq.boxCount) : 0;
+        const canCreateFbo = !!newReq.clientId && !!newReq.cityId && !!newReq.deliveryDate && !!newReq.boxCount && (
+          (newReq.packagingType === "boxes" && !!newReq.boxTypeId) ||
+          (newReq.packagingType === "pallets" && !!newReq.palletTypeId)
+        );
+
         return (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
@@ -823,12 +853,38 @@ export default function Requests() {
                   <div>
                     <div className="flex gap-2">
                       {(["pallets", "boxes"] as PackagingType[]).map((p) => (
-                        <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p })} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReq.packagingType === p ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
+                        <button key={p} type="button" onClick={() => setNewReq({ ...newReq, packagingType: p, boxTypeId: "", palletTypeId: "" })} className={cn("flex-1 px-3 py-2 text-sm rounded-lg font-medium transition", newReq.packagingType === p ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")}>
                           {p === "pallets" ? "Палеты" : "Коробки"}
                         </button>
                       ))}
                     </div>
                   </div>
+                  {newReq.packagingType === "boxes" && boxTypes.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Размер коробки</label>
+                      <select value={newReq.boxTypeId} onChange={(e) => setNewReq({ ...newReq, boxTypeId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                        <option value="">Выберите размер</option>
+                        {boxTypes.map((bt) => (
+                          <option key={bt.id} value={bt.id}>
+                            {bt.name} {bt.hint ? `(${bt.hint})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {newReq.packagingType === "pallets" && palletTypes.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Размер палеты</label>
+                      <select value={newReq.palletTypeId} onChange={(e) => setNewReq({ ...newReq, palletTypeId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                        <option value="">Выберите размер</option>
+                        {palletTypes.map((pt) => (
+                          <option key={pt.id} value={pt.id}>
+                            {pt.name} {pt.hint ? `(${pt.hint})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Кол-во мест</label>
@@ -839,6 +895,19 @@ export default function Requests() {
                       <input type="number" min="0" step="0.1" value={newReq.weight} onChange={(e) => setNewReq({ ...newReq, weight: e.target.value })} placeholder="необяз." className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200" />
                     </div>
                   </div>
+                  {fboAmount > 0 && (
+                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Стоимость доставки:</span>
+                        <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{fboAmount.toLocaleString("ru-RU")} ₽</span>
+                      </div>
+                      {fboRate && (
+                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {fboRate.price.toLocaleString("ru-RU")} ₽ × {newReq.boxCount} {newReq.packagingType === "pallets" ? "палет" : "мест"}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Комментарий</label>
                     <textarea value={newReq.comment} onChange={(e) => setNewReq({ ...newReq, comment: e.target.value })} rows={2} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 resize-none" />
@@ -846,12 +915,17 @@ export default function Requests() {
                 </div>
                 <div className="flex justify-end gap-3 mt-5">
                   <button onClick={() => { setShowNewModal(false); setOrgSearch(""); }} className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200">Отмена</button>
-                  {newReq.boxCount && (
+                  {canCreateFbo && (
                     <button
-                      disabled={creating || !newReq.clientId || !newReq.cityId || !newReq.deliveryDate || !newReq.boxCount}
+                      disabled={creating}
                       onClick={async () => {
                       setCreating(true);
                       try {
+                        const selectedCity = citiesList.find(c => c.id === Number(newReq.cityId));
+                        const selectedSize = newReq.packagingType === "boxes" 
+                          ? boxTypes.find(bt => bt.id === Number(newReq.boxTypeId))
+                          : palletTypes.find(pt => pt.id === Number(newReq.palletTypeId));
+                        
                         await createAdminRequest({
                           clientId: Number(newReq.clientId),
                           cityId: Number(newReq.cityId),
@@ -859,8 +933,18 @@ export default function Requests() {
                           packagingType: newReq.packagingType,
                           boxCount: Number(newReq.boxCount),
                           deliveryTypeId: 2,
+                          ...(newReq.packagingType === "boxes" && newReq.boxTypeId ? { boxTypeId: Number(newReq.boxTypeId) } : {}),
                           ...(newReq.weight ? { weight: Number(newReq.weight) } : {}),
                           ...(newReq.comment ? { comment: newReq.comment } : {}),
+                          ...(fboRate && fboAmount > 0 ? {
+                            items: [{
+                              description: `${selectedCity?.shortName || "Доставка"} - ${selectedSize?.name || ""}`,
+                              unit: newReq.packagingType === "pallets" ? "палета" : "место",
+                              quantity: Number(newReq.boxCount),
+                              price: fboRate.price,
+                              amount: fboAmount,
+                            }]
+                          } : {}),
                         });
                         setShowNewModal(false);
                         const data = await getRequests();
