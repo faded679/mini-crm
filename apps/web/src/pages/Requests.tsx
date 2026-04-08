@@ -879,7 +879,7 @@ export default function Requests() {
                         <option value="">Выберите размер</option>
                         {palletTypes.map((pt) => (
                           <option key={pt.id} value={pt.id}>
-                            {pt.name} {pt.hint ? `(${pt.hint})` : ""}
+                            {pt.name} {pt.comment ? `(${pt.comment})` : ""}
                           </option>
                         ))}
                       </select>
