@@ -585,14 +585,18 @@ router.get("/pallet-types", async (_req: Request, res: Response, next: NextFunct
   }
 });
 
-// GET /bot/rates?cityId=N — price rates for a city
+// GET /bot/rates?cityId=N — price rates for a city (cityId is optional)
 router.get("/rates", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const cityId = Number(req.query.cityId);
-    if (!Number.isFinite(cityId)) throw new ApiError(400, "cityId is required");
+    const cityId = req.query.cityId ? Number(req.query.cityId) : undefined;
+
+    const where: any = {};
+    if (cityId && Number.isFinite(cityId)) {
+      where.cityId = cityId;
+    }
 
     const rates = await (prisma as any).priceRate.findMany({
-      where: { cityId },
+      where,
       include: { boxType: true, palletType: true },
       orderBy: [{ unit: "asc" }],
     });
