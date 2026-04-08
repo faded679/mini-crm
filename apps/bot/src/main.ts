@@ -129,6 +129,21 @@ bot.hears("📋 Новые заявки", async (ctx) => {
   await showDeliveryTypeMenu(ctx);
 });
 
+bot.hears("➕ Создать заявку", async (ctx) => {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  const { isWarehouseWorker, startCreateRequest } = await import("./handlers/warehouse.js");
+  const isWorker = await isWarehouseWorker(String(telegramId));
+  
+  if (!isWorker) {
+    await ctx.reply("❌ У вас нет доступа к функциям кладовщика.");
+    return;
+  }
+
+  await startCreateRequest(ctx);
+});
+
 bot.hears("ℹ️ Помощь", async (ctx) => {
   const telegramId = ctx.from?.id;
   if (!telegramId) return;
@@ -243,6 +258,61 @@ bot.callbackQuery(/^warehouse:confirm_service:(\d+):(\d+)$/, async (ctx) => {
   const servicePriceId = Number(match[2]);
   const { startAddServiceQuantity } = await import("./handlers/warehouse.js");
   await startAddServiceQuantity(ctx, requestId, servicePriceId);
+});
+
+// Warehouse create request callbacks
+bot.callbackQuery("create_request:start", async (ctx) => {
+  const { startCreateRequest } = await import("./handlers/warehouse-create-request.js");
+  await startCreateRequest(ctx);
+});
+
+bot.callbackQuery(/^create_request:type:(fbo|fbs)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const type = match[1] as "fbo" | "fbs";
+  const { handleRequestTypeSelection } = await import("./handlers/warehouse-create-request.js");
+  await handleRequestTypeSelection(ctx, type);
+});
+
+bot.callbackQuery(/^create_request:client:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const clientId = Number(match[1]);
+  const { handleClientSelection } = await import("./handlers/warehouse-create-request.js");
+  await handleClientSelection(ctx, clientId);
+});
+
+bot.callbackQuery(/^create_request:fbo_city:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const cityId = Number(match[1]);
+  const { handleFboCitySelection } = await import("./handlers/warehouse-create-request.js");
+  await handleFboCitySelection(ctx, cityId);
+});
+
+bot.callbackQuery(/^create_request:fbs_city:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const cityId = Number(match[1]);
+  const { handleFbsCitySelection } = await import("./handlers/warehouse-create-request.js");
+  await handleFbsCitySelection(ctx, cityId);
+});
+
+bot.callbackQuery(/^create_request:packaging:(boxes|pallets)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const packagingType = match[1] as "boxes" | "pallets";
+  const { handlePackagingTypeSelection } = await import("./handlers/warehouse-create-request.js");
+  await handlePackagingTypeSelection(ctx, packagingType);
+});
+
+bot.callbackQuery(/^create_request:size:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const sizeId = Number(match[1]);
+  const { handleSizeSelection } = await import("./handlers/warehouse-create-request.js");
+  await handleSizeSelection(ctx, sizeId);
+});
+
+bot.callbackQuery(/^create_request:fbs_date:(.+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const deliveryDate = match[1];
+  const { handleFbsDateSelection } = await import("./handlers/warehouse-create-request.js");
+  await handleFbsDateSelection(ctx, deliveryDate);
 });
 
 // Handle consent callback

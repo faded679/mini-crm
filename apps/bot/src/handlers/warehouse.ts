@@ -4,13 +4,24 @@ import { API_BASE_URL } from "../env.js";
 
 // State management для кладовщиков
 interface WarehouseConversation {
-  state: "editing_volume" | "editing_boxes" | "uploading_photo" | "selecting_box_type" | "selecting_pallet_type" | "selecting_service" | "entering_service_quantity" | "idle";
+  state: "editing_volume" | "editing_boxes" | "uploading_photo" | "selecting_box_type" | "selecting_pallet_type" | "selecting_service" | "entering_service_quantity" | "creating_request_type" | "creating_request_client" | "creating_request_fbo_city" | "creating_request_fbo_date" | "creating_request_fbo_size" | "creating_request_fbo_count" | "creating_request_fbs_city" | "creating_request_fbs_date" | "creating_request_fbs_volume" | "idle";
   requestId?: number;
   data?: any;
   photoCount?: number;
   messageId?: number;
   servicePriceId?: number;
   serviceName?: string;
+  newRequest?: {
+    type?: "fbo" | "fbs";
+    clientId?: number;
+    cityId?: number;
+    deliveryDate?: string;
+    packagingType?: "pallets" | "boxes";
+    boxTypeId?: number;
+    palletTypeId?: number;
+    boxCount?: number;
+    volume?: number;
+  };
 }
 
 // API Response types
@@ -83,6 +94,8 @@ export async function isWarehouseWorker(telegramId: string): Promise<boolean> {
 export async function showWarehouseMenu(ctx: Context) {
   const keyboard = new Keyboard()
     .text("📋 Новые заявки")
+    .row()
+    .text("➕ Создать заявку")
     .row()
     .text("ℹ️ Помощь")
     .resized()
@@ -403,12 +416,22 @@ export async function handleWarehouseInput(ctx: Context) {
   if (!userId) return false;
 
   const conversation = warehouseConversations.get(userId);
-  if (!conversation || !conversation.requestId) return false;
+  if (!conversation) return false;
 
   const text = ctx.message?.text?.trim();
   if (!text) return false;
 
   const telegramId = String(userId);
+
+  // Обработка создания заявки
+  if (conversation.state.startsWith("creating_request_")) {
+    const { handleCreateRequestMessage } = await import("./warehouse-create-request.js");
+    await handleCreateRequestMessage(ctx);
+    return true;
+  }
+
+  // Для остальных состояний требуется requestId
+  if (!conversation.requestId) return false;
 
   try {
     if (conversation.state === "editing_volume") {
