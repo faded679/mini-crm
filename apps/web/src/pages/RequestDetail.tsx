@@ -1484,44 +1484,40 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     Отмена
                   </button>
 
-                  <button
-                    className={cn(
-                      "px-4 py-2 rounded-lg text-sm font-medium",
-                      canCreateInvoice
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
-                    )}
-                    disabled={!canCreateInvoice || invoiceCreating}
-                    onClick={async () => {
-                      if (!canCreateInvoice || invoiceCreating) return;
-                      
-                      // Проверяем, есть ли уже счет для этой заявки
-                      if (createdInvoice) {
-                        alert(`По данной заявке есть действующий счёт/акт ${(createdInvoice as any).number}.\n\nЧтобы создать новый счёт, необходимо удалить существующий во вкладке Счета.`);
-                        return;
-                      }
-                      
-                      setInvoiceCreating(true);
-                      try {
-                        const inv = await createInvoice({
-                          counterpartyId: invoiceCounterpartyId as number,
-                          requestIds: [request.id],
-                          items: invoiceItems,
-                          number: `СЧ-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getHours()).padStart(2, '0')}${String(new Date().getMinutes()).padStart(2, '0')}`,
-                        });
+                  {!createdInvoice && (
+                    <button
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-sm font-medium",
+                        canCreateInvoice
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500",
+                      )}
+                      disabled={!canCreateInvoice || invoiceCreating}
+                      onClick={async () => {
+                        if (!canCreateInvoice || invoiceCreating) return;
                         
-                        // Сохраняем созданный счёт для отображения
-                        setCreatedInvoice(inv);
-                        alert(`Счёт ${inv.number} успешно создан!\n\nОтправить счёт и акт клиенту можно на странице "Счета".`);
-                      } catch (err) {
-                        alert("Ошибка создания счёта: " + (err instanceof Error ? err.message : String(err)));
-                      } finally {
-                        setInvoiceCreating(false);
-                      }
-                    }}
-                  >
-                    {invoiceCreating ? "Создание..." : "Счёт/Акт"}
-                  </button>
+                        setInvoiceCreating(true);
+                        try {
+                          const inv = await createInvoice({
+                            counterpartyId: invoiceCounterpartyId as number,
+                            requestIds: [request.id],
+                            items: invoiceItems,
+                            number: `СЧ-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getHours()).padStart(2, '0')}${String(new Date().getMinutes()).padStart(2, '0')}`,
+                          });
+                          
+                          // Сохраняем созданный счёт для отображения
+                          setCreatedInvoice(inv);
+                          alert(`Счёт ${inv.number} успешно создан!\n\nОтправить счёт и акт клиенту можно на странице "Счета".`);
+                        } catch (err) {
+                          alert("Ошибка создания счёта: " + (err instanceof Error ? err.message : String(err)));
+                        } finally {
+                          setInvoiceCreating(false);
+                        }
+                      }}
+                    >
+                      {invoiceCreating ? "Создание..." : "Счёт/Акт"}
+                    </button>
+                  )}
                 </div>
               </>
             )}
