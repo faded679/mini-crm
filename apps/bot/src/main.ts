@@ -133,7 +133,7 @@ bot.hears("➕ Создать заявку", async (ctx) => {
   const telegramId = ctx.from?.id;
   if (!telegramId) return;
 
-  const { isWarehouseWorker, startCreateRequest } = await import("./handlers/warehouse.js");
+  const { isWarehouseWorker } = await import("./handlers/warehouse.js");
   const isWorker = await isWarehouseWorker(String(telegramId));
   
   if (!isWorker) {
@@ -141,6 +141,7 @@ bot.hears("➕ Создать заявку", async (ctx) => {
     return;
   }
 
+  const { startCreateRequest } = await import("./handlers/warehouse-create-request.js");
   await startCreateRequest(ctx);
 });
 
