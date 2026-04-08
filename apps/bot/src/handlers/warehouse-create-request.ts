@@ -40,7 +40,7 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
 
   // Загружаем список клиентов
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/clients`);
+    const response = await fetch(`${API_BASE_URL}/bot/clients`);
     if (!response.ok) {
       await ctx.editMessageText("❌ Ошибка загрузки списка организаций");
       return;
@@ -121,7 +121,7 @@ async function showFboCitySelection(ctx: Context, conv: any) {
   if (!telegramId) return;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/cities`);
+    const response = await fetch(`${API_BASE_URL}/bot/cities`);
     if (!response.ok) {
       await ctx.editMessageText("❌ Ошибка загрузки списка городов");
       return;
@@ -160,7 +160,7 @@ async function showFbsCitySelection(ctx: Context, conv: any) {
   if (!telegramId) return;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/cities-fbs`);
+    const response = await fetch(`${API_BASE_URL}/bot/cities-fbs`);
     if (!response.ok) {
       await ctx.editMessageText("❌ Ошибка загрузки списка направлений FBS");
       return;
@@ -228,8 +228,8 @@ export async function handleFbsCitySelection(ctx: Context, cityId: number) {
   // Загружаем расписание и цены для выбранного города
   try {
     const [scheduleRes, citiesRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/admin/schedule-fbs`),
-      fetch(`${API_BASE_URL}/admin/cities-fbs`),
+      fetch(`${API_BASE_URL}/bot/schedule-fbs`),
+      fetch(`${API_BASE_URL}/bot/cities-fbs`),
     ]);
 
     if (!scheduleRes.ok || !citiesRes.ok) {
@@ -369,7 +369,7 @@ export async function handlePackagingTypeSelection(ctx: Context, packagingType: 
 
   // Загружаем размеры
   try {
-    const endpoint = packagingType === "boxes" ? "/admin/box-types" : "/admin/pallet-types";
+    const endpoint = packagingType === "boxes" ? "/bot/box-types" : "/bot/pallet-types";
     const response = await fetch(`${API_BASE_URL}${endpoint}`);
     
     if (!response.ok) {
@@ -464,8 +464,8 @@ async function createFboRequest(ctx: Context, conv: any) {
   try {
     // Загружаем данные для расчёта цены
     const [ratesRes, citiesRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/admin/rates`),
-      fetch(`${API_BASE_URL}/admin/cities`),
+      fetch(`${API_BASE_URL}/bot/rates`),
+      fetch(`${API_BASE_URL}/bot/cities`),
     ]);
 
     if (!ratesRes.ok || !citiesRes.ok) {
@@ -508,7 +508,7 @@ async function createFboRequest(ctx: Context, conv: any) {
       }];
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/requests`, {
+    const response = await fetch(`${API_BASE_URL}/bot/warehouse/create-request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -556,8 +556,8 @@ async function createFbsRequest(ctx: Context, conv: any) {
   try {
     // Загружаем данные для расчёта цены
     const [pricesRes, citiesRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/admin/prices-fbs`),
-      fetch(`${API_BASE_URL}/admin/cities-fbs`),
+      fetch(`${API_BASE_URL}/bot/price-fbs`),
+      fetch(`${API_BASE_URL}/bot/cities-fbs`),
     ]);
 
     if (!pricesRes.ok || !citiesRes.ok) {
@@ -604,7 +604,7 @@ async function createFbsRequest(ctx: Context, conv: any) {
       }] : [],
     };
 
-    const response = await fetch(`${API_BASE_URL}/admin/requests`, {
+    const response = await fetch(`${API_BASE_URL}/bot/warehouse/create-request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

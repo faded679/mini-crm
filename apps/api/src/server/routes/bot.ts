@@ -940,4 +940,99 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
   }
 });
 
+// GET /bot/clients — list all clients (for warehouse workers to create requests)
+router.get("/clients", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const clients = await prisma.client.findMany({
+      include: {
+        counterparties: {
+          include: {
+            counterparty: true,
+          },
+        },
+      },
+      orderBy: { id: "asc" },
+    });
+    res.json(clients);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /bot/warehouse/create-request — create request by warehouse worker
+router.post("/warehouse/create-request", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, palletTypeId, boxCount, volume, weight, comment, deliveryTypeId, items } = req.body as {
+      clientId: number;
+      cityId: number;
+      deliveryDate: string;
+      packagingType: "pallets" | "boxes";
+      boxTypeId?: number;
+      palletTypeId?: number;
+      boxCount: number;
+      volume?: number;
+      weight?: number;
+      comment?: string;
+      deliveryTypeId: number;
+      items?: Array<{ description: string; unit: string; quantity: number; price: number; amount: number }>;
+    };
+
+    if (!Number.isFinite(clientId)) throw new ApiError(400, "Invalid clientId");
+    if (!Number.isFinite(cityId)) throw new ApiError(400, "Invalid cityId");
+    if (!deliveryDate) throw new ApiError(400, "deliveryDate is required");
+    if (!packagingType) throw new ApiError(400, "packagingType is required");
+    if (!Number.isFinite(boxCount) || boxCount < 1) throw new ApiError(400, "Invalid boxCount");
+    if (!Number.isFinite(deliveryTypeId)) throw new ApiError(400, "Invalid deliveryTypeId");
+
+    const parsedDate = new Date(deliveryDate);
+    if (isNaN(parsedDate.getTime())) throw new ApiError(400, "Invalid deliveryDate");
+
+    const data: any = {
+      clientId,
+      cityId,
+      deliveryDate: parsedDate,
+      packagingType,
+      boxCount,
+      deliveryTypeId,
+      status: "new",
+    };
+
+    if (boxTypeId) data.boxTypeId = boxTypeId;
+    if (palletTypeId) data.palletTypeId = palletTypeId;
+    if (volume) data.volume = volume;
+    if (weight) data.weight = weight;
+    if (comment) data.comment = comment;
+
+    const request = await (prisma as any).shipmentRequest.create({
+      data,
+      include: {
+        client: true,
+        cityRef: true,
+        boxType: true,
+        deliveryType: true,
+      },
+    });
+
+    // Создаём items если переданы
+    if (items && items.length > 0) {
+      for (const item of items) {
+        await (prisma as any).requestService.create({
+          data: {
+            requestId: request.id,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            price: item.price,
+            amount: item.amount,
+          },
+        });
+      }
+    }
+
+    res.json(request);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
