@@ -86,28 +86,83 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
       return nameA.localeCompare(nameB, 'ru');
     });
 
-    // Создаём клавиатуру с клиентами (по 1 на строку для удобства)
-    const keyboard = new InlineKeyboard();
-    for (const client of clients) {
-      keyboard.text(
-        `${client.name} - ${client.contactName}`,
-        `create_request:client:${client.clientId}`
-      ).row();
-    }
-    keyboard.text("◀️ Назад", "create_request:start");
+    // Сохраняем список клиентов в состоянии для пагинации
+    conv.clientsList = clients;
+    conv.clientsPage = 0;
+    warehouseConversations.set(telegramId, conv);
 
-    await ctx.editMessageText(
-      `➕ *Создание заявки ${type.toUpperCase()}*\n\n` +
-      "Выберите организацию:",
-      {
-        parse_mode: "Markdown",
-        reply_markup: keyboard,
-      }
-    );
+    // Показываем первую страницу
+    await showClientsPage(ctx, conv, 0);
   } catch (err) {
     console.error("Error loading clients:", err);
     await ctx.editMessageText("❌ Произошла ошибка при загрузке организаций");
   }
+}
+
+/**
+ * Показать страницу клиентов с пагинацией
+ */
+async function showClientsPage(ctx: Context, conv: any, page: number) {
+  const CLIENTS_PER_PAGE = 10;
+  const clients = conv.clientsList || [];
+  const totalPages = Math.ceil(clients.length / CLIENTS_PER_PAGE);
+  const startIdx = page * CLIENTS_PER_PAGE;
+  const endIdx = Math.min(startIdx + CLIENTS_PER_PAGE, clients.length);
+  const pageClients = clients.slice(startIdx, endIdx);
+
+  const keyboard = new InlineKeyboard();
+  
+  // Добавляем клиентов текущей страницы
+  for (const client of pageClients) {
+    keyboard.text(
+      `${client.name} - ${client.contactName}`,
+      `create_request:client:${client.clientId}`
+    ).row();
+  }
+
+  // Добавляем кнопки навигации
+  const navRow = [];
+  if (page > 0) {
+    navRow.push({ text: "⬅️ Назад", callback_data: `create_request:clients_page:${page - 1}` });
+  }
+  if (page < totalPages - 1) {
+    navRow.push({ text: "Вперёд ➡️", callback_data: `create_request:clients_page:${page + 1}` });
+  }
+  if (navRow.length > 0) {
+    keyboard.row(...navRow.map(btn => ({ text: btn.text, callback_data: btn.callback_data })));
+  }
+
+  keyboard.text("◀️ Отмена", "create_request:start");
+
+  const type = conv.newRequest?.type || "fbo";
+  await ctx.editMessageText(
+    `➕ *Создание заявки ${type.toUpperCase()}*\n\n` +
+    `Выберите организацию (${startIdx + 1}-${endIdx} из ${clients.length}):`,
+    {
+      parse_mode: "Markdown",
+      reply_markup: keyboard,
+    }
+  );
+}
+
+/**
+ * Обработка переключения страницы клиентов
+ */
+export async function handleClientsPageChange(ctx: Context, page: number) {
+  const telegramId = ctx.from?.id;
+  if (!telegramId) return;
+
+  const conv = warehouseConversations.get(telegramId);
+  if (!conv || !conv.clientsList) {
+    await ctx.answerCallbackQuery({ text: "❌ Сессия истекла, начните заново" });
+    return;
+  }
+
+  conv.clientsPage = page;
+  warehouseConversations.set(telegramId, conv);
+
+  await showClientsPage(ctx, conv, page);
+  await ctx.answerCallbackQuery();
 }
 
 /**

@@ -316,6 +316,13 @@ bot.callbackQuery(/^create_request:fbs_date:(.+)$/, async (ctx) => {
   await handleFbsDateSelection(ctx, deliveryDate);
 });
 
+bot.callbackQuery(/^create_request:clients_page:(\d+)$/, async (ctx) => {
+  const match = ctx.match as RegExpMatchArray;
+  const page = Number(match[1]);
+  const { handleClientsPageChange } = await import("./handlers/warehouse-create-request.js");
+  await handleClientsPageChange(ctx, page);
+});
+
 // Handle consent callback
 bot.callbackQuery("consent_accept", async (ctx) => {
   const user = ctx.from;
