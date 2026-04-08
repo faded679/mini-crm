@@ -154,13 +154,14 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
 // POST /admin/requests — create request from admin panel
 router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, weight, comment, deliveryTypeId, items } = req.body as {
+    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, volume, weight, comment, deliveryTypeId, items } = req.body as {
       clientId: number;
       cityId: number;
       deliveryDate: string;
       packagingType: "pallets" | "boxes";
       boxTypeId?: number;
       boxCount: number;
+      volume?: number;
       weight?: number;
       comment?: string;
       deliveryTypeId?: number;
@@ -199,6 +200,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         boxCount,
         size: "-",
         ...(boxTypeId ? { boxTypeId } : {}),
+        ...(volume != null ? { volume } : {}),
         ...(weight != null ? { weight } : {}),
         ...(comment ? { comment } : {}),
         ...(deliveryTypeId != null ? { deliveryTypeId: Number(deliveryTypeId) } : {}),
