@@ -1068,6 +1068,8 @@ router.post("/warehouse/create-request", async (req: Request, res: Response, nex
 
     res.json(request);
   } catch (err) {
+    console.error("Error creating warehouse request:", err);
+    console.error("Request body:", req.body);
     next(err);
   }
 });

@@ -588,22 +588,26 @@ async function createFbsRequest(ctx: Context, conv: any) {
       amount = Math.round(pricePerM3 * conv.newRequest.volume * 100) / 100;
     }
 
-    const payload = {
+    const payload: any = {
       clientId: conv.newRequest.clientId,
       cityId: conv.newRequest.cityId,
       deliveryDate: conv.newRequest.deliveryDate,
-      packagingType: "boxes",
+      packagingType: "boxes" as const,
       boxCount: 1,
       volume: conv.newRequest.volume,
       deliveryTypeId: 1,
-      items: selectedPrice ? [{
+    };
+
+    // Добавляем items если есть цена
+    if (selectedPrice) {
+      payload.items = [{
         description: `${selectedCity?.fullName || selectedCity?.shortName || "FBS"}`,
         unit: "м³",
         quantity: conv.newRequest.volume,
         price: pricePerM3,
         amount: amount,
-      }] : [],
-    };
+      }];
+    }
 
     const response = await fetch(`${API_BASE_URL}/bot/warehouse/create-request`, {
       method: "POST",
