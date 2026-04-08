@@ -355,6 +355,7 @@ export interface Invoice {
 export interface CreateInvoicePayload {
   counterpartyId: number;
   requestId?: number;
+  requestIds?: number[];
   date?: string;
   items: InvoiceItemPayload[];
   number: string;

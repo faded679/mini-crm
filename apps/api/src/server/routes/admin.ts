@@ -419,9 +419,10 @@ async function nextInvoiceNumber(): Promise<string> {
 // POST /admin/invoices  — create invoice + items, return invoice with items
 router.post("/invoices", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { counterpartyId, requestId, date, items } = req.body as {
+    const { counterpartyId, requestId, requestIds, date, items } = req.body as {
       counterpartyId: number;
       requestId?: number | null;
+      requestIds?: number[];
       date?: string;
       items: Array<{ description: string; quantity: number; unit: string; price: number; amount: number }>;
     };
@@ -433,6 +434,14 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
     if (!cp) throw new ApiError(404, "Counterparty not found");
 
     const number = await nextInvoiceNumber();
+
+    // Поддерживаем как requestId (единственный), так и requestIds (массив)
+    let requestIdsToLink: number[] = [];
+    if (requestId) {
+      requestIdsToLink = [Number(requestId)];
+    } else if (Array.isArray(requestIds) && requestIds.length > 0) {
+      requestIdsToLink = requestIds.map(id => Number(id));
+    }
 
     const invoice = await (prisma as any).invoice.create({
       data: {
@@ -448,11 +457,9 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
             amount: it.amount,
           })),
         },
-        // Связываем счет с заявкой через промежуточную таблицу (если requestId передан)
-        requests: requestId ? {
-          create: [{
-            requestId: Number(requestId),
-          }],
+        // Связываем счет с заявками через промежуточную таблицу
+        requests: requestIdsToLink.length > 0 ? {
+          create: requestIdsToLink.map(id => ({ requestId: id })),
         } : undefined,
       },
       include: { 
