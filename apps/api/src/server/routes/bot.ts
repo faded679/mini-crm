@@ -992,9 +992,41 @@ router.post("/warehouse/create-request", async (req: Request, res: Response, nex
     const parsedDate = new Date(deliveryDate);
     if (isNaN(parsedDate.getTime())) throw new ApiError(400, "Invalid deliveryDate");
 
+    // Для FBS заявок (deliveryTypeId === 1) нужно найти соответствующий City по имени из CityFbs
+    const isFbs = deliveryTypeId === 1;
+    let finalCityId = cityId;
+    let cityName = "";
+
+    if (isFbs) {
+      const cityFbs = await (prisma as any).cityFbs.findUnique({ where: { id: cityId } });
+      if (!cityFbs) throw new ApiError(404, "CityFbs not found");
+      
+      cityName = cityFbs.shortName;
+      
+      // Ищем соответствующий City по имени
+      const city = await (prisma as any).city.findUnique({ where: { shortName: cityFbs.shortName } });
+      if (city) {
+        finalCityId = city.id;
+      } else {
+        // Если не нашли, создаём новый City
+        const newCity = await (prisma as any).city.create({
+          data: {
+            shortName: cityFbs.shortName,
+            fullName: cityFbs.fullName || cityFbs.shortName,
+          },
+        });
+        finalCityId = newCity.id;
+      }
+    } else {
+      const city = await (prisma as any).city.findUnique({ where: { id: cityId } });
+      if (!city) throw new ApiError(404, "City not found");
+      cityName = city.shortName;
+    }
+
     const data: any = {
       clientId,
-      cityId,
+      cityId: finalCityId,
+      city: cityName,
       deliveryDate: parsedDate,
       packagingType,
       boxCount,
