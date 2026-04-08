@@ -884,7 +884,7 @@ export async function showAddService(ctx: Context, requestId: number) {
       { pattern: /Распечатка \(шк коробов или поставки\)/i, found: false },
       { pattern: /Гофрокартон 60х40х40 \(б\/у 5ти слойные\)/i, found: false },
       { pattern: /Помощь на выгрузке/i, found: false },
-      { pattern: /Выгрузка\/Сборка/i, found: false }
+      { pattern: /Выгрузка\/[CС]борка/i, found: false }  // C может быть латинской или кириллической
     ];
 
     const selectedServices: any[] = [];
