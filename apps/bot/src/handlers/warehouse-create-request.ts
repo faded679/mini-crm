@@ -70,9 +70,12 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
       return;
     }
 
+    // Сортируем по названию организации по алфавиту
+    clients.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
     // Создаём клавиатуру с клиентами (по 1 на строку для удобства)
     const keyboard = new InlineKeyboard();
-    for (const client of clients.slice(0, 20)) { // Ограничиваем 20 клиентами
+    for (const client of clients) {
       keyboard.text(
         `${client.name} - ${client.contactName}`,
         `create_request:client:${client.clientId}`
