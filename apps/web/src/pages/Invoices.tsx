@@ -333,18 +333,35 @@ export default function Invoices() {
                             disabled={actionId === inv.id}
                             onClick={async () => {
                               if (actionId) return;
+                              
+                              // Ищем telegramId через заявку или через контакты контрагента
+                              let telegramId: string | null = null;
+                              
+                              // Сначала пробуем через заявку
                               const client = inv.requests?.[0]?.request?.client;
-                              const telegramId = (client as any)?.telegramId;
+                              telegramId = (client as any)?.telegramId;
+                              
+                              // Если не нашли через заявку, ищем через контакты контрагента
+                              if (!telegramId && inv.counterparty?.contacts) {
+                                const contact = inv.counterparty.contacts[0];
+                                telegramId = (contact as any)?.client?.telegramId;
+                              }
+                              
                               if (!telegramId) {
-                                alert("Не найден Telegram ID клиента. Привяжите заявку к счету.");
+                                alert("Не найден Telegram ID клиента. Привяжите заявку к счету или добавьте контакт контрагента.");
                                 return;
                               }
+                              
                               setActionId(inv.id);
                               try {
+                                // Отправляем и счёт и акт
                                 await sendInvoicePdf(inv.id, telegramId);
-                                alert("Счёт отправлен клиенту!");
+                                await sendActPdf(inv.id, telegramId);
+                                alert("Счёт и акт отправлены клиенту!");
                                 await reload();
-                              } catch { alert("Ошибка отправки счёта"); }
+                              } catch (err) { 
+                                alert("Ошибка отправки: " + (err instanceof Error ? err.message : String(err))); 
+                              }
                               finally { setActionId(null); }
                             }}
                             className="px-2 py-1 text-xs rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"

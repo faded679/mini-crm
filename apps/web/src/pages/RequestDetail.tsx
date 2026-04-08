@@ -1510,17 +1510,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           number: `СЧ-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getHours()).padStart(2, '0')}${String(new Date().getMinutes()).padStart(2, '0')}`,
                         });
                         
-                        // Автоматически отправляем счет клиенту после создания
-                        try {
-                          await sendInvoicePdf(inv.id, request.client.telegramId);
-                          alert(`Счёт ${inv.number} успешно создан и отправлен клиенту!`);
-                          setConfirmInvoice(false);
-                          setCreatedInvoice(null);
-                        } catch (sendErr) {
-                          // Если отправка не удалась, сохраняем счет для ручной отправки
-                          setCreatedInvoice(inv);
-                          alert("Счёт создан, но не удалось отправить клиенту. Попробуйте отправить вручную.");
-                        }
+                        // Сохраняем созданный счёт для отображения
+                        setCreatedInvoice(inv);
+                        alert(`Счёт ${inv.number} успешно создан!\n\nОтправить счёт и акт клиенту можно на странице "Счета".`);
+                      } catch (err) {
+                        alert("Ошибка создания счёта: " + (err instanceof Error ? err.message : String(err)));
                       } finally {
                         setInvoiceCreating(false);
                       }
