@@ -516,8 +516,9 @@ async function createFboRequest(ctx: Context, conv: any) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("Create request error:", error);
-      await ctx.reply("❌ Ошибка создания заявки");
+      console.error("Create FBO request error:", error);
+      console.error("Payload:", JSON.stringify(payload, null, 2));
+      await ctx.reply(`❌ Ошибка создания заявки FBO\n\nДетали: ${error.substring(0, 200)}`);
       return;
     }
 
@@ -613,7 +614,8 @@ async function createFbsRequest(ctx: Context, conv: any) {
     if (!response.ok) {
       const error = await response.text();
       console.error("Create FBS request error:", error);
-      await ctx.reply("❌ Ошибка создания заявки FBS");
+      console.error("Payload:", JSON.stringify(payload, null, 2));
+      await ctx.reply(`❌ Ошибка создания заявки FBS\n\nДетали: ${error.substring(0, 200)}`);
       return;
     }
 
