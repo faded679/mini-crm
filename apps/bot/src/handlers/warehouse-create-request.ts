@@ -40,34 +40,30 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
 
   // Загружаем список клиентов
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/counterparties`);
+    const response = await fetch(`${API_BASE_URL}/admin/clients`);
     if (!response.ok) {
       await ctx.editMessageText("❌ Ошибка загрузки списка организаций");
       return;
     }
 
-    const counterparties = await response.json();
+    const allClients = await response.json();
     
-    // Получаем уникальных клиентов
-    const clientsMap = new Map();
-    for (const cp of counterparties) {
-      if (cp.contacts && cp.contacts.length > 0) {
-        for (const contact of cp.contacts) {
-          if (contact.clientId) {
-            const key = contact.clientId;
-            if (!clientsMap.has(key)) {
-              clientsMap.set(key, {
-                clientId: contact.clientId,
-                name: cp.shortName || cp.name,
-                contactName: contact.name || "",
-              });
-            }
-          }
-        }
-      }
-    }
-
-    const clients = Array.from(clientsMap.values());
+    // Формируем список клиентов с их организациями
+    const clients = allClients.map((client: any) => {
+      const counterpartyName = client.counterparties?.[0]?.counterparty?.shortName || 
+                               client.counterparties?.[0]?.counterparty?.name || 
+                               "Без организации";
+      const contactName = `${client.firstName || ""} ${client.lastName || ""}`.trim() || 
+                         client.username || 
+                         client.phone || 
+                         "Контакт";
+      
+      return {
+        clientId: client.id,
+        name: counterpartyName,
+        contactName: contactName,
+      };
+    });
 
     if (clients.length === 0) {
       await ctx.editMessageText("❌ Нет доступных организаций");
