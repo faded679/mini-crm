@@ -190,12 +190,22 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       cityName = city.shortName;
     }
 
+    // Парсим дату: если это ISO string, используем как есть, иначе добавляем время
+    let parsedDate: Date;
+    if (deliveryDate.includes('T')) {
+      // Уже ISO string с временем
+      parsedDate = new Date(deliveryDate);
+    } else {
+      // Только дата, добавляем время
+      parsedDate = new Date(deliveryDate + "T12:00:00");
+    }
+
     const created = await (prisma as any).shipmentRequest.create({
       data: {
         clientId,
         cityId,
         city: cityName,
-        deliveryDate: new Date(deliveryDate + "T12:00:00"),
+        deliveryDate: parsedDate,
         packagingType,
         boxCount,
         size: "-",
