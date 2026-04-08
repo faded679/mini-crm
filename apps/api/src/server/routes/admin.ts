@@ -1306,23 +1306,26 @@ router.post("/counterparties", async (req: Request, res: Response, next: NextFun
 
     const contactClientIds = Array.isArray(body.contactClientIds) ? body.contactClientIds : [];
 
+    // Преобразуем пустые строки в null для избежания конфликтов с unique constraints
+    const toNullIfEmpty = (val: any) => (typeof val === 'string' && val.trim() === '') ? null : (val ?? null);
+
     const created = await (prisma as any).counterparty.create({
       data: {
         name: body.name.trim(),
-        shortName: body.shortName ?? null,
-        orgType: body.orgType ?? null,
-        orgStatus: body.orgStatus ?? null,
-        inn: body.inn ?? null,
-        kpp: body.kpp ?? null,
-        ogrn: body.ogrn ?? null,
-        address: body.address ?? null,
-        account: body.account ?? null,
-        bik: body.bik ?? null,
-        correspondentAccount: body.correspondentAccount ?? null,
-        bank: body.bank ?? null,
-        director: body.director ?? null,
-        directorPost: body.directorPost ?? null,
-        contract: body.contract ?? null,
+        shortName: toNullIfEmpty(body.shortName),
+        orgType: toNullIfEmpty(body.orgType),
+        orgStatus: toNullIfEmpty(body.orgStatus),
+        inn: toNullIfEmpty(body.inn),
+        kpp: toNullIfEmpty(body.kpp),
+        ogrn: toNullIfEmpty(body.ogrn),
+        address: toNullIfEmpty(body.address),
+        account: toNullIfEmpty(body.account),
+        bik: toNullIfEmpty(body.bik),
+        correspondentAccount: toNullIfEmpty(body.correspondentAccount),
+        bank: toNullIfEmpty(body.bank),
+        director: toNullIfEmpty(body.director),
+        directorPost: toNullIfEmpty(body.directorPost),
+        contract: toNullIfEmpty(body.contract),
         contacts: {
           create: contactClientIds.map((clientId) => ({ clientId })),
         },
@@ -1350,25 +1353,28 @@ router.patch("/counterparties/:id", async (req: Request, res: Response, next: Ne
     const existing = await prisma.counterparty.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Counterparty not found");
 
+    // Преобразуем пустые строки в null для избежания конфликтов с unique constraints
+    const toNullIfEmpty = (val: any) => (typeof val === 'string' && val.trim() === '') ? null : val;
+
     const updated = await (prisma as any).counterparty.update({
       where: { id },
       data: {
         name: body.name !== undefined ? body.name.trim() : undefined,
-        shortName: body.shortName !== undefined ? body.shortName : undefined,
-        orgType: body.orgType !== undefined ? body.orgType : undefined,
-        orgStatus: body.orgStatus !== undefined ? body.orgStatus : undefined,
-        inn: body.inn !== undefined ? body.inn : undefined,
-        kpp: body.kpp !== undefined ? body.kpp : undefined,
-        ogrn: body.ogrn !== undefined ? body.ogrn : undefined,
-        address: body.address !== undefined ? body.address : undefined,
-        account: body.account !== undefined ? body.account : undefined,
-        bik: body.bik !== undefined ? body.bik : undefined,
+        shortName: body.shortName !== undefined ? toNullIfEmpty(body.shortName) : undefined,
+        orgType: body.orgType !== undefined ? toNullIfEmpty(body.orgType) : undefined,
+        orgStatus: body.orgStatus !== undefined ? toNullIfEmpty(body.orgStatus) : undefined,
+        inn: body.inn !== undefined ? toNullIfEmpty(body.inn) : undefined,
+        kpp: body.kpp !== undefined ? toNullIfEmpty(body.kpp) : undefined,
+        ogrn: body.ogrn !== undefined ? toNullIfEmpty(body.ogrn) : undefined,
+        address: body.address !== undefined ? toNullIfEmpty(body.address) : undefined,
+        account: body.account !== undefined ? toNullIfEmpty(body.account) : undefined,
+        bik: body.bik !== undefined ? toNullIfEmpty(body.bik) : undefined,
         correspondentAccount:
-          body.correspondentAccount !== undefined ? body.correspondentAccount : undefined,
-        bank: body.bank !== undefined ? body.bank : undefined,
-        director: body.director !== undefined ? body.director : undefined,
-        directorPost: body.directorPost !== undefined ? body.directorPost : undefined,
-        contract: body.contract !== undefined ? body.contract : undefined,
+          body.correspondentAccount !== undefined ? toNullIfEmpty(body.correspondentAccount) : undefined,
+        bank: body.bank !== undefined ? toNullIfEmpty(body.bank) : undefined,
+        director: body.director !== undefined ? toNullIfEmpty(body.director) : undefined,
+        directorPost: body.directorPost !== undefined ? toNullIfEmpty(body.directorPost) : undefined,
+        contract: body.contract !== undefined ? toNullIfEmpty(body.contract) : undefined,
         contacts:
           contactClientIds !== undefined
             ? {
