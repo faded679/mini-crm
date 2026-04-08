@@ -1032,6 +1032,7 @@ router.post("/warehouse/create-request", async (req: Request, res: Response, nex
       boxCount,
       deliveryTypeId,
       status: "new",
+      size: "", // Обязательное поле, для FBS оставляем пустым
     };
 
     if (boxTypeId) data.boxTypeId = boxTypeId;
