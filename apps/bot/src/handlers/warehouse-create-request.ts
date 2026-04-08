@@ -57,22 +57,24 @@ export async function handleRequestTypeSelection(ctx: Context, type: "fbo" | "fb
       return;
     }
     
-    // Формируем список клиентов с их организациями
-    const clients = allClients.map((client: any) => {
-      const counterpartyName = client.counterparties?.[0]?.counterparty?.shortName || 
-                               client.counterparties?.[0]?.counterparty?.name || 
-                               "Без организации";
-      const contactName = `${client.firstName || ""} ${client.lastName || ""}`.trim() || 
-                         client.username || 
-                         client.phone || 
-                         "Контакт";
-      
-      return {
-        clientId: client.id,
-        name: counterpartyName,
-        contactName: contactName,
-      };
-    });
+    // Группируем клиентов по организациям и берём только тех, у кого есть организация
+    const organizationsMap = new Map<number, { clientId: number; name: string; counterpartyId: number }>();
+    
+    for (const client of allClients) {
+      const counterparty = client.counterparties?.[0]?.counterparty;
+      if (counterparty && counterparty.id) {
+        const counterpartyName = counterparty.shortName || counterparty.name;
+        if (counterpartyName && !organizationsMap.has(counterparty.id)) {
+          organizationsMap.set(counterparty.id, {
+            clientId: client.id,
+            name: counterpartyName,
+            counterpartyId: counterparty.id,
+          });
+        }
+      }
+    }
+
+    const clients = Array.from(organizationsMap.values());
 
     if (clients.length === 0) {
       await ctx.editMessageText("❌ Нет доступных организаций");
@@ -112,10 +114,10 @@ async function showClientsPage(ctx: Context, conv: any, page: number) {
 
   const keyboard = new InlineKeyboard();
   
-  // Добавляем клиентов текущей страницы
+  // Добавляем организации текущей страницы
   for (const client of pageClients) {
     keyboard.text(
-      `${client.name} - ${client.contactName}`,
+      client.name,
       `create_request:client:${client.clientId}`
     ).row();
   }
