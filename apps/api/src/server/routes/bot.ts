@@ -628,16 +628,21 @@ router.get("/cities-fbs", async (_req: Request, res: Response, next: NextFunctio
   }
 });
 
-// GET /bot/schedule-fbs?cityId=N — delivery dates for an FBS city
+// GET /bot/schedule-fbs?cityId=N — delivery dates for an FBS city (cityId is optional)
 router.get("/schedule-fbs", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const cityId = Number(req.query.cityId);
-    if (!Number.isFinite(cityId)) throw new ApiError(400, "cityId is required");
+    const cityId = req.query.cityId ? Number(req.query.cityId) : undefined;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    const where: any = { deliveryDate: { gte: today } };
+    if (cityId && Number.isFinite(cityId)) {
+      where.cityId = cityId;
+    }
+    
     const schedules = await (prisma as any).deliveryScheduleFbs.findMany({
-      where: { cityId, deliveryDate: { gte: today } },
+      where,
       orderBy: { deliveryDate: "asc" },
     });
     res.json(schedules);
