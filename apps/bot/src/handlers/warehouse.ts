@@ -883,7 +883,8 @@ export async function showAddService(ctx: Context, requestId: number) {
     const serviceCategories = [
       { pattern: /Распечатка \(шк коробов или поставки\)/i, found: false },
       { pattern: /Гофрокартон 60х40х40 \(б\/у 5ти слойные\)/i, found: false },
-      { pattern: /Помощь на выгрузке/i, found: false }
+      { pattern: /Помощь на выгрузке/i, found: false },
+      { pattern: /Выгрузка\/Сборка/i, found: false }
     ];
 
     const selectedServices: any[] = [];
