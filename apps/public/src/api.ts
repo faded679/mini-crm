@@ -1,3 +1,5 @@
+import { getAuthHeader } from "./auth";
+
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -166,7 +168,6 @@ export function checkVerification(sessionId: string) {
 }
 
 export function completeProfile(email: string, inn: string) {
-  const { getAuthHeader } = require("./auth");
   return api<{ success: boolean; message: string; client: { id: number; email: string; inn: string } }>("/public-auth/complete-profile", {
     method: "POST",
     headers: { 
