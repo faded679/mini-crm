@@ -14,6 +14,14 @@ export default function Login({ onSuccess }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Убираем все кроме цифр
+    const digits = input.replace(/\D/g, "");
+    // Ограничиваем 10 цифрами (после +7)
+    setPhone(digits.slice(0, 10));
+  };
+
   const handleRequestVerification = async () => {
     if (!phone || phone.length < 10) {
       setError("Введите корректный номер телефона");
@@ -22,7 +30,7 @@ export default function Login({ onSuccess }: LoginProps) {
     setLoading(true);
     setError("");
     try {
-      const response = await requestVerification(phone);
+      const response = await requestVerification("+7" + phone);
       setSessionId(response.sessionId);
       setVerificationNumber(response.verificationNumber);
       setStep("waiting");
@@ -91,13 +99,16 @@ export default function Login({ onSuccess }: LoginProps) {
             <>
               <h2 className="text-heading text-base font-bold mb-3">Вход по телефону</h2>
               <p className="text-muted text-sm mb-4">Введите ваш номер телефона для получения номера для звонка</p>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+7 (___) ___-__-__"
-                className="w-full h-12 px-4 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm mb-3 transition-all focus:border-accent"
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-heading text-sm pointer-events-none">+7</span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  placeholder="(___) ___-__-__"
+                  className="w-full h-12 pl-10 pr-4 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm mb-3 transition-all focus:border-accent"
+                />
+              </div>
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
               <button
                 onClick={handleRequestVerification}
@@ -111,7 +122,7 @@ export default function Login({ onSuccess }: LoginProps) {
             <>
               <h2 className="text-heading text-base font-bold mb-3">Позвоните на номер</h2>
               <p className="text-muted text-sm mb-4">
-                Для подтверждения позвоните на указанный номер с телефона <strong>{phone}</strong>
+                Для подтверждения позвоните на указанный номер с телефона <strong>+7{phone}</strong>
               </p>
               <div className="bg-accent/10 rounded-2xl p-4 mb-4 text-center">
                 <p className="text-muted text-xs mb-1">Номер для звонка</p>
