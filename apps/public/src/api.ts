@@ -154,8 +154,22 @@ export function requestVerification(phone: string) {
 }
 
 export function checkVerification(sessionId: string) {
-  return api<{ verified: boolean; token?: string; client?: { id: number; phone: string }; message?: string }>(`/public-auth/check-verification/${sessionId}`, {
+  return api<{ 
+    verified: boolean; 
+    token?: string; 
+    client?: { id: number; phone: string; email?: string; inn?: string }; 
+    requiresProfileCompletion?: boolean;
+    message?: string;
+  }>(`/public-auth/check-verification/${sessionId}`, {
     method: "GET",
+  });
+}
+
+export function completeProfile(email: string, inn: string) {
+  return api<{ success: boolean; message: string; client: { id: number; email: string; inn: string } }>("/public-auth/complete-profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, inn }),
   });
 }
 

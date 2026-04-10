@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { requestVerification, checkVerification } from "../api";
 import { saveAuth } from "../auth";
+import ProfileCompletion from "./ProfileCompletion";
 
 interface LoginProps {
   onSuccess: () => void;
@@ -10,7 +11,7 @@ export default function Login({ onSuccess }: LoginProps) {
   const [phone, setPhone] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [verificationNumber, setVerificationNumber] = useState("");
-  const [step, setStep] = useState<"phone" | "waiting">("phone");
+  const [step, setStep] = useState<"phone" | "waiting" | "profile">("phone");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -57,7 +58,15 @@ export default function Login({ onSuccess }: LoginProps) {
         if (status.verified && status.client) {
           console.log("Verification successful!");
           saveAuth(status.client.phone, status.token || "verified");
-          onSuccess();
+          
+          // Проверяем нужно ли заполнить профиль
+          if (status.requiresProfileCompletion) {
+            console.log("Profile completion required");
+            setStep("profile");
+          } else {
+            console.log("Profile complete, redirecting...");
+            onSuccess();
+          }
           return true;
         }
         return false;
@@ -80,6 +89,11 @@ export default function Login({ onSuccess }: LoginProps) {
 
     return () => clearInterval(interval);
   }, [step, sessionId, onSuccess]);
+
+  // Если нужно заполнить профиль, показываем форму ProfileCompletion
+  if (step === "profile") {
+    return <ProfileCompletion onSuccess={onSuccess} />;
+  }
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4">

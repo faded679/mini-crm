@@ -108,13 +108,20 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
       let clientPhone = session.phone;
       
       try {
-        // Ищем клиента по обоим форматам номера
+        // Ищем клиента по обоим форматам номера с включением связей
         let client = await (prisma as any).client.findFirst({
           where: { 
             OR: [
               { phone: phoneWithPlus },
               { phone: phoneWithoutPlus },
             ]
+          },
+          include: {
+            counterparties: {
+              include: {
+                counterparty: true,
+              },
+            },
           },
         });
         console.log("Found existing client:", client ? client.id : "none");
@@ -125,17 +132,52 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
               phone: phoneWithoutPlus,
               telegramId: `phone_${phoneWithoutPlus}_${Date.now()}`,
             },
+            include: {
+              counterparties: {
+                include: {
+                  counterparty: true,
+                },
+              },
+            },
           });
           console.log("Created new client:", client.id);
         }
         
         clientId = client.id;
         clientPhone = client.phone || session.phone;
+
+        // Проверяем заполненность профиля
+        const hasEmail = !!client.email;
+        const hasCounterparty = client.counterparties && client.counterparties.length > 0;
+        const hasInn = hasCounterparty && !!client.counterparties[0]?.counterparty?.inn;
+        const requiresProfileCompletion = !hasEmail || !hasInn;
+
+        console.log("Profile check:", { hasEmail, hasInn, requiresProfileCompletion });
+
+        // Генерируем JWT токен для авторизации
+        const token = jwt.sign(
+          { clientId, phone: clientPhone },
+          JWT_SECRET,
+          { expiresIn: "30d" }
+        );
+
+        res.json({
+          verified: true,
+          token,
+          client: {
+            id: clientId,
+            phone: clientPhone,
+            email: client.email,
+            inn: hasCounterparty ? client.counterparties[0]?.counterparty?.inn : null,
+          },
+          requiresProfileCompletion,
+        });
+        return;
       } catch (dbErr: any) {
         console.error("DB error (non-fatal):", dbErr.message);
       }
 
-      // Генерируем JWT токен для авторизации
+      // Fallback если произошла ошибка БД
       const token = jwt.sign(
         { clientId, phone: clientPhone },
         JWT_SECRET,
@@ -149,6 +191,7 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
           id: clientId,
           phone: clientPhone,
         },
+        requiresProfileCompletion: true,
       });
     } else {
       // Верификация еще не завершена
@@ -157,6 +200,95 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
         message: "Ожидание звонка..."
       });
     }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /public-auth/complete-profile - заполнение профиля (email и ИНН)
+router.post("/complete-profile", async (req, res, next) => {
+  try {
+    const { email, inn } = req.body;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new ApiError(401, "Authorization required");
+    }
+
+    const token = authHeader.slice(7);
+    let decoded: any;
+    
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      throw new ApiError(401, "Invalid token");
+    }
+
+    const clientId = decoded.clientId;
+    if (!clientId) {
+      throw new ApiError(401, "Invalid token payload");
+    }
+
+    // Валидация email
+    if (!email || !email.includes("@")) {
+      throw new ApiError(400, "Valid email is required");
+    }
+
+    // Валидация ИНН (10 или 12 цифр)
+    const innDigits = inn?.replace(/\D/g, "");
+    if (!innDigits || (innDigits.length !== 10 && innDigits.length !== 12)) {
+      throw new ApiError(400, "ИНН должен содержать 10 или 12 цифр");
+    }
+
+    // Обновляем email клиента
+    await (prisma as any).client.update({
+      where: { id: clientId },
+      data: { email: email.trim() },
+    });
+
+    // Ищем или создаём контрагента по ИНН
+    let counterparty = await (prisma as any).counterparty.findUnique({
+      where: { inn: innDigits },
+    });
+
+    if (!counterparty) {
+      // Создаём нового контрагента с минимальными данными
+      counterparty = await (prisma as any).counterparty.create({
+        data: {
+          inn: innDigits,
+          name: `Контрагент ИНН ${innDigits}`,
+          shortName: `ИНН ${innDigits}`,
+        },
+      });
+    }
+
+    // Проверяем существует ли связь клиента с контрагентом
+    const existingLink = await (prisma as any).counterpartyClient.findFirst({
+      where: {
+        clientId: clientId,
+        counterpartyId: counterparty.id,
+      },
+    });
+
+    if (!existingLink) {
+      // Создаём связь клиента с контрагентом
+      await (prisma as any).counterpartyClient.create({
+        data: {
+          clientId: clientId,
+          counterpartyId: counterparty.id,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Профиль успешно заполнен",
+      client: {
+        id: clientId,
+        email: email.trim(),
+        inn: innDigits,
+      },
+    });
   } catch (err) {
     next(err);
   }
