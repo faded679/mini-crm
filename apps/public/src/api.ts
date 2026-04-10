@@ -166,9 +166,13 @@ export function checkVerification(sessionId: string) {
 }
 
 export function completeProfile(email: string, inn: string) {
+  const { getAuthHeader } = require("./auth");
   return api<{ success: boolean; message: string; client: { id: number; email: string; inn: string } }>("/public-auth/complete-profile", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
     body: JSON.stringify({ email, inn }),
   });
 }
