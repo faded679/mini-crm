@@ -27,6 +27,18 @@ router.post("/request-verification", async (req, res, next) => {
       throw new ApiError(400, "Invalid phone number");
     }
 
+    // Приводим к формату 7XXXXXXXXXX
+    if (normalizedPhone.startsWith("8")) {
+      // 89101111111 -> 79101111111
+      normalizedPhone = "7" + normalizedPhone.slice(1);
+    } else if (normalizedPhone.startsWith("9")) {
+      // 9101111111 -> 79101111111
+      normalizedPhone = "7" + normalizedPhone;
+    } else if (!normalizedPhone.startsWith("7")) {
+      // Если не начинается с 7, 8 или 9 - добавляем 7
+      normalizedPhone = "7" + normalizedPhone;
+    }
+
     // Zvonok ожидает номер в формате +7XXXXXXXXXX
     normalizedPhone = "+" + normalizedPhone;
 
