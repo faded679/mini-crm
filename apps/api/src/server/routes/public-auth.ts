@@ -263,7 +263,7 @@ router.post("/complete-profile", async (req, res, next) => {
     }
 
     // Проверяем существует ли связь клиента с контрагентом
-    const existingLink = await (prisma as any).counterpartyClient.findFirst({
+    const existingLink = await (prisma as any).counterpartyContact.findFirst({
       where: {
         clientId: clientId,
         counterpartyId: counterparty.id,
@@ -272,7 +272,7 @@ router.post("/complete-profile", async (req, res, next) => {
 
     if (!existingLink) {
       // Создаём связь клиента с контрагентом
-      await (prisma as any).counterpartyClient.create({
+      await (prisma as any).counterpartyContact.create({
         data: {
           clientId: clientId,
           counterpartyId: counterparty.id,
