@@ -99,14 +99,14 @@ export default function Login({ onSuccess }: LoginProps) {
             <>
               <h2 className="text-heading text-base font-bold mb-3">Вход по телефону</h2>
               <p className="text-muted text-sm mb-4">Введите ваш номер телефона для получения номера для звонка</p>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-heading text-sm pointer-events-none">+7</span>
+              <div className="flex items-center h-12 px-4 rounded-2xl bg-bg border border-gray-200 mb-3 transition-all focus-within:border-accent">
+                <span className="text-heading text-sm mr-1">+7</span>
                 <input
                   type="tel"
                   value={phone}
                   onChange={handlePhoneChange}
                   placeholder="(___) ___-__-__"
-                  className="w-full h-12 pl-10 pr-4 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm mb-3 transition-all focus:border-accent"
+                  className="flex-1 outline-none text-heading text-sm bg-transparent"
                 />
               </div>
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
