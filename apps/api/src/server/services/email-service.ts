@@ -1,13 +1,19 @@
 import nodemailer from "nodemailer";
 
+const smtpPort = Number(process.env.SMTP_PORT) || 587;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.yandex.ru",
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: true,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false,
+  },
+  socketTimeout: 15000,
+  connectionTimeout: 15000,
 });
 
 const FROM = process.env.SMTP_FROM || `"Соловьев-Экспресс" <${process.env.SMTP_USER}>`;
