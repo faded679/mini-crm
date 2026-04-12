@@ -7,6 +7,7 @@ import { sendClientDocument } from "../services/telegram-notifier.js";
 import { RequestStatus } from "@prisma/client";
 import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
 import { generateActPdfBuffer } from "../services/act-pdf.js";
+import { sendInvoiceEmail, sendActEmail } from "../services/email-service.js";
 import { env } from "../env.js";
 
 const router = Router();
@@ -616,7 +617,7 @@ router.get("/invoices/:id/pdf", async (req: Request, res: Response, next: NextFu
   }
 });
 
-// POST /admin/invoices/:id/send  — send PDF to client via Telegram
+// POST /admin/invoices/:id/send  — send PDF to client via Telegram and Email
 router.post("/invoices/:id/send", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
@@ -627,7 +628,14 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
 
     const invoice = await (prisma as any).invoice.findUnique({
       where: { id },
-      include: { items: true, counterparty: true },
+      include: {
+        items: true,
+        counterparty: {
+          include: {
+            contacts: { include: { client: true } },
+          },
+        },
+      },
     });
     if (!invoice) throw new ApiError(404, "Invoice not found");
 
@@ -653,6 +661,13 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
       fileName,
       `Счёт ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
     );
+
+    // Отправляем на email если есть
+    const clientEmail = invoice.counterparty?.contacts?.[0]?.client?.email;
+    if (clientEmail) {
+      sendInvoiceEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf })
+        .catch((err: any) => console.error("Invoice email error:", err));
+    }
 
     // Обновляем статус счета на "sent" если он был "new"
     if (invoice.status === "new") {
@@ -704,7 +719,7 @@ router.get("/invoices/:id/act-pdf", async (req: Request, res: Response, next: Ne
   }
 });
 
-// POST /admin/invoices/:id/send-act  — send Act PDF to client via Telegram
+// POST /admin/invoices/:id/send-act  — send Act PDF to client via Telegram and Email
 router.post("/invoices/:id/send-act", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
@@ -715,7 +730,14 @@ router.post("/invoices/:id/send-act", async (req: Request, res: Response, next: 
 
     const invoice = await (prisma as any).invoice.findUnique({
       where: { id },
-      include: { items: true, counterparty: true },
+      include: {
+        items: true,
+        counterparty: {
+          include: {
+            contacts: { include: { client: true } },
+          },
+        },
+      },
     });
     if (!invoice) throw new ApiError(404, "Invoice not found");
 
@@ -743,6 +765,13 @@ router.post("/invoices/:id/send-act", async (req: Request, res: Response, next: 
       fileName,
       `Акт выполненных работ ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
     );
+
+    // Отправляем на email если есть
+    const clientEmail = invoice.counterparty?.contacts?.[0]?.client?.email;
+    if (clientEmail) {
+      sendActEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf })
+        .catch((err: any) => console.error("Act email error:", err));
+    }
 
     res.json({ ok: true });
   } catch (err) {

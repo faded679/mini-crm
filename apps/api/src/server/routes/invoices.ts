@@ -3,6 +3,7 @@ import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
 import { tbankPayment } from "../../services/tbank-payment.js";
 import { notifyClient } from "../services/telegram-notifier.js";
+import { sendPaymentLinkEmail } from "../services/email-service.js";
 
 const router = Router();
 
@@ -217,6 +218,18 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     } catch (notifErr) {
       console.error("Failed to send payment link notification:", notifErr);
       throw new ApiError(500, "Failed to send payment link to client");
+    }
+
+    // Отправляем ссылку на email если есть
+    if (client.email) {
+      const requestNumbers = invoice.requests?.map((ir: any) => `#${ir.request.id}`);
+      sendPaymentLinkEmail({
+        to: client.email,
+        invoiceNumber: invoice.number,
+        amount: totalAmount,
+        paymentUrl: paymentResult.PaymentURL,
+        requestNumbers,
+      }).catch((err: any) => console.error("Payment link email error:", err));
     }
 
     res.json({
