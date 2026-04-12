@@ -221,13 +221,13 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     }
 
     // Отправляем ссылку на email если есть
-    if (client.email) {
+    if (client.email && paymentResult.PaymentURL) {
       const requestNumbers = invoice.requests?.map((ir: any) => `#${ir.request.id}`);
       sendPaymentLinkEmail({
         to: client.email,
         invoiceNumber: invoice.number,
         amount: totalAmount,
-        paymentUrl: paymentResult.PaymentURL,
+        paymentUrl: paymentResult.PaymentURL as string,
         requestNumbers,
       }).catch((err: any) => console.error("Payment link email error:", err));
     }
