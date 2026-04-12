@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mini_crm
+    ports:
+      - "5432:5432"
     volumes:
       - mini_crm_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -20,14 +22,9 @@ services:
       context: ../apps/api
     container_name: mini-crm-api
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+    network_mode: host
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/mini_crm?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mini_crm?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
@@ -52,12 +49,10 @@ services:
       context: ../apps/bot
     container_name: mini-crm-bot
     restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_started
+    network_mode: host
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      API_URL: http://mini-crm-api:3000
+      API_URL: http://127.0.0.1:3000
       MINI_APP_URL: ${MINI_APP_URL:-https://test.ved31.ru/app/}
 
   mini-app:
@@ -89,7 +84,6 @@ services:
     container_name: mini-crm-nginx
     restart: unless-stopped
     depends_on:
-      - api
       - mini-app
       - web
       - public
