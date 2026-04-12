@@ -1,10 +1,21 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.EMAIL_FROM || "Соловьев-Экспресс <noreply@ved31.ru>";
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.yandex.ru",
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: Number(process.env.SMTP_PORT) === 587 ? false : true,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  connectionTimeout: 15000,
+  socketTimeout: 15000,
+} as any);
+
+const FROM = process.env.SMTP_FROM || `"Соловьев-Экспресс" <${process.env.SMTP_USER}>`;
 
 function isConfigured(): boolean {
-  return !!process.env.RESEND_API_KEY;
+  return !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
 }
 
 export async function sendPaymentLinkEmail(opts: {
@@ -35,14 +46,13 @@ export async function sendPaymentLinkEmail(opts: {
   `;
 
   try {
-    const { error } = await resend.emails.send({
+    const result = await transporter.sendMail({
       from: FROM,
       to: opts.to,
       subject: `Счёт на оплату №${opts.invoiceNumber} — ${opts.amount.toLocaleString("ru-RU")} ₽`,
       html,
     });
-    if (error) throw new Error(error.message);
-    console.log(`Payment link email sent to ${opts.to}`);
+    console.log(`Payment link email sent to ${opts.to}, messageId: ${result.messageId}`);
   } catch (err) {
     console.error(`Payment link email FAILED to ${opts.to}:`, err);
     throw err;
@@ -57,7 +67,7 @@ export async function sendInvoiceEmail(opts: {
   if (!isConfigured()) return;
 
   try {
-    const { error } = await resend.emails.send({
+    const result = await transporter.sendMail({
       from: FROM,
       to: opts.to,
       subject: `Счёт №${opts.invoiceNumber}`,
@@ -65,12 +75,12 @@ export async function sendInvoiceEmail(opts: {
       attachments: [
         {
           filename: `Счёт_${opts.invoiceNumber}.pdf`,
-          content: opts.pdfBuffer.toString("base64"),
+          content: opts.pdfBuffer,
+          contentType: "application/pdf",
         },
       ],
     });
-    if (error) throw new Error(error.message);
-    console.log(`Invoice PDF email sent to ${opts.to}`);
+    console.log(`Invoice PDF email sent to ${opts.to}, messageId: ${result.messageId}`);
   } catch (err) {
     console.error(`Invoice PDF email FAILED to ${opts.to}:`, err);
     throw err;
@@ -83,14 +93,14 @@ export async function sendActEmail(opts: {
   pdfBuffer: Buffer;
 }): Promise<void> {
   if (!isConfigured()) {
-    console.log("Email not configured (RESEND_API_KEY missing), skipping");
+    console.log("Email not configured (SMTP_USER or SMTP_PASS missing), skipping");
     return;
   }
 
   console.log(`Sending act email to ${opts.to}`);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const result = await transporter.sendMail({
       from: FROM,
       to: opts.to,
       subject: `Акт №${opts.invoiceNumber}`,
@@ -98,12 +108,12 @@ export async function sendActEmail(opts: {
       attachments: [
         {
           filename: `Акт_${opts.invoiceNumber}.pdf`,
-          content: opts.pdfBuffer.toString("base64"),
+          content: opts.pdfBuffer,
+          contentType: "application/pdf",
         },
       ],
     });
-    if (error) throw new Error(error.message);
-    console.log(`Act PDF email sent to ${opts.to}, id: ${data?.id}`);
+    console.log(`Act PDF email sent to ${opts.to}, messageId: ${result.messageId}`);
   } catch (err) {
     console.error(`Act PDF email FAILED to ${opts.to}:`, err);
     throw err;

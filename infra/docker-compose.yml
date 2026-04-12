@@ -23,6 +23,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/mini_crm?schema=public
       JWT_SECRET: ${JWT_SECRET}
@@ -38,8 +41,11 @@ services:
       ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}
       ZVONOK_CAMPAIGN_ID: ${ZVONOK_CAMPAIGN_ID:-}
       ZVONOK_VERIFICATION_NUMBER: ${ZVONOK_VERIFICATION_NUMBER:-+78005558607}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      EMAIL_FROM: ${EMAIL_FROM:-Соловьев-Экспресс <noreply@ved31.ru>}
+      SMTP_HOST: ${SMTP_HOST:-smtp.yandex.ru}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
 
   bot:
     build:
