@@ -38,11 +38,8 @@ services:
       ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}
       ZVONOK_CAMPAIGN_ID: ${ZVONOK_CAMPAIGN_ID:-}
       ZVONOK_VERIFICATION_NUMBER: ${ZVONOK_VERIFICATION_NUMBER:-+78005558607}
-      SMTP_HOST: ${SMTP_HOST:-smtp.yandex.ru}
-      SMTP_PORT: ${SMTP_PORT:-465}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Соловьев-Экспресс <noreply@ved31.ru>}
 
   bot:
     build:

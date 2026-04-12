@@ -24,12 +24,11 @@
     "pdfkit": "^0.15.0",
     "pino": "^9.5.0",
     "qrcode": "^1.5.3",
-    "nodemailer": "^6.9.16",
+    "resend": "^4.2.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/nodemailer": "^6.4.17",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
