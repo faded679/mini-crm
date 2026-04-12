@@ -82,21 +82,30 @@ export async function sendActEmail(opts: {
   invoiceNumber: string;
   pdfBuffer: Buffer;
 }): Promise<void> {
-  if (!isConfigured()) return;
+  if (!isConfigured()) {
+    console.log("Email not configured (SMTP_USER or SMTP_PASS missing), skipping");
+    return;
+  }
 
-  await transporter.sendMail({
-    from: FROM,
-    to: opts.to,
-    subject: `Акт №${opts.invoiceNumber}`,
-    html: `<p>Здравствуйте!</p><p>Во вложении — акт №${opts.invoiceNumber}.</p>`,
-    attachments: [
-      {
-        filename: `Акт_${opts.invoiceNumber}.pdf`,
-        content: opts.pdfBuffer,
-        contentType: "application/pdf",
-      },
-    ],
-  });
+  console.log(`Sending act email to ${opts.to}, SMTP_USER=${process.env.SMTP_USER}, host=${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
 
-  console.log(`Act PDF email sent to ${opts.to}`);
+  try {
+    const result = await transporter.sendMail({
+      from: FROM,
+      to: opts.to,
+      subject: `Акт №${opts.invoiceNumber}`,
+      html: `<p>Здравствуйте!</p><p>Во вложении — акт №${opts.invoiceNumber}.</p>`,
+      attachments: [
+        {
+          filename: `Акт_${opts.invoiceNumber}.pdf`,
+          content: opts.pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+    console.log(`Act PDF email sent to ${opts.to}, messageId: ${result.messageId}`);
+  } catch (err) {
+    console.error(`Act PDF email FAILED to ${opts.to}:`, err);
+    throw err;
+  }
 }
