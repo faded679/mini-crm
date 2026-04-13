@@ -80,7 +80,8 @@ services:
     build:
       context: ../apps/public
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://test.ved31.ru/api}
+        VITE_API_URL: ${VITE_API_URL:-https://sologo.ru/api}
+        VITE_BASE_PATH: /
     container_name: mini-crm-public
     restart: unless-stopped
 
