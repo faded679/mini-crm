@@ -20,8 +20,8 @@ SENDER_NAME = os.environ.get("SMTP_FROM_NAME", "Соловьев-Экспрес�
 
 def send_email(to: str, subject: str, html: str, attachment_b64: str = None, attachment_filename: str = None):
     msg = MIMEMultipart("mixed")
-    msg["Subject"] = Header(subject, "utf-8")
-    msg["From"] = f"{SENDER_NAME} <{SENDER_EMAIL}>"
+    msg["Subject"] = Header(subject, "utf-8").encode()
+    msg["From"] = SENDER_EMAIL
     msg["To"] = to
 
     msg.attach(MIMEText(html, "html", "utf-8"))
@@ -31,8 +31,9 @@ def send_email(to: str, subject: str, html: str, attachment_b64: str = None, att
         part = MIMEBase("application", "pdf")
         part.set_payload(pdf_bytes)
         encoders.encode_base64(part)
-        encoded_name = Header(attachment_filename, "utf-8").encode()
-        part.add_header("Content-Disposition", f'attachment; filename="{encoded_name}"')
+        from email.utils import encode_rfc2231
+        encoded_name = encode_rfc2231(attachment_filename, charset="utf-8")
+        part.add_header("Content-Disposition", "attachment", filename=("utf-8", "", attachment_filename))
         msg.attach(part)
 
     if SMTP_PORT == 465:
