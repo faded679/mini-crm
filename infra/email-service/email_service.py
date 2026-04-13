@@ -35,10 +35,15 @@ def send_email(to: str, subject: str, html: str, attachment_b64: str = None, att
         part.add_header("Content-Disposition", f'attachment; filename="{encoded_name}"')
         msg.attach(part)
 
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SENDER_EMAIL, APP_PASSWORD)
-        server.sendmail(SENDER_EMAIL, [to], msg.as_string())
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(SENDER_EMAIL, APP_PASSWORD)
+            server.sendmail(SENDER_EMAIL, [to], msg.as_string())
+    else:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, APP_PASSWORD)
+            server.sendmail(SENDER_EMAIL, [to], msg.as_string())
 
 
 @app.route("/health", methods=["GET"])
