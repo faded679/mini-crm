@@ -1,21 +1,26 @@
-import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.yandex.ru",
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: Number(process.env.SMTP_PORT) === 587 ? false : true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  connectionTimeout: 15000,
-  socketTimeout: 15000,
-} as any);
-
-const FROM = process.env.SMTP_FROM || `"Соловьев-Экспресс" <${process.env.SMTP_USER}>`;
+const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://172.17.0.1:5001";
 
 function isConfigured(): boolean {
-  return !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
+  return !!process.env.EMAIL_SERVICE_URL || true;
+}
+
+async function callEmailService(payload: {
+  to: string;
+  subject: string;
+  html: string;
+  attachment_b64?: string;
+  attachment_filename?: string;
+}): Promise<void> {
+  const res = await fetch(`${EMAIL_SERVICE_URL}/send-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Email service error ${res.status}: ${text}`);
+  }
 }
 
 export async function sendPaymentLinkEmail(opts: {
@@ -25,8 +30,6 @@ export async function sendPaymentLinkEmail(opts: {
   paymentUrl: string;
   requestNumbers?: string[];
 }): Promise<void> {
-  if (!isConfigured()) return;
-
   const requestsLine = opts.requestNumbers?.length
     ? `<p>Заявки: ${opts.requestNumbers.join(", ")}</p>`
     : "";
@@ -46,13 +49,12 @@ export async function sendPaymentLinkEmail(opts: {
   `;
 
   try {
-    const result = await transporter.sendMail({
-      from: FROM,
+    await callEmailService({
       to: opts.to,
       subject: `Счёт на оплату №${opts.invoiceNumber} — ${opts.amount.toLocaleString("ru-RU")} ₽`,
       html,
     });
-    console.log(`Payment link email sent to ${opts.to}, messageId: ${result.messageId}`);
+    console.log(`Payment link email sent to ${opts.to}`);
   } catch (err) {
     console.error(`Payment link email FAILED to ${opts.to}:`, err);
     throw err;
@@ -64,23 +66,15 @@ export async function sendInvoiceEmail(opts: {
   invoiceNumber: string;
   pdfBuffer: Buffer;
 }): Promise<void> {
-  if (!isConfigured()) return;
-
   try {
-    const result = await transporter.sendMail({
-      from: FROM,
+    await callEmailService({
       to: opts.to,
       subject: `Счёт №${opts.invoiceNumber}`,
       html: `<p>Здравствуйте!</p><p>Во вложении — счёт №${opts.invoiceNumber}.</p>`,
-      attachments: [
-        {
-          filename: `Счёт_${opts.invoiceNumber}.pdf`,
-          content: opts.pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
+      attachment_b64: opts.pdfBuffer.toString("base64"),
+      attachment_filename: `Счёт_${opts.invoiceNumber}.pdf`,
     });
-    console.log(`Invoice PDF email sent to ${opts.to}, messageId: ${result.messageId}`);
+    console.log(`Invoice PDF email sent to ${opts.to}`);
   } catch (err) {
     console.error(`Invoice PDF email FAILED to ${opts.to}:`, err);
     throw err;
@@ -92,28 +86,16 @@ export async function sendActEmail(opts: {
   invoiceNumber: string;
   pdfBuffer: Buffer;
 }): Promise<void> {
-  if (!isConfigured()) {
-    console.log("Email not configured (SMTP_USER or SMTP_PASS missing), skipping");
-    return;
-  }
-
   console.log(`Sending act email to ${opts.to}`);
-
   try {
-    const result = await transporter.sendMail({
-      from: FROM,
+    await callEmailService({
       to: opts.to,
       subject: `Акт №${opts.invoiceNumber}`,
       html: `<p>Здравствуйте!</p><p>Во вложении — акт №${opts.invoiceNumber}.</p>`,
-      attachments: [
-        {
-          filename: `Акт_${opts.invoiceNumber}.pdf`,
-          content: opts.pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
+      attachment_b64: opts.pdfBuffer.toString("base64"),
+      attachment_filename: `Акт_${opts.invoiceNumber}.pdf`,
     });
-    console.log(`Act PDF email sent to ${opts.to}, messageId: ${result.messageId}`);
+    console.log(`Act PDF email sent to ${opts.to}`);
   } catch (err) {
     console.error(`Act PDF email FAILED to ${opts.to}:`, err);
     throw err;

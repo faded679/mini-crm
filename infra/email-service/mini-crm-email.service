@@ -1,0 +1,16 @@
+[Unit]
+Description=Mini CRM Email Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/mini-crm/infra/email-service
+EnvironmentFile=/root/mini-crm/infra/.env
+ExecStart=/usr/bin/python3 /root/mini-crm/infra/email-service/email_service.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
