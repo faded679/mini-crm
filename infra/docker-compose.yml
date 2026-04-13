@@ -27,6 +27,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/mini_crm?schema=public
       JWT_SECRET: ${JWT_SECRET}
@@ -42,11 +44,7 @@ services:
       ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}
       ZVONOK_CAMPAIGN_ID: ${ZVONOK_CAMPAIGN_ID:-}
       ZVONOK_VERIFICATION_NUMBER: ${ZVONOK_VERIFICATION_NUMBER:-+78005558607}
-      SMTP_HOST: ${SMTP_HOST:-smtp.yandex.ru}
-      SMTP_PORT: ${SMTP_PORT:-465}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-}
+      EMAIL_SERVICE_URL: http://host.docker.internal:5001
 
   bot:
     build:
