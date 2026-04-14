@@ -666,7 +666,7 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
     // Отправляем на email если есть
     const clientEmail = invoice.counterparty?.contacts?.[0]?.client?.email;
     if (clientEmail) {
-      const requestNumbers = invoice.requests?.map((r: any) => r.number);
+      const requestNumbers = invoice.requests?.map((r: any) => r.number).filter(Boolean);
       sendInvoiceEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf, requestNumbers })
         .catch((err: any) => console.error("Invoice email error:", err));
     }

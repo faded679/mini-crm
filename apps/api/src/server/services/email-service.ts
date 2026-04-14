@@ -70,7 +70,7 @@ export async function sendInvoiceEmail(opts: {
   try {
     await callEmailService({
       to: opts.to,
-      subject: opts.requestNumbers?.length ? `Заявка №${opts.requestNumbers.join(", ")}, Счёт №${opts.invoiceNumber}` : `Счёт №${opts.invoiceNumber}`,
+      subject: opts.requestNumbers?.length ? `Заявка №${opts.requestNumbers.join(", ")}, Счёт № ${opts.invoiceNumber}` : `Счёт № ${opts.invoiceNumber}`,
       html: `<p>Здравствуйте!</p><p>Во вложении — счёт №${opts.invoiceNumber}.</p>`,
       attachment_b64: opts.pdfBuffer.toString("base64"),
       attachment_filename: `Счёт_${opts.invoiceNumber}.pdf`,
