@@ -234,7 +234,10 @@ export default function Counterparties() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Организации</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Организации</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Всего: {counterparties.length}</p>
+        </div>
         <button
           onClick={openCreate}
           className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"

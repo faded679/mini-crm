@@ -45,13 +45,11 @@ export default function ProfileCompletion({ onSuccess }: ProfileCompletionProps)
     <div className="min-h-screen bg-bg flex items-center justify-center px-4">
       <div className="w-full max-w-[380px] fade-in">
         <div className="bg-card rounded-[22px] p-6 shadow-[0_10px_22px_rgba(39,56,74,0.1)]">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-[42px] h-[42px] rounded-xl bg-accent text-white flex items-center justify-center font-bold text-sm">
-              СЭ
-            </div>
+          <div className="flex items-center gap-2.5 mb-6">
+            <img src="/logotip.jpg" alt="Логотип" className="w-[42px] h-[42px] rounded-xl object-contain flex-shrink-0" />
             <div>
               <p className="text-muted text-xs m-0">Логистический сервис</p>
-              <h1 className="text-heading text-lg font-bold m-0">Соловьев-Экспресс</h1>
+              <h1 className="text-heading text-[21px] font-bold m-0">Доставка на маркетплейсы</h1>
             </div>
           </div>
 

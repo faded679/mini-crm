@@ -12,7 +12,15 @@ export default function Profile() {
 
   return (
     <div className="fade-in">
-      <h1 className="text-heading text-[22px] font-bold mb-3">Профиль</h1>
+      <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
+        <div className="flex items-center gap-2.5">
+          <img src="/logotip.jpg" alt="Логотип" className="w-[42px] h-[42px] rounded-xl object-contain flex-shrink-0" />
+          <div>
+            <p className="text-muted text-xs m-0">Логистический сервис</p>
+            <h1 className="text-heading text-[21px] font-bold m-0">Доставка на маркетплейсы</h1>
+          </div>
+        </div>
+      </section>
 
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <p className="text-sm text-heading"><strong>Телефон:</strong> {phone}</p>
