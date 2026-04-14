@@ -7,9 +7,7 @@ export default function Home() {
     <div className="fade-in">
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-[42px] h-[42px] rounded-xl bg-accent text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-            СЭ
-          </div>
+          <img src="/logotip.jpg" alt="Логотип" className="w-[42px] h-[42px] rounded-xl object-contain flex-shrink-0" />
           <div>
             <p className="text-muted text-xs m-0">Логистический сервис</p>
             <h1 className="text-heading text-[21px] font-bold m-0">Соловьев-Экспресс</h1>
