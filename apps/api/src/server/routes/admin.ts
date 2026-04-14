@@ -635,6 +635,7 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
             contacts: { include: { client: true } },
           },
         },
+        requests: true,
       },
     });
     if (!invoice) throw new ApiError(404, "Invoice not found");
@@ -665,7 +666,8 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
     // Отправляем на email если есть
     const clientEmail = invoice.counterparty?.contacts?.[0]?.client?.email;
     if (clientEmail) {
-      sendInvoiceEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf })
+      const requestNumbers = invoice.requests?.map((r: any) => r.number);
+      sendInvoiceEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf, requestNumbers })
         .catch((err: any) => console.error("Invoice email error:", err));
     }
 

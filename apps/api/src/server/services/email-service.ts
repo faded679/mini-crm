@@ -51,7 +51,7 @@ export async function sendPaymentLinkEmail(opts: {
   try {
     await callEmailService({
       to: opts.to,
-      subject: `Счёт на оплату №${opts.invoiceNumber} — ${opts.amount.toLocaleString("ru-RU")} ₽`,
+      subject: `Счёт на оплату №${opts.invoiceNumber}${opts.requestNumbers?.length ? ` (заявки: ${opts.requestNumbers.join(", ")})` : ""} — ${opts.amount.toLocaleString("ru-RU")} ₽`,
       html,
     });
     console.log(`Payment link email sent to ${opts.to}`);
@@ -65,11 +65,12 @@ export async function sendInvoiceEmail(opts: {
   to: string;
   invoiceNumber: string;
   pdfBuffer: Buffer;
+  requestNumbers?: string[];
 }): Promise<void> {
   try {
     await callEmailService({
       to: opts.to,
-      subject: `Счёт №${opts.invoiceNumber}`,
+      subject: opts.requestNumbers?.length ? `Заявка №${opts.requestNumbers.join(", ")}, Счёт №${opts.invoiceNumber}` : `Счёт №${opts.invoiceNumber}`,
       html: `<p>Здравствуйте!</p><p>Во вложении — счёт №${opts.invoiceNumber}.</p>`,
       attachment_b64: opts.pdfBuffer.toString("base64"),
       attachment_filename: `Счёт_${opts.invoiceNumber}.pdf`,
