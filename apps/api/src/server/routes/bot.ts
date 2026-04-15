@@ -351,6 +351,19 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         throw new ApiError(400, "Invalid boxCount");
       }
       updateData.boxCount = count;
+
+      // Пересчитываем услуги по количеству (палеты или коробки)
+      const unitToUpdate = (updateData.packagingType ?? existing.packagingType) === "pallets" ? "пал" : "кор";
+      const countServices = await (prisma as any).requestService.findMany({
+        where: { requestId: id, unit: unitToUpdate },
+      });
+      for (const svc of countServices) {
+        const pricePerUnit = svc.quantity > 0 ? svc.amount / svc.quantity : svc.price;
+        await (prisma as any).requestService.update({
+          where: { id: svc.id },
+          data: { quantity: count, amount: pricePerUnit * count },
+        });
+      }
     }
     
     if (mpAccountDate !== undefined) {
