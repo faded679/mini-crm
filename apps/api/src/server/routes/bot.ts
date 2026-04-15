@@ -279,7 +279,7 @@ router.get("/request-detail/:id", async (req: Request, res: Response, next: Next
 router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    const { deliveryDate, packagingType, volume, boxCount, mpAccountDate, boxTypeId } = req.body;
+    const { deliveryDate, packagingType, volume, boxCount, mpAccountDate, boxTypeId, palletTypeId } = req.body;
 
     // Check if request exists and is editable
     const existing = await prisma.shipmentRequest.findUnique({
@@ -366,6 +366,21 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         const exists = await (prisma as any).boxType.findUnique({ where: { id: btId } });
         if (!exists) throw new ApiError(400, "Invalid boxTypeId");
         updateData.boxTypeId = btId;
+      }
+    }
+
+    if (palletTypeId !== undefined && palletTypeId !== null) {
+      const ptId = Number(palletTypeId);
+      if (!Number.isFinite(ptId)) throw new ApiError(400, "Invalid palletTypeId");
+      const rate = await (prisma as any).priceRate.findFirst({
+        where: { cityId: existing.cityId, unit: "pallet", palletTypeId: ptId },
+      });
+      if (rate) {
+        const count = updateData.boxCount ?? existing.boxCount;
+        await (prisma as any).requestService.updateMany({
+          where: { requestId: id, unit: "пал" },
+          data: { price: rate.price, amount: rate.price * count },
+        });
       }
     }
 
@@ -951,11 +966,16 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
       res.json([]);
       return;
     }
-    const requests = await prisma.shipmentRequest.findMany({
+    const requests = await (prisma as any).shipmentRequest.findMany({
       where: { clientId: client.id },
       orderBy: { createdAt: "desc" },
+      include: { services: true },
     });
-    res.json(requests);
+    const result = requests.map((r: any) => ({
+      ...r,
+      _totalAmount: r.services.reduce((sum: number, s: any) => sum + Number(s.amount), 0),
+    }));
+    res.json(result);
   } catch (err) {
     next(err);
   }

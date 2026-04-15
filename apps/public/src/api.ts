@@ -70,6 +70,7 @@ export interface ShipmentRequest {
   createdAt: string;
   mpAccountDate?: string | null;
   deliveryTypeId?: number | null;
+  _totalAmount?: number;
 }
 
 export interface CityFbs {
@@ -219,6 +220,7 @@ export function patchRequest(id: number, data: {
   packagingType?: "pallets" | "boxes";
   boxCount?: number;
   boxTypeId?: number | null;
+  palletTypeId?: number | null;
   volume?: number;
   mpAccountDate?: string | null;
 }) {
