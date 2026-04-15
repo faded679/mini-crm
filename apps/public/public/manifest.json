@@ -1,6 +1,6 @@
 {
-  "name": "Соловьев-Экспресс",
-  "short_name": "СЭ",
+  "name": "SOLOGO",
+  "short_name": "SOLOGO",
   "description": "Логистический сервис доставки на маркетплейсы",
   "start_url": "/",
   "scope": "/",
@@ -10,9 +10,9 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/logotip.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]

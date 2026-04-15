@@ -26,7 +26,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <div className="max-w-[420px] mx-auto min-h-screen pb-32 px-3.5 pt-3.5">
+      <div className="max-w-[420px] mx-auto min-h-screen pb-32 px-3.5 pt-10">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/fbs" element={<FbsRequest />} />
