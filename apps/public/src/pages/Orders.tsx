@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRequestsByPhone, patchRequest, type ShipmentRequest } from "../api";
+import { getRequestsByPhone, getBoxTypes, patchRequest, type ShipmentRequest, type BoxType } from "../api";
 import { getPhone, getToken } from "../auth";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -20,13 +20,16 @@ function toInputDate(iso: string | null | undefined) {
 
 interface EditState {
   deliveryDate: string;
+  packagingType: "pallets" | "boxes";
   boxCount: string;
+  boxTypeId: string;
   volume: string;
   mpAccountDate: string;
 }
 
 export default function Orders() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
+  const [boxTypes, setBoxTypes] = useState<BoxType[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editState, setEditState] = useState<EditState | null>(null);
@@ -43,13 +46,18 @@ export default function Orders() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadRequests(); }, []);
+  useEffect(() => {
+    loadRequests();
+    getBoxTypes().then(setBoxTypes).catch(() => {});
+  }, []);
 
   const startEdit = (r: ShipmentRequest) => {
     setEditingId(r.id);
     setEditState({
       deliveryDate: toInputDate(r.deliveryDate),
+      packagingType: r.packagingType,
       boxCount: String(r.boxCount),
+      boxTypeId: r.boxTypeId ? String(r.boxTypeId) : "",
       volume: r.volume ? String(r.volume) : "",
       mpAccountDate: toInputDate(r.mpAccountDate),
     });
@@ -69,7 +77,9 @@ export default function Orders() {
     try {
       await patchRequest(id, {
         deliveryDate: editState.deliveryDate || undefined,
+        packagingType: editState.packagingType,
         boxCount: editState.boxCount ? Number(editState.boxCount) : undefined,
+        boxTypeId: editState.packagingType === "boxes" && editState.boxTypeId ? Number(editState.boxTypeId) : editState.packagingType === "pallets" ? null : undefined,
         volume: editState.volume ? Number(editState.volume) : undefined,
         mpAccountDate: editState.mpAccountDate || null,
       });
@@ -157,6 +167,35 @@ export default function Orders() {
                 ) : editState && (
                   <div className="space-y-2 slide-up">
                     <div>
+                      <label className="text-xs text-muted block mb-1">Тип упаковки</label>
+                      <div className="flex gap-2">
+                        {(["pallets", "boxes"] as const).map((pt) => (
+                          <button
+                            key={pt}
+                            onClick={() => setEditState({ ...editState, packagingType: pt, boxTypeId: "" })}
+                            className={`flex-1 h-10 rounded-xl text-xs font-semibold border transition ${editState.packagingType === pt ? "bg-accent text-white border-accent" : "bg-bg border-gray-200 text-heading"}`}
+                          >
+                            {pt === "pallets" ? "Палеты" : "Коробки"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {!isFbs && editState.packagingType === "boxes" && boxTypes.length > 0 && (
+                      <div>
+                        <label className="text-xs text-muted block mb-1">Тип коробки</label>
+                        <select
+                          value={editState.boxTypeId}
+                          onChange={(e) => setEditState({ ...editState, boxTypeId: e.target.value })}
+                          className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent appearance-none"
+                        >
+                          <option value="">Не выбрано</option>
+                          {boxTypes.map((bt) => (
+                            <option key={bt.id} value={bt.id}>{bt.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div>
                       <label className="text-xs text-muted block mb-1">Дата поставки</label>
                       <input
                         type="date"
@@ -167,7 +206,7 @@ export default function Orders() {
                     </div>
                     <div>
                       <label className="text-xs text-muted block mb-1">
-                        Кол-во {r.packagingType === "pallets" ? "палет" : "коробок"}
+                        Кол-во {editState.packagingType === "pallets" ? "палет" : "коробок"}
                       </label>
                       <input
                         type="number"

@@ -279,7 +279,7 @@ router.get("/request-detail/:id", async (req: Request, res: Response, next: Next
 router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    const { deliveryDate, packagingType, volume, boxCount, mpAccountDate } = req.body;
+    const { deliveryDate, packagingType, volume, boxCount, mpAccountDate, boxTypeId } = req.body;
 
     // Check if request exists and is editable
     const existing = await prisma.shipmentRequest.findUnique({
@@ -355,6 +355,18 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     
     if (mpAccountDate !== undefined) {
       updateData.mpAccountDate = mpAccountDate ? new Date(mpAccountDate) : null;
+    }
+
+    if (boxTypeId !== undefined) {
+      if (boxTypeId === null) {
+        updateData.boxTypeId = null;
+      } else {
+        const btId = Number(boxTypeId);
+        if (!Number.isFinite(btId)) throw new ApiError(400, "Invalid boxTypeId");
+        const exists = await (prisma as any).boxType.findUnique({ where: { id: btId } });
+        if (!exists) throw new ApiError(400, "Invalid boxTypeId");
+        updateData.boxTypeId = btId;
+      }
     }
 
     // Update the request

@@ -216,7 +216,9 @@ export function getRequestsByPhone(phone: string, token?: string) {
 
 export function patchRequest(id: number, data: {
   deliveryDate?: string;
+  packagingType?: "pallets" | "boxes";
   boxCount?: number;
+  boxTypeId?: number | null;
   volume?: number;
   mpAccountDate?: string | null;
 }) {
