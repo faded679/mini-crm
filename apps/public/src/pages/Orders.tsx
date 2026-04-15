@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRequestsByPhone, type ShipmentRequest } from "../api";
+import { getRequestsByPhone, patchRequest, type ShipmentRequest } from "../api";
 import { getPhone, getToken } from "../auth";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -10,14 +10,30 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function toInputDate(iso: string | null | undefined) {
+  if (!iso) return "";
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+interface EditState {
+  deliveryDate: string;
+  boxCount: string;
+  volume: string;
+  mpAccountDate: string;
 }
 
 export default function Orders() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editState, setEditState] = useState<EditState | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
-  useEffect(() => {
+  const loadRequests = () => {
     const phone = getPhone();
     const token = getToken();
     if (!phone) { setLoading(false); return; }
@@ -25,7 +41,48 @@ export default function Orders() {
       .then((all) => setRequests(all.filter((r) => r.status !== "archived")))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadRequests(); }, []);
+
+  const startEdit = (r: ShipmentRequest) => {
+    setEditingId(r.id);
+    setEditState({
+      deliveryDate: toInputDate(r.deliveryDate),
+      boxCount: String(r.boxCount),
+      volume: r.volume ? String(r.volume) : "",
+      mpAccountDate: toInputDate(r.mpAccountDate),
+    });
+    setSaveError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditState(null);
+    setSaveError("");
+  };
+
+  const handleSave = async (id: number) => {
+    if (!editState) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await patchRequest(id, {
+        deliveryDate: editState.deliveryDate || undefined,
+        boxCount: editState.boxCount ? Number(editState.boxCount) : undefined,
+        volume: editState.volume ? Number(editState.volume) : undefined,
+        mpAccountDate: editState.mpAccountDate || null,
+      });
+      setEditingId(null);
+      setEditState(null);
+      setLoading(true);
+      loadRequests();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Ошибка сохранения");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return <div className="p-4 text-center text-muted text-sm">Загрузка...</div>;
@@ -44,21 +101,123 @@ export default function Orders() {
         <div className="space-y-3">
           {requests.map((r) => {
             const st = statusConfig[r.status] || statusConfig.new;
+            const isEditing = editingId === r.id;
+            const isFbs = r.deliveryTypeId === 1;
+
             return (
               <section key={r.id} className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)]">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <p className="text-heading font-bold text-sm">Заявка #{r.id}</p>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${st.color}`}>
                     {st.label}
                   </span>
                 </div>
-                <p className="text-sm text-heading">Маршрут: {r.city}</p>
-                <p className="text-sm text-muted">Дата: {formatDate(r.deliveryDate)}</p>
-                <p className="text-sm text-heading">
-                  {r.packagingType === "pallets" ? "Палеты" : "Коробки"} × {r.boxCount}
-                </p>
-                {r.comment && (
-                  <p className="text-xs text-muted mt-1 truncate">{r.comment}</p>
+
+                {!isEditing ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-xs text-muted">Направление</span>
+                        <span className="text-xs text-heading font-medium">{r.city}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-xs text-muted">Дата поставки</span>
+                        <span className="text-xs text-heading font-medium">{formatDate(r.deliveryDate)}</span>
+                      </div>
+                      {r.mpAccountDate && (
+                        <div className="flex justify-between">
+                          <span className="text-xs text-muted">Дата в л/к МП</span>
+                          <span className="text-xs text-heading font-medium">{formatDate(r.mpAccountDate)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-xs text-muted">Тип груза</span>
+                        <span className="text-xs text-heading font-medium">
+                          {r.packagingType === "pallets" ? "Палеты" : "Коробки"} × {r.boxCount}
+                          {r.volume ? ` (${r.volume} м³)` : ""}
+                        </span>
+                      </div>
+                      {r.comment && (
+                        <div className="flex justify-between gap-3">
+                          <span className="text-xs text-muted flex-shrink-0">Комментарий</span>
+                          <span className="text-xs text-muted text-right break-words">{r.comment}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {r.status === "new" && (
+                      <button
+                        onClick={() => startEdit(r)}
+                        className="mt-3 w-full h-9 rounded-xl border border-accent text-accent text-xs font-semibold transition active:bg-accent active:text-white"
+                      >
+                        Редактировать
+                      </button>
+                    )}
+                  </>
+                ) : editState && (
+                  <div className="space-y-2 slide-up">
+                    <div>
+                      <label className="text-xs text-muted block mb-1">Дата поставки</label>
+                      <input
+                        type="date"
+                        value={editState.deliveryDate}
+                        onChange={(e) => setEditState({ ...editState, deliveryDate: e.target.value })}
+                        className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted block mb-1">
+                        Кол-во {r.packagingType === "pallets" ? "палет" : "коробок"}
+                      </label>
+                      <input
+                        type="number"
+                        value={editState.boxCount}
+                        onChange={(e) => setEditState({ ...editState, boxCount: e.target.value })}
+                        min="1"
+                        className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
+                      />
+                    </div>
+                    {isFbs && (
+                      <div>
+                        <label className="text-xs text-muted block mb-1">Объём (м³)</label>
+                        <input
+                          type="number"
+                          value={editState.volume}
+                          onChange={(e) => setEditState({ ...editState, volume: e.target.value })}
+                          min="0.1"
+                          step="0.1"
+                          className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-xs text-muted block mb-1">Дата в л/к МП</label>
+                      <input
+                        type="date"
+                        value={editState.mpAccountDate}
+                        onChange={(e) => setEditState({ ...editState, mpAccountDate: e.target.value })}
+                        className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
+                      />
+                    </div>
+
+                    {saveError && <p className="text-xs text-red-500">{saveError}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 h-9 rounded-xl border border-gray-200 text-muted text-xs font-semibold"
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        onClick={() => handleSave(r.id)}
+                        disabled={saving}
+                        className="flex-1 h-9 rounded-xl bg-accent text-white text-xs font-semibold disabled:opacity-50 transition active:bg-accent-dark"
+                      >
+                        {saving ? "Сохранение..." : "Сохранить"}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </section>
             );

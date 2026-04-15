@@ -62,12 +62,14 @@ export interface ShipmentRequest {
   boxTypeId?: number | null;
   size?: string;
   weight?: number | null;
+  volume?: number | null;
   boxCount: number;
   packagingType: "pallets" | "boxes";
   comment: string | null;
   status: string;
   createdAt: string;
   mpAccountDate?: string | null;
+  deliveryTypeId?: number | null;
 }
 
 export interface CityFbs {
@@ -210,4 +212,17 @@ export function getRequestsByPhone(phone: string, token?: string) {
     headers["Authorization"] = `Bearer ${token}`;
   }
   return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}`, { headers });
+}
+
+export function patchRequest(id: number, data: {
+  deliveryDate?: string;
+  boxCount?: number;
+  volume?: number;
+  mpAccountDate?: string | null;
+}) {
+  return api<ShipmentRequest>(`/bot/requests/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
