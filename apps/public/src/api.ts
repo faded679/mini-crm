@@ -212,7 +212,7 @@ export function getRequestsByPhone(phone: string, token?: string) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}`, { headers });
+  return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}?_ts=${Date.now()}`, { headers, cache: "no-store" });
 }
 
 export function patchRequest(id: number, data: {

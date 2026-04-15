@@ -983,11 +983,21 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
     const requests = await (prisma as any).shipmentRequest.findMany({
       where: { clientId: client.id },
       orderBy: { createdAt: "desc" },
-      include: { services: true },
     });
+    const ids: number[] = requests.map((r: any) => r.id);
+    const serviceTotals = ids.length > 0
+      ? await (prisma as any).requestService.groupBy({
+          by: ["requestId"],
+          where: { requestId: { in: ids } },
+          _sum: { amount: true },
+        })
+      : [];
+    const totalMap = new Map<number, number>(
+      serviceTotals.map((t: any) => [t.requestId, Number(t._sum?.amount ?? 0)])
+    );
     const result = requests.map((r: any) => ({
       ...r,
-      _totalAmount: r.services.reduce((sum: number, s: any) => sum + Number(s.amount), 0),
+      _totalAmount: totalMap.get(r.id) ?? 0,
     }));
     res.json(result);
   } catch (err) {
