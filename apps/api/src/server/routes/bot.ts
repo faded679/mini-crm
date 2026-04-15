@@ -282,7 +282,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     const { deliveryDate, packagingType, volume, boxCount, mpAccountDate, boxTypeId, palletTypeId } = req.body;
 
     // Check if request exists and is editable
-    const existing = await prisma.shipmentRequest.findUnique({
+    const existing = await (prisma as any).shipmentRequest.findUnique({
       where: { id },
     });
 
@@ -385,13 +385,14 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     }
 
     // Update the request
-    const updated = await prisma.shipmentRequest.update({
+    const updated = await (prisma as any).shipmentRequest.update({
       where: { id },
       data: updateData,
     });
 
     res.json(updated);
   } catch (err) {
+    console.error("PATCH /requests/:id error:", err);
     next(err);
   }
 });
