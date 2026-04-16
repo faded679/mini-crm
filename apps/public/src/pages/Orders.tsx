@@ -177,7 +177,7 @@ export default function Orders() {
                       </button>
                     )}
                   </>
-                ) : editState && (
+                /* ) : editState && (
                   <div className="space-y-2 slide-up">
                     {!isFbs && (
                     <div>
@@ -289,7 +289,7 @@ export default function Orders() {
                       </button>
                     </div>
                   </div>
-                )}
+                )} */
               </section>
             );
           })}
