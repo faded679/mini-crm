@@ -354,11 +354,14 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
 
       // Пересчитываем услуги по количеству (палеты или коробки)
       const unitToUpdate = (updateData.packagingType ?? existing.packagingType) === "pallets" ? "пал" : "кор";
+      console.log(`[PATCH /requests/${id}] boxCount=${count}, unitToUpdate="${unitToUpdate}"`);
       const countServices = await (prisma as any).requestService.findMany({
         where: { requestId: id, unit: unitToUpdate },
       });
+      console.log(`[PATCH /requests/${id}] found ${countServices.length} services with unit="${unitToUpdate}":`, countServices.map((s: any) => ({ id: s.id, qty: s.quantity, price: s.price, amount: s.amount })));
       for (const svc of countServices) {
         const pricePerUnit = svc.quantity > 0 ? svc.amount / svc.quantity : svc.price;
+        console.log(`[PATCH /requests/${id}] updating svc ${svc.id}: pricePerUnit=${pricePerUnit}, newQty=${count}, newAmount=${pricePerUnit * count}`);
         await (prisma as any).requestService.update({
           where: { id: svc.id },
           data: { quantity: count, amount: pricePerUnit * count },
@@ -985,22 +988,12 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
       orderBy: { createdAt: "desc" },
       include: {
         boxType: { select: { id: true, name: true } },
+        services: true,
       },
     });
-    const ids: number[] = requests.map((r: any) => r.id);
-    const serviceTotals = ids.length > 0
-      ? await (prisma as any).requestService.groupBy({
-          by: ["requestId"],
-          where: { requestId: { in: ids } },
-          _sum: { amount: true },
-        })
-      : [];
-    const totalMap = new Map<number, number>(
-      serviceTotals.map((t: any) => [t.requestId, Number(t._sum?.amount ?? 0)])
-    );
     const result = requests.map((r: any) => ({
       ...r,
-      _totalAmount: totalMap.get(r.id) ?? 0,
+      _totalAmount: (r.services ?? []).reduce((sum: number, s: any) => sum + Number(s.amount || 0), 0),
     }));
     res.json(result);
   } catch (err) {
