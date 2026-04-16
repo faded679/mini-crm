@@ -61,7 +61,7 @@ export default function Orders() {
       packagingType: r.packagingType,
       boxCount: String(r.boxCount),
       boxTypeId: r.boxTypeId ? String(r.boxTypeId) : "",
-      palletTypeId: r.palletTypeId ? String(r.palletTypeId) : "",
+      palletTypeId: "",
       volume: r.volume ? String(r.volume) : "",
       mpAccountDate: toInputDate(r.mpAccountDate),
     });
@@ -149,7 +149,6 @@ export default function Orders() {
                         <span className="text-xs text-muted">Тип груза</span>
                         <span className="text-xs text-heading font-medium">
                           {r.packagingType === "pallets" ? "Палеты" : "Коробки"}
-                          {r.packagingType === "pallets" && r.palletType ? ` (${r.palletType.name})` : ""}
                           {r.packagingType === "boxes" && r.boxType ? ` (${r.boxType.name})` : ""}
                           {" "}× {r.boxCount}
                           {r.volume ? ` · ${r.volume} м³` : ""}
