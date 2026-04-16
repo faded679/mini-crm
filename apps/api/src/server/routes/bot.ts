@@ -310,13 +310,13 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     
     if (volume !== undefined && volume !== null) {
       const vol = Number(volume);
-      if (!Number.isFinite(vol) || vol <= 0) {
+      if (!Number.isFinite(vol) || vol < 0) {
         throw new ApiError(400, "Invalid volume");
       }
-      updateData.volume = vol;
+      if (vol > 0) updateData.volume = vol;
       
       // Пересчитываем позиции доставки для нового объёма
-      if (existing.deliveryTypeId === 1) {
+      if (vol > 0 && existing.deliveryTypeId === 1) {
         // Получаем все позиции доставки (unit = "м³")
         const deliveryItems = await (prisma as any).requestService.findMany({
           where: { 
