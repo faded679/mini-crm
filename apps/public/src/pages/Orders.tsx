@@ -168,128 +168,17 @@ export default function Orders() {
                       )}
                     </div>
 
-                    {r.status === "new" && (
+                    {/* {r.status === "new" && (
                       <button
                         onClick={() => startEdit(r)}
                         className="mt-3 w-full h-9 rounded-xl border border-accent text-accent text-xs font-semibold transition active:bg-accent active:text-white"
                       >
                         Редактировать
                       </button>
-                    )}
+                    )} */}
                   </>
-                /* ) : editState && (
-                  <div className="space-y-2 slide-up">
-                    {!isFbs && (
-                    <div>
-                      <label className="text-xs text-muted block mb-1">Тип упаковки</label>
-                      <div className="flex gap-2">
-                        {(["pallets", "boxes"] as const).map((pt) => (
-                          <button
-                            key={pt}
-                            onClick={() => setEditState({ ...editState, packagingType: pt, boxTypeId: "" })}
-                            className={`flex-1 h-10 rounded-xl text-xs font-semibold border transition ${editState.packagingType === pt ? "bg-accent text-white border-accent" : "bg-bg border-gray-200 text-heading"}`}
-                          >
-                            {pt === "pallets" ? "Палеты" : "Коробки"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    )}
-                    {!isFbs && editState.packagingType === "pallets" && palletTypes.length > 0 && (
-                      <div>
-                        <label className="text-xs text-muted block mb-1">Тип палет</label>
-                        <select
-                          value={editState.palletTypeId}
-                          onChange={(e) => setEditState({ ...editState, palletTypeId: e.target.value })}
-                          className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent appearance-none"
-                        >
-                          <option value="">Не выбрано</option>
-                          {palletTypes.map((pt) => (
-                            <option key={pt.id} value={pt.id}>{pt.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {!isFbs && editState.packagingType === "boxes" && boxTypes.length > 0 && (
-                      <div>
-                        <label className="text-xs text-muted block mb-1">Тип коробки</label>
-                        <select
-                          value={editState.boxTypeId}
-                          onChange={(e) => setEditState({ ...editState, boxTypeId: e.target.value })}
-                          className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent appearance-none"
-                        >
-                          <option value="">Не выбрано</option>
-                          {boxTypes.map((bt) => (
-                            <option key={bt.id} value={bt.id}>{bt.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-xs text-muted block mb-1">Дата поставки</label>
-                      <input
-                        type="date"
-                        value={editState.deliveryDate}
-                        onChange={(e) => setEditState({ ...editState, deliveryDate: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
-                      />
-                    </div>
-                    {!isFbs && (
-                    <div>
-                      <label className="text-xs text-muted block mb-1">
-                        Кол-во {editState.packagingType === "pallets" ? "палет" : "коробок"}
-                      </label>
-                      <input
-                        type="number"
-                        value={editState.boxCount}
-                        onChange={(e) => setEditState({ ...editState, boxCount: e.target.value })}
-                        min="1"
-                        className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
-                      />
-                    </div>
-                    )}
-                    {isFbs && (
-                      <div>
-                        <label className="text-xs text-muted block mb-1">Объём (м³)</label>
-                        <input
-                          type="number"
-                          value={editState.volume}
-                          onChange={(e) => setEditState({ ...editState, volume: e.target.value })}
-                          min="0.1"
-                          step="0.1"
-                          className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-xs text-muted block mb-1">Дата в л/к МП</label>
-                      <input
-                        type="date"
-                        value={editState.mpAccountDate}
-                        onChange={(e) => setEditState({ ...editState, mpAccountDate: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
-                      />
-                    </div>
+                )}
 
-                    {saveError && <p className="text-xs text-red-500">{saveError}</p>}
-
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        onClick={cancelEdit}
-                        className="flex-1 h-9 rounded-xl border border-gray-200 text-muted text-xs font-semibold"
-                      >
-                        Отмена
-                      </button>
-                      <button
-                        onClick={() => handleSave(r.id)}
-                        disabled={saving}
-                        className="flex-1 h-9 rounded-xl bg-accent text-white text-xs font-semibold disabled:opacity-50 transition active:bg-accent-dark"
-                      >
-                        {saving ? "Сохранение..." : "Сохранить"}
-                      </button>
-                    </div>
-                  </div>
-                )} */
               </section>
             );
           })}
