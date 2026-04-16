@@ -82,7 +82,7 @@ export default function Orders() {
       await patchRequest(id, {
         deliveryDate: editState.deliveryDate || undefined,
         packagingType: editState.packagingType,
-        boxCount: editState.boxCount ? Number(editState.boxCount) : undefined,
+        boxCount: Number(editState.boxCount) > 0 ? Number(editState.boxCount) : undefined,
         boxTypeId: editState.packagingType === "boxes" && editState.boxTypeId ? Number(editState.boxTypeId) : editState.packagingType === "pallets" ? null : undefined,
         palletTypeId: editState.packagingType === "pallets" && editState.palletTypeId ? Number(editState.palletTypeId) : undefined,
         volume: editState.volume ? Number(editState.volume) : undefined,
