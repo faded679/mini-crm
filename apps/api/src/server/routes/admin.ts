@@ -1067,11 +1067,12 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     if (body.boxCount !== undefined && body.boxCount !== null && body.boxCount > 0 &&
         body.boxCount !== existing.boxCount) {
       const newCount = body.boxCount;
-      const packType = (body.packagingType ?? (existing as any).packagingType) === "pallets" ? "пал" : "кор";
-      const countServices = await (prisma as any).requestService.findMany({
-        where: { requestId: id, unit: packType },
-      });
-      for (const svc of countServices) {
+      const isPallets = (body.packagingType ?? (existing as any).packagingType) === "pallets";
+      const matchUnit = (u: string) => isPallets
+        ? (u.startsWith("пал") || u === "pallet")
+        : (u.startsWith("кор") || u === "box" || u === "boxes");
+      const allSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
+      for (const svc of allSvcs.filter((s: any) => matchUnit(s.unit))) {
         const pricePerUnit = svc.quantity > 0 ? svc.amount / svc.quantity : svc.price;
         await (prisma as any).requestService.update({
           where: { id: svc.id },

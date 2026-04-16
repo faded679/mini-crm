@@ -355,9 +355,12 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       // Пересчитываем услуги по количеству (палеты или коробки)
       const allSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
       console.log(`[PATCH /requests/${id}] ALL services:`, allSvcs.map((s: any) => ({ id: s.id, unit: s.unit, qty: s.quantity, price: s.price, amount: s.amount, desc: s.description?.substring(0, 40) })));
-      const unitToUpdate = (updateData.packagingType ?? existing.packagingType) === "pallets" ? "пал" : "кор";
-      console.log(`[PATCH /requests/${id}] boxCount=${count}, unitToUpdate="${unitToUpdate}"`);
-      const countServices = allSvcs.filter((s: any) => s.unit === unitToUpdate);
+      const isPallets = (updateData.packagingType ?? existing.packagingType) === "pallets";
+      const matchUnit = (u: string) => isPallets
+        ? (u.startsWith("пал") || u === "pallet")
+        : (u.startsWith("кор") || u === "box" || u === "boxes");
+      console.log(`[PATCH /requests/${id}] boxCount=${count}, isPallets=${isPallets}`);
+      const countServices = allSvcs.filter((s: any) => matchUnit(s.unit));
       for (const svc of countServices) {
         const pricePerUnit = svc.quantity > 0 ? svc.amount / svc.quantity : svc.price;
         console.log(`[PATCH /requests/${id}] updating svc ${svc.id}: pricePerUnit=${pricePerUnit}, newQty=${count}, newAmount=${pricePerUnit * count}`);
@@ -392,10 +395,13 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       });
       if (rate) {
         const count = updateData.boxCount ?? existing.boxCount;
-        await (prisma as any).requestService.updateMany({
-          where: { requestId: id, unit: "пал" },
-          data: { price: rate.price, amount: rate.price * count },
-        });
+        const palSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
+        for (const svc of palSvcs.filter((s: any) => s.unit.startsWith("пал") || s.unit === "pallet")) {
+          await (prisma as any).requestService.update({
+            where: { id: svc.id },
+            data: { price: rate.price, amount: rate.price * count },
+          });
+        }
       }
     }
 
