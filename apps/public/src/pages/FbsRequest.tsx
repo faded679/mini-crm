@@ -124,7 +124,7 @@ export default function FbsRequest() {
         const isPickupService = s.name.includes("Забор груза");
         return sum + (isPickupService ? s.price : s.price * (totalQty / 0.1));
       }, 0);
-      const grandTotal = total + clientServicesTotal;
+      // const grandTotal = total + clientServicesTotal;
 
       const allItems = [
         ...items.map((it) => ({
