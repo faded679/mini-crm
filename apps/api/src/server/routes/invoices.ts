@@ -132,7 +132,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
         const activeStatuses = ["NEW", "FORM_SHOWED", "AUTHORIZING", "AUTHORIZED", "CONFIRMING"];
         if (state.Success && activeStatuses.includes(state.Status)) {
           // Платёж ещё активен — пересылаем существующую ссылку
-          let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
+          let message = `💳 <b>Ссылка на оплату №${invoice.number}</b>\n`;
           if (invoice.requests && invoice.requests.length > 0) {
             const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
             message += `Заявки: ${requestNumbers}\n`;
@@ -206,7 +206,7 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
 
     // Отправляем ссылку клиенту через бот
     try {
-      let message = `💳 <b>Счет на оплату №${invoice.number}</b>\n`;
+      let message = `💳 <b>Ссылка на оплату №${invoice.number}</b>\n`;
       if (invoice.requests && invoice.requests.length > 0) {
         const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
         message += `Заявки: ${requestNumbers}\n`;

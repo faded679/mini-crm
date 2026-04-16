@@ -36,7 +36,7 @@ export async function sendPaymentLinkEmail(opts: {
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #2563eb;">Счёт на оплату №${opts.invoiceNumber}</h2>
+      <h2 style="color: #2563eb;">Ссылка на оплату №${opts.invoiceNumber}</h2>
       ${requestsLine}
       <p>Сумма: <strong>${opts.amount.toLocaleString("ru-RU")} ₽</strong></p>
       <p>Для оплаты нажмите кнопку ниже:</p>
@@ -51,7 +51,7 @@ export async function sendPaymentLinkEmail(opts: {
   try {
     await callEmailService({
       to: opts.to,
-      subject: `Счёт на оплату №${opts.invoiceNumber}${opts.requestNumbers?.length ? ` (заявки: ${opts.requestNumbers.join(", ")})` : ""} — ${opts.amount.toLocaleString("ru-RU")} ₽`,
+      subject: `Ссылка на оплату №${opts.invoiceNumber}${opts.requestNumbers?.length ? ` (заявки: ${opts.requestNumbers.join(", ")})` : ""} — ${opts.amount.toLocaleString("ru-RU")} ₽`,
       html,
     });
     console.log(`Payment link email sent to ${opts.to}`);

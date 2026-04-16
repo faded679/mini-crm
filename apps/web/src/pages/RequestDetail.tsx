@@ -1400,24 +1400,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   </div>
                   <div className="flex justify-end pt-2 gap-2">
                     <button
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={invoiceCreating}
-                      onClick={async () => {
-                        if (invoiceCreating) return;
-                        setInvoiceCreating(true);
-                        try {
-                          await sendRequestPaymentLink(request.id);
-                          alert("Ссылка на оплату отправлена клиенту!");
-                        } catch (err) {
-                          alert(err instanceof Error ? err.message : "Ошибка отправки ссылки");
-                        } finally {
-                          setInvoiceCreating(false);
-                        }
-                      }}
-                    >
-                      {invoiceCreating ? "Отправка..." : "QR код"}
-                    </button>
-                    <button
                       className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
                       onClick={() => { setConfirmInvoice(false); setCreatedInvoice(null); }}
                     >
