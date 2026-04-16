@@ -179,6 +179,7 @@ export default function Orders() {
                   </>
                 ) : editState && (
                   <div className="space-y-2 slide-up">
+                    {!isFbs && (
                     <div>
                       <label className="text-xs text-muted block mb-1">Тип упаковки</label>
                       <div className="flex gap-2">
@@ -193,7 +194,8 @@ export default function Orders() {
                         ))}
                       </div>
                     </div>
-                    {editState.packagingType === "pallets" && palletTypes.length > 0 && (
+                    )}
+                    {!isFbs && editState.packagingType === "pallets" && palletTypes.length > 0 && (
                       <div>
                         <label className="text-xs text-muted block mb-1">Тип палет</label>
                         <select
@@ -232,6 +234,7 @@ export default function Orders() {
                         className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
                       />
                     </div>
+                    {!isFbs && (
                     <div>
                       <label className="text-xs text-muted block mb-1">
                         Кол-во {editState.packagingType === "pallets" ? "палет" : "коробок"}
@@ -244,6 +247,7 @@ export default function Orders() {
                         className="w-full h-10 px-3 rounded-xl bg-bg border border-gray-200 text-heading text-sm outline-none focus:border-accent"
                       />
                     </div>
+                    )}
                     {isFbs && (
                       <div>
                         <label className="text-xs text-muted block mb-1">Объём (м³)</label>
