@@ -128,8 +128,7 @@ export default function Orders() {
                   </span>
                 </div>
 
-                {!isEditing ? (
-                  <>
+                <>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-xs text-muted">Направление</span>
@@ -167,17 +166,7 @@ export default function Orders() {
                         </div>
                       )}
                     </div>
-
-                    {/* {r.status === "new" && (
-                      <button
-                        onClick={() => startEdit(r)}
-                        className="mt-3 w-full h-9 rounded-xl border border-accent text-accent text-xs font-semibold transition active:bg-accent active:text-white"
-                      >
-                        Редактировать
-                      </button>
-                    )} */}
                   </>
-                )}
 
               </section>
             );
