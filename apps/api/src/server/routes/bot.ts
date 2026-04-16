@@ -353,12 +353,11 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       updateData.boxCount = count;
 
       // Пересчитываем услуги по количеству (палеты или коробки)
+      const allSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
+      console.log(`[PATCH /requests/${id}] ALL services:`, allSvcs.map((s: any) => ({ id: s.id, unit: s.unit, qty: s.quantity, price: s.price, amount: s.amount, desc: s.description?.substring(0, 40) })));
       const unitToUpdate = (updateData.packagingType ?? existing.packagingType) === "pallets" ? "пал" : "кор";
       console.log(`[PATCH /requests/${id}] boxCount=${count}, unitToUpdate="${unitToUpdate}"`);
-      const countServices = await (prisma as any).requestService.findMany({
-        where: { requestId: id, unit: unitToUpdate },
-      });
-      console.log(`[PATCH /requests/${id}] found ${countServices.length} services with unit="${unitToUpdate}":`, countServices.map((s: any) => ({ id: s.id, qty: s.quantity, price: s.price, amount: s.amount })));
+      const countServices = allSvcs.filter((s: any) => s.unit === unitToUpdate);
       for (const svc of countServices) {
         const pricePerUnit = svc.quantity > 0 ? svc.amount / svc.quantity : svc.price;
         console.log(`[PATCH /requests/${id}] updating svc ${svc.id}: pricePerUnit=${pricePerUnit}, newQty=${count}, newAmount=${pricePerUnit * count}`);
