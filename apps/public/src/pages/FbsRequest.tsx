@@ -120,10 +120,10 @@ export default function FbsRequest() {
         .map((id) => clientServicePrices.find((s) => s.id === id))
         .filter((s): s is ClientServicePrice => s !== undefined);
 
-      const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => {
-        const isPickupService = s.name.includes("Забор груза");
-        return sum + (isPickupService ? s.price : s.price * (totalQty / 0.1));
-      }, 0);
+      // const clientServicesTotal = selectedClientServicesList.reduce((sum, s) => {
+      //   const isPickupService = s.name.includes("Забор груза");
+      //   return sum + (isPickupService ? s.price : s.price * (totalQty / 0.1));
+      // }, 0);
       // const grandTotal = total + clientServicesTotal;
 
       const allItems = [
