@@ -384,6 +384,21 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         const exists = await (prisma as any).boxType.findUnique({ where: { id: btId } });
         if (!exists) throw new ApiError(400, "Invalid boxTypeId");
         updateData.boxTypeId = btId;
+
+        // Пересчитываем цену услуг по новому тарифу коробки
+        const rate = await (prisma as any).priceRate.findFirst({
+          where: { cityId: existing.cityId, unit: "boxes", boxTypeId: btId },
+        });
+        if (rate) {
+          const count = updateData.boxCount ?? existing.boxCount;
+          const boxSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
+          for (const svc of boxSvcs.filter((s: any) => s.unit.startsWith("кор") || s.unit === "box" || s.unit === "boxes")) {
+            await (prisma as any).requestService.update({
+              where: { id: svc.id },
+              data: { price: rate.price, amount: rate.price * count },
+            });
+          }
+        }
       }
     }
 
