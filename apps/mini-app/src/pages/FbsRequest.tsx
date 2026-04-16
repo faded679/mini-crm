@@ -168,14 +168,14 @@ export default function FbsRequest() {
         volume: totalQty,
         boxCount: totalQty,
         deliveryTypeId: 1, // FBS
-        comment:
+        /* comment:
           items
             .map((it, i) => `${i + 1}. ${it.volume} x${it.qty} = ${it.amount}₽`)
             .join("; ") + 
           (selectedClientServicesList.length > 0
             ? " | Услуги клиента: " + selectedClientServicesList.map((s) => s.name).join(", ")
             : "") +
-          ` | Итого: ${grandTotal.toLocaleString("ru-RU")}₽`,
+          ` | Итого: ${grandTotal.toLocaleString("ru-RU")}₽`, */
         items: allItems,
       }); 
       navigate("/history");

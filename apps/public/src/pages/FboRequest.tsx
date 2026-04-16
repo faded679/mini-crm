@@ -173,7 +173,7 @@ export default function FboRequest() {
         ...(deliveryTypeId ? { deliveryTypeId } : {}),
         ...(mpDate ? { mpAccountDate: mpDate } : {}),
         boxCount: totalQty,
-        comment: items
+        /* comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
           .join("; ") +
           (selectedClientServicesList.length > 0
@@ -182,7 +182,7 @@ export default function FboRequest() {
               return isPickupService ? s.name : `${s.name} x${totalQty}`;
             }).join(", ")
             : "") +
-          ` | Итого: ${grandTotal}₽`,
+          ` | Итого: ${grandTotal}₽`, */
         items: allItems,
       });
       navigate(`/success/${result.id}`);
