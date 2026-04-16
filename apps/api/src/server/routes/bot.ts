@@ -983,6 +983,10 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
     const requests = await (prisma as any).shipmentRequest.findMany({
       where: { clientId: client.id },
       orderBy: { createdAt: "desc" },
+      include: {
+        boxType: { select: { id: true, name: true } },
+        palletType: { select: { id: true, name: true } },
+      },
     });
     const ids: number[] = requests.map((r: any) => r.id);
     const serviceTotals = ids.length > 0

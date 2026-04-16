@@ -1063,6 +1063,23 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       include: { client: true },
     });
 
+    // Recalculate service amounts when boxCount changes
+    if (body.boxCount !== undefined && body.boxCount !== null && body.boxCount > 0 &&
+        body.boxCount !== existing.boxCount) {
+      const newCount = body.boxCount;
+      const packType = (body.packagingType ?? (existing as any).packagingType) === "pallets" ? "пал" : "кор";
+      const countServices = await (prisma as any).requestService.findMany({
+        where: { requestId: id, unit: packType },
+      });
+      for (const svc of countServices) {
+        const pricePerUnit = svc.quantity > 0 ? svc.amount / svc.quantity : svc.price;
+        await (prisma as any).requestService.update({
+          where: { id: svc.id },
+          data: { quantity: newCount, amount: pricePerUnit * newCount },
+        });
+      }
+    }
+
     // Log field-level changes (weight, boxCount, volume, packagingType, deliveryDate)
     const fieldChanges: { field: string; oldValue: string | null; newValue: string | null }[] = [];
 

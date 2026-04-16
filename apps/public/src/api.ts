@@ -60,6 +60,7 @@ export interface ShipmentRequest {
   cityId: number;
   deliveryDate: string;
   boxTypeId?: number | null;
+  palletTypeId?: number | null;
   size?: string;
   weight?: number | null;
   volume?: number | null;
@@ -70,6 +71,8 @@ export interface ShipmentRequest {
   createdAt: string;
   mpAccountDate?: string | null;
   deliveryTypeId?: number | null;
+  boxType?: { id: number; name: string } | null;
+  palletType?: { id: number; name: string } | null;
   _totalAmount?: number;
 }
 
