@@ -34,7 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://test.ved31.ru}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://sologo.ru,https://crm.sologo.ru,https://app.sologo.ru,https://warehouse.sologo.ru,https://test.ved31.ru}
       PORT: "3000"
       DADATA_TOKEN: ${DADATA_TOKEN}
       TBANK_TERMINAL_KEY: ${TBANK_TERMINAL_KEY:-}
