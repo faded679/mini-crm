@@ -88,6 +88,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
   const [editDeliveryDate, setEditDeliveryDate] = useState("");
   const [editPackagingType, setEditPackagingType] = useState<PackagingType>("boxes");
   const [editBoxTypeId, setEditBoxTypeId] = useState<string>("");
+  const [editPalletTypeId, setEditPalletTypeId] = useState<string>("");
   const [editBoxCount, setEditBoxCount] = useState<string>("");
   const [editVolume, setEditVolume] = useState<string>("");
   const [editWeight, setEditWeight] = useState<string>("");
@@ -179,6 +180,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
         setEditDeliveryDate(new Date(r.deliveryDate).toISOString().slice(0, 10));
         setEditPackagingType(r.packagingType);
         setEditBoxTypeId(r.boxTypeId == null ? "" : String(r.boxTypeId));
+        setEditPalletTypeId((r as any).palletTypeId == null ? "" : String((r as any).palletTypeId));
         setEditBoxCount(String(r.boxCount));
         setEditVolume((r as any).volume == null ? "" : String((r as any).volume));
         setEditWeight(r.weight == null ? "" : String(r.weight));
@@ -284,6 +286,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
     const volume = editVolume.trim() === "" ? null : Number(editVolume);
     const weight = editWeight.trim() === "" ? null : Number(editWeight);
     const boxTypeId = editBoxTypeId === "" ? null : Number(editBoxTypeId);
+    const palletTypeId = editPalletTypeId === "" ? undefined : Number(editPalletTypeId);
 
     setUpdating(true);
     try {
@@ -292,6 +295,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
         deliveryDate,
         packagingType: editPackagingType,
         boxTypeId,
+        ...(palletTypeId ? { palletTypeId } : {}),
         boxCount,
         volume,
         weight,
@@ -314,6 +318,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
     setEditDeliveryDate(new Date(request.deliveryDate).toISOString().slice(0, 10));
     setEditPackagingType(request.packagingType);
     setEditBoxTypeId(request.boxTypeId == null ? "" : String(request.boxTypeId));
+    setEditPalletTypeId((request as any).palletTypeId == null ? "" : String((request as any).palletTypeId));
     setEditBoxCount(String(request.boxCount));
     setEditVolume((request as any).volume == null ? "" : String((request as any).volume));
     setEditWeight(request.weight == null ? "" : String(request.weight));
@@ -498,6 +503,26 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                     <p className="text-sm text-gray-900 dark:text-gray-100">
                       {request.packagingType === "boxes" ? ((request as any)?.boxType?.name ?? "—") : "—"}
                     </p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-1">Тип палеты</p>
+                  {editing ? (
+                    <select
+                      value={editPalletTypeId}
+                      onChange={(e) => setEditPalletTypeId(e.target.value)}
+                      disabled={editPackagingType !== "pallets"}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                    >
+                      <option value="">Выберите...</option>
+                      {palletTypes.map((pt) => (
+                        <option key={pt.id} value={String(pt.id)}>
+                          {pt.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-gray-900 dark:text-gray-100">—</p>
                   )}
                 </div>
               </>
