@@ -222,6 +222,7 @@ export default function Orders() {
                         className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
                       />
                     </div>
+                    {!isFbs && (
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-muted">Дата МП/ЛК</span>
                       <input
@@ -231,6 +232,7 @@ export default function Orders() {
                         className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
                       />
                     </div>
+                    )}
 
                     {saveError && <p className="text-xs text-red-500">{saveError}</p>}
 
