@@ -515,7 +515,10 @@ router.get("/rates", requireWarehouseAuth, async (_req: Request, res: Response, 
 // GET /warehouse-web/schedule-fbs
 router.get("/schedule-fbs", requireWarehouseAuth, async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    res.json(await (prisma as any).scheduleFbs.findMany({ orderBy: { deliveryDate: "asc" } }));
+    res.json(await (prisma as any).deliveryScheduleFbs.findMany({
+      include: { cityRef: true },
+      orderBy: { deliveryDate: "asc" },
+    }));
   } catch (err) { next(err); }
 });
 
@@ -534,19 +537,34 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
 
     const worker = (req as any).warehouseWorker;
 
-    // Resolve city shortName
+    // Resolve city: for FBS (deliveryTypeId=1), cityId is CityFbs.id — need to find/create matching City
+    const isFbs = Number(deliveryTypeId) === 1;
+    let finalCityId: number;
     let cityShortName = "";
-    if (deliveryTypeId === 1) {
-      const city = await (prisma as any).cityFbs.findUnique({ where: { id: cityId } });
-      cityShortName = city?.shortName || "";
+
+    if (isFbs) {
+      const cityFbs = await (prisma as any).cityFbs.findUnique({ where: { id: Number(cityId) } });
+      if (!cityFbs) throw new ApiError(404, "CityFbs not found");
+      cityShortName = cityFbs.shortName;
+      // Find matching City by shortName, create if not found
+      const city = await (prisma as any).city.findUnique({ where: { shortName: cityFbs.shortName } });
+      if (city) {
+        finalCityId = city.id;
+      } else {
+        const newCity = await (prisma as any).city.create({ data: { shortName: cityFbs.shortName, fullName: cityFbs.fullName || cityFbs.shortName } });
+        finalCityId = newCity.id;
+      }
     } else {
-      const city = await (prisma as any).city.findUnique({ where: { id: cityId } });
-      cityShortName = city?.shortName || "";
+      const city = await (prisma as any).city.findUnique({ where: { id: Number(cityId) } });
+      if (!city) throw new ApiError(404, "City not found");
+      finalCityId = city.id;
+      cityShortName = city.shortName;
     }
 
     const request = await (prisma as any).shipmentRequest.create({
       data: {
         clientId: Number(clientId),
+        cityId: finalCityId,
         city: cityShortName,
         deliveryDate: new Date(deliveryDate),
         packagingType: packagingType || "boxes",
@@ -556,7 +574,7 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
         volume: volume ? Number(volume) : null,
         deliveryTypeId: Number(deliveryTypeId),
         status: "new",
-        source: "warehouse_web",
+        size: "",
       },
     });
 

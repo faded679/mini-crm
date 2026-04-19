@@ -181,19 +181,33 @@ export default function WarehouseCreateRequest() {
 
         {step === "date" && (
           <div className="space-y-3">
-            {reqType === "fbs" && selectedCity ? (
-              <>
-                <p className="text-sm text-gray-500">Доступные даты для {selectedCity.shortName}:</p>
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                  {scheduleFbs.filter((s) => s.destination === selectedCity.shortName).map((s) => (
-                    <button key={s.id} onClick={() => { setDeliveryDate(s.deliveryDate); setStep("volume"); }}
-                      className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-sm font-medium text-gray-700 text-left active:bg-gray-50">
-                      {new Date(s.deliveryDate).toLocaleDateString("ru-RU")}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
+            {reqType === "fbs" && selectedCity ? (() => {
+              const fbsDates = scheduleFbs.filter((s) => s.cityId === selectedCity.id);
+              if (fbsDates.length === 0) {
+                return (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Нет расписания для {selectedCity.shortName}. Выберите дату вручную:</p>
+                    <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg" />
+                    <button onClick={() => { if (deliveryDate) setStep("volume"); }} disabled={!deliveryDate}
+                      className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium disabled:opacity-50">Далее</button>
+                  </div>
+                );
+              }
+              return (
+                <>
+                  <p className="text-sm text-gray-500">Доступные даты для {selectedCity.shortName}:</p>
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                    {fbsDates.map((s) => (
+                      <button key={s.id} onClick={() => { setDeliveryDate(s.deliveryDate.split("T")[0]); setStep("volume"); }}
+                        className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-sm font-medium text-gray-700 text-left active:bg-gray-50">
+                        {new Date(s.deliveryDate).toLocaleDateString("ru-RU")}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              );
+            })() : (
               <div className="space-y-3">
                 <p className="text-sm text-gray-500">Выберите дату доставки:</p>
                 <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}

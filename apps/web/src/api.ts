@@ -1157,7 +1157,7 @@ export interface WHPalletType { id: number; name: string; comment?: string; minV
 export interface WHServicePrice { id: number; name: string; price: number; unit?: string; }
 export interface WHCity { id: number; shortName: string; fullName: string; }
 export interface WHRate { id: number; cityId: number; unit: string; price: number; boxTypeId?: number; palletTypeId?: number; }
-export interface WHScheduleFbs { id: number; destination: string; deliveryDate: string; }
+export interface WHScheduleFbs { id: number; cityId: number; destination: string; deliveryDate: string; cityRef?: { id: number; shortName: string; fullName: string }; }
 export interface WHPriceFbs { id: number; destination: string; volume: string; price: string; }
 export interface WHClient {
   id: number;
