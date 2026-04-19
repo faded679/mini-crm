@@ -1108,3 +1108,136 @@ export function bulkShipRequests(requestIds: number[]) {
 export function getWarehouseStats() {
   return warehouseRequest<WarehouseStats>("/warehouse-web/stats");
 }
+
+// --- New warehouse endpoints ---
+
+export interface WarehouseRequestPhoto {
+  id: number;
+  fileId: string;
+  fileUrl: string | null;
+  uploadedAt: string;
+}
+
+export interface WarehouseRequestService {
+  id: number;
+  description: string;
+  quantity: number;
+  price: number;
+  amount: number;
+}
+
+export interface WarehouseRequest {
+  id: number;
+  status: string;
+  packagingType: "pallets" | "boxes";
+  boxCount: number;
+  volume?: number | null;
+  weight?: number | null;
+  city: string;
+  deliveryDate: string;
+  source?: string;
+  client: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    phone?: string;
+    counterparties?: Array<{ counterparty: { id: number; name: string; shortName?: string } }>;
+  };
+  deliveryType?: { id: number; name: string };
+  boxType?: { id: number; name: string } | null;
+  palletType?: { id: number; name: string } | null;
+  photos?: WarehouseRequestPhoto[];
+  services?: WarehouseRequestService[];
+  cityRef?: { shortName: string; fullName: string };
+}
+
+export interface WHBoxType { id: number; name: string; hint?: string; maxVolumeM3?: number; }
+export interface WHPalletType { id: number; name: string; comment?: string; minValue?: number; maxValue?: number; }
+export interface WHServicePrice { id: number; name: string; price: number; unit?: string; }
+export interface WHCity { id: number; shortName: string; fullName: string; }
+export interface WHRate { id: number; cityId: number; unit: string; price: number; boxTypeId?: number; palletTypeId?: number; }
+export interface WHScheduleFbs { id: number; destination: string; deliveryDate: string; }
+export interface WHPriceFbs { id: number; destination: string; volume: string; price: string; }
+export interface WHClient {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  counterparties?: Array<{ counterparty: { id: number; name: string; shortName?: string } }>;
+}
+
+export function getWarehouseNewRequests(deliveryType?: string) {
+  const params = deliveryType ? `?deliveryType=${deliveryType}` : "";
+  return warehouseRequest<WarehouseRequest[]>(`/warehouse-web/requests/new${params}`);
+}
+
+export function getWarehouseRequestById(id: number) {
+  return warehouseRequest<WarehouseRequest>(`/warehouse-web/requests/${id}`);
+}
+
+export function updateWarehouseVolume(id: number, volume: number) {
+  return warehouseRequest<any>(`/warehouse-web/requests/${id}/volume`, {
+    method: "PATCH", body: JSON.stringify({ volume }),
+  });
+}
+
+export function updateWarehousePackaging(id: number, data: { boxCount?: number; boxTypeId?: number | null; palletTypeId?: number | null }) {
+  return warehouseRequest<any>(`/warehouse-web/requests/${id}/packaging`, {
+    method: "PATCH", body: JSON.stringify(data),
+  });
+}
+
+export function updateWarehousePackagingType(id: number, packagingType: "boxes" | "pallets") {
+  return warehouseRequest<any>(`/warehouse-web/requests/${id}/packaging-type`, {
+    method: "PATCH", body: JSON.stringify({ packagingType }),
+  });
+}
+
+export function moveWarehouseToWarehouse(id: number) {
+  return warehouseRequest<any>(`/warehouse-web/requests/${id}/status`, {
+    method: "PATCH", body: JSON.stringify({}),
+  });
+}
+
+export async function uploadWarehousePhoto(requestId: number, file: File): Promise<any> {
+  const token = getWarehouseToken();
+  const formData = new FormData();
+  formData.append("photo", file);
+  const res = await fetch(`${API_URL}/warehouse-web/requests/${requestId}/photo`, {
+    method: "POST",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: formData,
+  });
+  if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error((b as any).message || `HTTP ${res.status}`); }
+  return res.json();
+}
+
+export function deleteWarehousePhoto(requestId: number, photoId: number) {
+  return warehouseRequest<{ ok: boolean }>(`/warehouse-web/requests/${requestId}/photo/${photoId}`, { method: "DELETE" });
+}
+
+export function addWarehouseService(requestId: number, servicePriceId: number, quantity: number) {
+  return warehouseRequest<any>(`/warehouse-web/requests/${requestId}/services`, {
+    method: "POST", body: JSON.stringify({ servicePriceId, quantity }),
+  });
+}
+
+export function deleteWarehouseService(requestId: number, serviceId: number) {
+  return warehouseRequest<{ ok: boolean }>(`/warehouse-web/requests/${requestId}/services/${serviceId}`, { method: "DELETE" });
+}
+
+export function getWarehouseBoxTypes() { return warehouseRequest<WHBoxType[]>("/warehouse-web/box-types"); }
+export function getWarehousePalletTypes() { return warehouseRequest<WHPalletType[]>("/warehouse-web/pallet-types"); }
+export function getWarehouseServicePrices() { return warehouseRequest<WHServicePrice[]>("/warehouse-web/service-prices"); }
+export function getWarehouseCities() { return warehouseRequest<WHCity[]>("/warehouse-web/cities"); }
+export function getWarehouseCitiesFbs() { return warehouseRequest<WHCity[]>("/warehouse-web/cities-fbs"); }
+export function getWarehouseClients() { return warehouseRequest<WHClient[]>("/warehouse-web/clients"); }
+export function getWarehouseRates() { return warehouseRequest<WHRate[]>("/warehouse-web/rates"); }
+export function getWarehouseScheduleFbs() { return warehouseRequest<WHScheduleFbs[]>("/warehouse-web/schedule-fbs"); }
+export function getWarehousePriceFbs() { return warehouseRequest<WHPriceFbs[]>("/warehouse-web/price-fbs"); }
+
+export function createWarehouseRequest(data: any) {
+  return warehouseRequest<any>("/warehouse-web/create-request", {
+    method: "POST", body: JSON.stringify(data),
+  });
+}

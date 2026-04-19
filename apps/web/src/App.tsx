@@ -15,7 +15,11 @@ import Broadcast from "./pages/Broadcast";
 import Finance from "./pages/Finance";
 import Reconciliation from "./pages/Reconciliation";
 import WarehouseLogin from "./pages/WarehouseLogin";
+import WarehouseDashboard from "./pages/WarehouseDashboard";
 import WarehouseShipment from "./pages/WarehouseShipment";
+import WarehouseNewRequests from "./pages/WarehouseNewRequests";
+import WarehouseRequestDetail from "./pages/WarehouseRequestDetail";
+import WarehouseCreateRequest from "./pages/WarehouseCreateRequest";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -60,14 +64,11 @@ export default function App() {
 
             {/* Warehouse routes */}
             <Route path="/warehouse/login" element={<WarehouseLogin />} />
-            <Route
-              path="/warehouse"
-              element={
-                <WarehouseProtectedRoute>
-                  <WarehouseShipment />
-                </WarehouseProtectedRoute>
-              }
-            />
+            <Route path="/warehouse" element={<WarehouseProtectedRoute><WarehouseDashboard /></WarehouseProtectedRoute>} />
+            <Route path="/warehouse/new" element={<WarehouseProtectedRoute><WarehouseNewRequests /></WarehouseProtectedRoute>} />
+            <Route path="/warehouse/request/:id" element={<WarehouseProtectedRoute><WarehouseRequestDetail /></WarehouseProtectedRoute>} />
+            <Route path="/warehouse/shipment" element={<WarehouseProtectedRoute><WarehouseShipment /></WarehouseProtectedRoute>} />
+            <Route path="/warehouse/create" element={<WarehouseProtectedRoute><WarehouseCreateRequest /></WarehouseProtectedRoute>} />
 
             {/* Redirects */}
             <Route path="/login" element={<Navigate to="/admin/login" replace />} />

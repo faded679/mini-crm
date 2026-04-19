@@ -54,6 +54,7 @@ export function createApp() {
 
   // Serve static assets
   app.use("/assets", express.static(path.join(__dirname, "../../assets")));
+  app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
 
   app.use("/auth", authRouter);
   app.use("/public-auth", publicAuthRouter);

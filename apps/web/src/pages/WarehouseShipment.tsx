@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useWarehouseAuth } from "../warehouseAuth";
 import { getWarehouseRequests, bulkShipRequests, getWarehouseStats, type ShipmentRequest, type WarehouseStats } from "../api";
 
 type DeliveryFilter = "all" | "FBO" | "FBS";
 
 export default function WarehouseShipment() {
+  const navigate = useNavigate();
   const { worker, logout } = useWarehouseAuth();
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [stats, setStats] = useState<WarehouseStats | null>(null);
@@ -95,6 +97,7 @@ export default function WarehouseShipment() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <button onClick={() => navigate("/warehouse")} className="text-2xl leading-none">←</button>
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                 <span className="text-xl">🏢</span>
               </div>

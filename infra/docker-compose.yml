@@ -27,6 +27,8 @@ services:
         condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      - mini_crm_uploads:/app/uploads
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/mini_crm?schema=public
       JWT_SECRET: ${JWT_SECRET}
@@ -101,3 +103,4 @@ services:
 
 volumes:
   mini_crm_pgdata:
+  mini_crm_uploads:
