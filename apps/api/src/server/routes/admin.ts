@@ -1,4 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { prisma } from "../db/prisma.js";
 import { requireAuth } from "../auth/middleware.js";
 import { ApiError } from "../errors.js";
@@ -10,9 +13,12 @@ import { generateActPdfBuffer } from "../services/act-pdf.js";
 import { sendInvoiceEmail, sendActEmail } from "../services/email-service.js";
 import { env } from "../env.js";
 
+const __filename_admin = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename_admin);
+
 const router = Router();
 
-// GET /admin/requests/:id/photo/:photoId - получить фото от Telegram (публичный endpoint)
+// GET /admin/requests/:id/photo/:photoId - получить фото от Telegram или с диска (публичный endpoint)
 router.get("/requests/:id/photo/:photoId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const photoId = Number(req.params.photoId);
@@ -23,6 +29,19 @@ router.get("/requests/:id/photo/:photoId", async (req: Request, res: Response, n
     
     if (!photo) {
       throw new ApiError(404, "Photo not found");
+    }
+
+    // Если фото загружено через PWA (локально)
+    if (photo.fileId?.startsWith("upload:") && photo.fileUrl) {
+      const filePath = path.resolve(__dirname, "../../.." + photo.fileUrl);
+      if (!fs.existsSync(filePath)) {
+        throw new ApiError(404, "Photo file not found on disk");
+      }
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeMap: Record<string, string> = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp" };
+      res.setHeader("Content-Type", mimeMap[ext] || "image/jpeg");
+      res.send(fs.readFileSync(filePath));
+      return;
     }
     
     // Получаем файл от Telegram
