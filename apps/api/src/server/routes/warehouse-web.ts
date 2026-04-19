@@ -162,9 +162,8 @@ router.patch("/requests/bulk-ship", requireWarehouseAuth, async (req: Request, r
     // Создаем записи в истории статусов для каждой заявки
     const historyRecords = requestIds.map((id) => ({
       requestId: id,
-      status: "shipped",
-      changedBy: `warehouse_worker_${worker.id}`,
-      comment: `Отгружено кладовщиком ${worker.name}`,
+      oldStatus: "warehouse",
+      newStatus: "shipped",
     }));
 
     await (prisma as any).requestStatusHistory.createMany({
@@ -360,7 +359,7 @@ router.patch("/requests/:id/status", requireWarehouseAuth, async (req: Request, 
     const worker = (req as any).warehouseWorker;
     const updated = await (prisma as any).shipmentRequest.update({ where: { id }, data: { status: "warehouse" } });
     await (prisma as any).requestStatusHistory.create({
-      data: { requestId: id, status: "warehouse", changedBy: `warehouse_worker_${worker.id}`, comment: `На склад: ${worker.name}` },
+      data: { requestId: id, oldStatus: "new", newStatus: "warehouse" },
     });
     res.json(updated);
   } catch (err) {
@@ -593,7 +592,7 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
     }
 
     await (prisma as any).requestStatusHistory.create({
-      data: { requestId: request.id, status: "new", changedBy: `warehouse_worker_${worker.id}`, comment: `Создано кладовщиком ${worker.name} (web)` },
+      data: { requestId: request.id, oldStatus: "new", newStatus: "new" },
     });
 
     res.status(201).json(request);
