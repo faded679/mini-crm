@@ -114,6 +114,7 @@ model ShipmentRequest {
   weight      Float?
   boxCount    Int                    @map("box_count")
   boxTypeId   Int?                   @map("box_type_id")
+  palletTypeId Int?                  @map("pallet_type_id")
   packagingType PackagingType        @default(boxes) @map("packaging_type")
   comment     String?
   status      RequestStatus          @default(new)
@@ -126,6 +127,7 @@ model ShipmentRequest {
   client       Client                 @relation(fields: [clientId], references: [id])
   cityRef      City                   @relation(fields: [cityId], references: [id])
   boxType      BoxType?               @relation(fields: [boxTypeId], references: [id])
+  palletType   PalletType?            @relation(fields: [palletTypeId], references: [id])
   deliveryType DeliveryType?          @relation(fields: [deliveryTypeId], references: [id])
   history      RequestStatusHistory[]
   fieldHistory RequestFieldHistory[]
@@ -187,6 +189,7 @@ model PalletType {
   updatedAt DateTime  @updatedAt @map("updated_at")
 
   rates     PriceRate[]
+  requests  ShipmentRequest[]
 
   @@map("pallet_types")
 }

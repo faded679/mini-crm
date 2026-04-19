@@ -402,20 +402,26 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
       }
     }
 
-    if (palletTypeId !== undefined && palletTypeId !== null) {
-      const ptId = Number(palletTypeId);
-      if (!Number.isFinite(ptId)) throw new ApiError(400, "Invalid palletTypeId");
-      const rate = await (prisma as any).priceRate.findFirst({
-        where: { cityId: existing.cityId, unit: "pallet", palletTypeId: ptId },
-      });
-      if (rate) {
-        const count = updateData.boxCount ?? existing.boxCount;
-        const palSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
-        for (const svc of palSvcs.filter((s: any) => s.unit.startsWith("пал") || s.unit === "pallet")) {
-          await (prisma as any).requestService.update({
-            where: { id: svc.id },
-            data: { price: rate.price, amount: rate.price * count },
-          });
+    if (palletTypeId !== undefined) {
+      if (palletTypeId === null) {
+        updateData.palletTypeId = null;
+      } else {
+        const ptId = Number(palletTypeId);
+        if (!Number.isFinite(ptId)) throw new ApiError(400, "Invalid palletTypeId");
+        updateData.palletTypeId = ptId;
+
+        const rate = await (prisma as any).priceRate.findFirst({
+          where: { cityId: existing.cityId, unit: "pallet", palletTypeId: ptId },
+        });
+        if (rate) {
+          const count = updateData.boxCount ?? existing.boxCount;
+          const palSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
+          for (const svc of palSvcs.filter((s: any) => s.unit.startsWith("пал") || s.unit === "pallet")) {
+            await (prisma as any).requestService.update({
+              where: { id: svc.id },
+              data: { price: rate.price, amount: rate.price * count },
+            });
+          }
         }
       }
     }
@@ -1008,6 +1014,8 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
       orderBy: { createdAt: "desc" },
       include: {
         boxType: { select: { id: true, name: true } },
+        palletType: { select: { id: true, name: true } },
+        deliveryType: { select: { id: true, name: true } },
         services: true,
       },
     });

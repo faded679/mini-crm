@@ -61,7 +61,7 @@ export default function Orders() {
       packagingType: r.packagingType,
       boxCount: String(r.boxCount),
       boxTypeId: r.boxTypeId ? String(r.boxTypeId) : "",
-      palletTypeId: "",
+      palletTypeId: r.palletTypeId ? String(r.palletTypeId) : "",
       volume: r.volume ? String(r.volume) : "",
       mpAccountDate: toInputDate(r.mpAccountDate),
     });
@@ -76,18 +76,29 @@ export default function Orders() {
 
   const handleSave = async (id: number) => {
     if (!editState) return;
+    const req = requests.find((r) => r.id === id);
+    const isFbs = req?.deliveryTypeId === 1;
     setSaving(true);
     setSaveError("");
     try {
-      await patchRequest(id, {
+      const patch: Parameters<typeof patchRequest>[1] = {
         deliveryDate: editState.deliveryDate || undefined,
-        packagingType: editState.packagingType,
-        boxCount: Number(editState.boxCount) > 0 ? Number(editState.boxCount) : undefined,
-        boxTypeId: editState.packagingType === "boxes" && editState.boxTypeId ? Number(editState.boxTypeId) : editState.packagingType === "pallets" ? null : undefined,
-        palletTypeId: editState.packagingType === "pallets" && editState.palletTypeId ? Number(editState.palletTypeId) : undefined,
-        volume: editState.volume ? Number(editState.volume) : undefined,
         mpAccountDate: editState.mpAccountDate || null,
-      });
+      };
+      if (isFbs) {
+        patch.volume = editState.volume ? Number(editState.volume) : undefined;
+      } else {
+        patch.packagingType = editState.packagingType;
+        patch.boxCount = Number(editState.boxCount) > 0 ? Number(editState.boxCount) : undefined;
+        if (editState.packagingType === "boxes") {
+          patch.boxTypeId = editState.boxTypeId ? Number(editState.boxTypeId) : undefined;
+          patch.palletTypeId = null;
+        } else {
+          patch.palletTypeId = editState.palletTypeId ? Number(editState.palletTypeId) : undefined;
+          patch.boxTypeId = null;
+        }
+      }
+      await patchRequest(id, patch);
       setEditingId(null);
       setEditState(null);
       setLoading(true);
@@ -128,7 +139,126 @@ export default function Orders() {
                   </span>
                 </div>
 
-                <>
+                {isEditing && editState ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted">Направление</span>
+                      <span className="text-xs text-heading font-medium">{r.city}</span>
+                    </div>
+
+                    {isFbs ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted">Объём (м³)</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={editState.volume}
+                            onChange={(e) => setEditState({ ...editState, volume: e.target.value.replace(",", ".") })}
+                            placeholder="0.5"
+                            className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200 w-20 text-right"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted">Упаковка</span>
+                          <select
+                            value={editState.packagingType}
+                            onChange={(e) => setEditState({ ...editState, packagingType: e.target.value as "pallets" | "boxes", boxTypeId: "", palletTypeId: "" })}
+                            className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
+                          >
+                            <option value="pallets">Палеты</option>
+                            <option value="boxes">Коробки</option>
+                          </select>
+                        </div>
+
+                        {editState.packagingType === "pallets" && palletTypes.length > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted">Тип палеты</span>
+                            <select
+                              value={editState.palletTypeId}
+                              onChange={(e) => setEditState({ ...editState, palletTypeId: e.target.value })}
+                              className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
+                            >
+                              <option value="">— выбрать —</option>
+                              {palletTypes.map((pt) => (
+                                <option key={pt.id} value={pt.id}>{pt.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {editState.packagingType === "boxes" && boxTypes.length > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted">Тип коробки</span>
+                            <select
+                              value={editState.boxTypeId}
+                              onChange={(e) => setEditState({ ...editState, boxTypeId: e.target.value })}
+                              className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
+                            >
+                              <option value="">— выбрать —</option>
+                              {boxTypes.map((bt) => (
+                                <option key={bt.id} value={bt.id}>{bt.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted">Количество</span>
+                          <input
+                            type="number"
+                            min="1"
+                            value={editState.boxCount}
+                            onChange={(e) => setEditState({ ...editState, boxCount: e.target.value })}
+                            className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200 w-20 text-right"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted">Дата поставки</span>
+                      <input
+                        type="date"
+                        value={editState.deliveryDate}
+                        onChange={(e) => setEditState({ ...editState, deliveryDate: e.target.value })}
+                        className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted">Дата МП/ЛК</span>
+                      <input
+                        type="date"
+                        value={editState.mpAccountDate}
+                        onChange={(e) => setEditState({ ...editState, mpAccountDate: e.target.value })}
+                        className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
+                      />
+                    </div>
+
+                    {saveError && <p className="text-xs text-red-500">{saveError}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="flex-1 py-2 rounded-xl bg-gray-100 text-heading text-xs font-semibold active:opacity-70 transition disabled:opacity-50"
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        onClick={() => handleSave(r.id)}
+                        disabled={saving}
+                        className="flex-1 py-2 rounded-xl bg-accent text-white text-xs font-semibold active:opacity-70 transition disabled:opacity-50"
+                      >
+                        {saving ? "Сохранение..." : "Сохранить"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-xs text-muted">Направление</span>
@@ -144,15 +274,22 @@ export default function Orders() {
                           <span className="text-xs text-heading font-medium">{formatDate(r.mpAccountDate)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span className="text-xs text-muted">Тип груза</span>
-                        <span className="text-xs text-heading font-medium">
-                          {r.packagingType === "pallets" ? "Палеты" : "Коробки"}
-                          {r.packagingType === "boxes" && r.boxType ? ` (${r.boxType.name})` : ""}
-                          {" "}× {r.boxCount}
-                          {r.volume ? ` · ${r.volume} м³` : ""}
-                        </span>
-                      </div>
+                      {isFbs ? (
+                        <div className="flex justify-between">
+                          <span className="text-xs text-muted">Объём</span>
+                          <span className="text-xs text-heading font-medium">{r.volume ? `${r.volume} м³` : "—"}</span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between">
+                          <span className="text-xs text-muted">Тип груза</span>
+                          <span className="text-xs text-heading font-medium">
+                            {r.packagingType === "pallets" ? "Палеты" : "Коробки"}
+                            {r.packagingType === "pallets" && r.palletType ? ` (${r.palletType.name})` : ""}
+                            {r.packagingType === "boxes" && r.boxType ? ` (${r.boxType.name})` : ""}
+                            {" "}× {r.boxCount}
+                          </span>
+                        </div>
+                      )}
                       {r._totalAmount !== undefined && r._totalAmount > 0 && (
                         <div className="flex justify-between">
                           <span className="text-xs text-muted">Сумма</span>
@@ -166,7 +303,17 @@ export default function Orders() {
                         </div>
                       )}
                     </div>
+
+                    {r.status === "new" && !isEditing && (
+                      <button
+                        onClick={() => startEdit(r)}
+                        className="w-full mt-3 py-2 rounded-xl bg-accent text-white text-xs font-semibold active:opacity-70 transition"
+                      >
+                        Редактировать
+                      </button>
+                    )}
                   </>
+                )}
 
               </section>
             );

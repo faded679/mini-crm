@@ -73,6 +73,7 @@ export interface ShipmentRequest {
   deliveryTypeId?: number | null;
   boxType?: { id: number; name: string } | null;
   palletType?: { id: number; name: string } | null;
+  deliveryType?: { id: number; name: string } | null;
   _totalAmount?: number;
 }
 
@@ -224,7 +225,7 @@ export function patchRequest(id: number, data: {
   boxCount?: number;
   boxTypeId?: number | null;
   palletTypeId?: number | null;
-  volume?: number;
+  volume?: number | null;
   mpAccountDate?: string | null;
 }) {
   return api<ShipmentRequest>(`/bot/requests/${id}`, {
