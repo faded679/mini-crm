@@ -88,7 +88,6 @@ export default function Orders() {
       if (isFbs) {
         patch.volume = editState.volume ? Number(editState.volume) : undefined;
       } else {
-        patch.packagingType = editState.packagingType;
         patch.boxCount = Number(editState.boxCount) > 0 ? Number(editState.boxCount) : undefined;
         if (editState.packagingType === "boxes") {
           patch.boxTypeId = editState.boxTypeId ? Number(editState.boxTypeId) : undefined;
@@ -164,14 +163,9 @@ export default function Orders() {
                       <>
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-muted">Упаковка</span>
-                          <select
-                            value={editState.packagingType}
-                            onChange={(e) => setEditState({ ...editState, packagingType: e.target.value as "pallets" | "boxes", boxTypeId: "", palletTypeId: "" })}
-                            className="text-xs font-medium bg-white text-heading rounded px-2 py-1 border border-gray-200"
-                          >
-                            <option value="pallets">Палеты</option>
-                            <option value="boxes">Коробки</option>
-                          </select>
+                          <span className="text-xs text-heading font-medium">
+                            {editState.packagingType === "pallets" ? "Палеты" : "Коробки"}
+                          </span>
                         </div>
 
                         {editState.packagingType === "pallets" && palletTypes.length > 0 && (
