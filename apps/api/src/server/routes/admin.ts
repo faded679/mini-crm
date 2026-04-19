@@ -262,6 +262,7 @@ router.get("/requests", async (_req: Request, res: Response, next: NextFunction)
           }
         }, 
         boxType: true, 
+        palletType: true,
         services: true, 
         deliveryType: true, 
         photos: true, 
@@ -298,6 +299,7 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
           },
         },
         boxType: true,
+        palletType: true,
         deliveryType: true,
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },

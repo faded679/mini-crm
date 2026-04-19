@@ -477,6 +477,9 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   ) : (
                     <p className="text-sm text-gray-900 dark:text-gray-100">
                       {request.packagingType === "pallets" ? "Палеты" : "Коробки"}
+                      {request.packagingType === "pallets" && (request as any)?.palletType?.name
+                        ? ` (${(request as any).palletType.name})`
+                        : ""}
                       {request.packagingType === "boxes" && (request as any)?.boxType?.name
                         ? ` (${(request as any).boxType.name})`
                         : ""}
@@ -522,7 +525,9 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                       ))}
                     </select>
                   ) : (
-                    <p className="text-sm text-gray-900 dark:text-gray-100">—</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {request.packagingType === "pallets" ? ((request as any)?.palletType?.name ?? "—") : "—"}
+                    </p>
                   )}
                 </div>
               </>

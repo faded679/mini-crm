@@ -306,6 +306,24 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
         throw new ApiError(400, "Invalid packagingType");
       }
       updateData.packagingType = packagingType;
+
+      // При смене типа упаковки — обновляем unit сервисов доставки
+      const oldType = existing.packagingType;
+      if (oldType !== packagingType) {
+        const allSvcs = await (prisma as any).requestService.findMany({ where: { requestId: id } });
+        const oldMatchUnit = (u: string) => oldType === "pallets"
+          ? (u.startsWith("пал") || u === "pallet")
+          : (u.startsWith("кор") || u === "box" || u === "boxes");
+        const newUnit = packagingType === "pallets" ? "пал" : "кор";
+        const deliverySvcs = allSvcs.filter((s: any) => oldMatchUnit(s.unit));
+        console.log(`[PATCH /requests/${id}] packagingType changed ${oldType} -> ${packagingType}, updating ${deliverySvcs.length} services unit to "${newUnit}"`);
+        for (const svc of deliverySvcs) {
+          await (prisma as any).requestService.update({
+            where: { id: svc.id },
+            data: { unit: newUnit },
+          });
+        }
+      }
     }
     
     if (volume !== undefined && volume !== null) {
