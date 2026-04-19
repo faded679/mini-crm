@@ -8,28 +8,22 @@ import { fileURLToPath } from "url";
 import { ApiError } from "../errors.js";
 import { prisma } from "../db/prisma.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const UPLOADS_DIR = path.resolve(__dirname, "../../../uploads");
+const __filename2 = fileURLToPath(import.meta.url);
+const __dirname2 = path.dirname(__filename2);
+const UPLOADS_DIR = path.resolve(__dirname2, "../../../uploads");
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname) || ".jpg";
-      cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-    },
-  }),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Only images allowed"));
-  },
-});
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
+
+function saveUploadedFile(file: Express.Multer.File): string {
+  const ext = path.extname(file.originalname) || ".jpg";
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+  fs.writeFileSync(path.join(UPLOADS_DIR, filename), file.buffer);
+  return filename;
+}
 
 const router = Router();
 
@@ -373,18 +367,20 @@ router.post("/requests/:id/photo", requireWarehouseAuth, upload.single("photo"),
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid ID");
 
-    const file = (req as any).file;
-    if (!file) throw new ApiError(400, "No photo uploaded");
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file || !file.buffer) throw new ApiError(400, "No photo uploaded");
+    if (!file.mimetype.startsWith("image/")) throw new ApiError(400, "Only images allowed");
 
     const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
     if (!request) throw new ApiError(404, "Not found");
 
+    const filename = saveUploadedFile(file);
     const worker = (req as any).warehouseWorker;
     const photo = await (prisma as any).requestPhoto.create({
       data: {
         requestId: id,
-        fileId: `upload:${file.filename}`,
-        fileUrl: `/uploads/${file.filename}`,
+        fileId: `upload:${filename}`,
+        fileUrl: `/uploads/${filename}`,
         uploadedBy: worker.telegramId || `web_${worker.id}`,
       },
     });
