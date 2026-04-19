@@ -528,6 +528,7 @@ router.get("/price-fbs", requireWarehouseAuth, async (_req: Request, res: Respon
 router.post("/create-request", requireWarehouseAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { clientId, cityId, deliveryDate, packagingType, boxCount, boxTypeId, palletTypeId, volume, deliveryTypeId, items } = req.body;
+    console.log("[warehouse-web] create-request payload:", JSON.stringify({ clientId, cityId, deliveryDate, packagingType, boxCount, boxTypeId, palletTypeId, volume, deliveryTypeId }));
     if (!clientId || !deliveryDate || !deliveryTypeId) throw new ApiError(400, "Missing required fields");
 
     const worker = (req as any).warehouseWorker;
@@ -591,6 +592,7 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
       data: { requestId: request.id, oldStatus: "new", newStatus: "new" },
     });
 
+    console.log("[warehouse-web] created request #" + request.id, "cityId:", request.cityId, "status:", request.status);
     res.status(201).json(request);
   } catch (err) {
     next(err);
