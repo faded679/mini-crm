@@ -33,13 +33,18 @@ router.get("/requests/:id/photo/:photoId", async (req: Request, res: Response, n
 
     // Если фото загружено через PWA (локально)
     if (photo.fileId?.startsWith("upload:") && photo.fileUrl) {
-      const filePath = path.resolve(__dirname, "../../.." + photo.fileUrl);
+      // photo.fileUrl = "/uploads/filename.jpg" → extract filename
+      const filename = path.basename(photo.fileUrl);
+      const uploadsDir = path.resolve(__dirname, "../../../uploads");
+      const filePath = path.join(uploadsDir, filename);
+      console.log("[admin] serving local photo:", { photoId, fileUrl: photo.fileUrl, uploadsDir, filePath, exists: fs.existsSync(filePath) });
       if (!fs.existsSync(filePath)) {
-        throw new ApiError(404, "Photo file not found on disk");
+        throw new ApiError(404, `Photo file not found: ${filePath}`);
       }
       const ext = path.extname(filePath).toLowerCase();
       const mimeMap: Record<string, string> = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp" };
       res.setHeader("Content-Type", mimeMap[ext] || "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=86400");
       res.send(fs.readFileSync(filePath));
       return;
     }
