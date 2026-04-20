@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getWarehouseNewRequests, type WarehouseRequest } from "../api";
+import { getWarehouseNewRequests, getWarehouseCities, getWarehouseCitiesFbs, type WarehouseRequest } from "../api";
 
 type Filter = "all" | "FBO" | "FBS";
 
@@ -20,6 +20,7 @@ export default function WarehouseNewRequests() {
   const [cityFilter, setCityFilter] = useState<string>("all");
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [allCities, setAllCities] = useState<string[]>([]);
 
   const load = () => {
     setLoading(true);
@@ -32,8 +33,17 @@ export default function WarehouseNewRequests() {
 
   useEffect(() => { load(); }, [filter]);
 
-  // Уникальные города из загруженных заявок
-  const cities = Array.from(new Set(requests.map((r) => r.city).filter(Boolean))).sort();
+  useEffect(() => {
+    Promise.all([getWarehouseCities(), getWarehouseCitiesFbs()])
+      .then(([fbo, fbs]) => {
+        const names = Array.from(new Set([...fbo.map((c) => c.shortName), ...fbs.map((c) => c.shortName)])).sort();
+        setAllCities(names);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Города из загруженных заявок + все доступные
+  const cities = allCities.length > 0 ? allCities : Array.from(new Set(requests.map((r) => r.city).filter(Boolean))).sort();
 
   // Сбрасываем фильтр города при смене типа
   const handleFilterChange = (f: Filter) => { setFilter(f); setCityFilter("all"); };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWarehouseAuth } from "../warehouseAuth";
-import { getWarehouseRequests, bulkShipRequests, getWarehouseStats, type ShipmentRequest, type WarehouseStats } from "../api";
+import { getWarehouseRequests, bulkShipRequests, getWarehouseStats, getWarehouseCities, getWarehouseCitiesFbs, type ShipmentRequest, type WarehouseStats } from "../api";
 
 type DeliveryFilter = "all" | "FBO" | "FBS";
 
@@ -17,6 +17,7 @@ export default function WarehouseShipment() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [shipping, setShipping] = useState(false);
+  const [allCities, setAllCities] = useState<string[]>([]);
 
   const loadData = async () => {
     setLoading(true);
@@ -39,8 +40,16 @@ export default function WarehouseShipment() {
     loadData();
   }, [filter]);
 
-  // Уникальные города из загруженных заявок
-  const cities = Array.from(new Set(requests.map((r) => (r as any).city).filter(Boolean))).sort() as string[];
+  useEffect(() => {
+    Promise.all([getWarehouseCities(), getWarehouseCitiesFbs()])
+      .then(([fbo, fbs]) => {
+        const names = Array.from(new Set([...fbo.map((c) => c.shortName), ...fbs.map((c) => c.shortName)])).sort();
+        setAllCities(names);
+      })
+      .catch(() => {});
+  }, []);
+
+  const cities = allCities.length > 0 ? allCities : Array.from(new Set(requests.map((r) => (r as any).city).filter(Boolean))).sort() as string[];
 
   const handleFilterChange = (f: DeliveryFilter) => { setFilter(f); setCityFilter("all"); };
 
