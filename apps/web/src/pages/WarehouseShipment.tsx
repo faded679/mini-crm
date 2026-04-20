@@ -13,6 +13,9 @@ export default function WarehouseShipment() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [filter, setFilter] = useState<DeliveryFilter>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const [shipping, setShipping] = useState(false);
 
   const loadData = async () => {
@@ -36,6 +39,15 @@ export default function WarehouseShipment() {
     loadData();
   }, [filter]);
 
+  // Уникальные города из загруженных заявок
+  const cities = Array.from(new Set(requests.map((r) => (r as any).city).filter(Boolean))).sort() as string[];
+
+  const handleFilterChange = (f: DeliveryFilter) => { setFilter(f); setCityFilter("all"); };
+
+  const visible = requests
+    .filter((r) => cityFilter === "all" || (r as any).city === cityFilter)
+    .filter((r) => !search.trim() || getOrgName(r).toLowerCase().includes(search.trim().toLowerCase()));
+
   const handleToggle = (id: number) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
@@ -47,10 +59,10 @@ export default function WarehouseShipment() {
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.size === requests.length) {
+    if (selectedIds.size === visible.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(requests.map((r) => r.id)));
+      setSelectedIds(new Set(visible.map((r) => r.id)));
     }
   };
 
@@ -108,13 +120,26 @@ export default function WarehouseShipment() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">{worker?.email}</p>
               </div>
             </div>
-            <button
-              onClick={logout}
-              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
-              Выход
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearch(""); }}
+                className={`w-8 h-8 flex items-center justify-center rounded-full text-lg transition ${searchOpen ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
+              >🔍</button>
+              <button onClick={logout} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Выход</button>
+            </div>
           </div>
+          {searchOpen && (
+            <div className="mt-3">
+              <input
+                autoFocus
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск по организации..."
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none focus:border-blue-400"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -136,36 +161,29 @@ export default function WarehouseShipment() {
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
           <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              }`}
+            {(["all", "FBO", "FBS"] as DeliveryFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === f
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                {f === "all" ? "Все" : f === "FBO" ? "📦 FBO" : "🚚 FBS"}
+              </button>
+            ))}
+            <select
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className="px-3 py-2 rounded-lg text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium ml-auto"
             >
-              Все
-            </button>
-            <button
-              onClick={() => setFilter("FBO")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === "FBO"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              }`}
-            >
-              📦 FBO
-            </button>
-            <button
-              onClick={() => setFilter("FBS")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === "FBS"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              }`}
-            >
-              🚚 FBS
-            </button>
+              <option value="all">📍 Все города</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -173,27 +191,27 @@ export default function WarehouseShipment() {
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              📦 Заявки в складе ({requests.length})
+              📦 Заявки в складе ({visible.length})
             </h2>
-            {requests.length > 0 && (
+            {visible.length > 0 && (
               <button
                 onClick={handleSelectAll}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
-                {selectedIds.size === requests.length ? "Снять все" : "Выбрать все"}
+                {selectedIds.size === visible.length ? "Снять все" : "Выбрать все"}
               </button>
             )}
           </div>
 
           {loading ? (
             <div className="p-8 text-center text-gray-500">Загрузка...</div>
-          ) : requests.length === 0 ? (
+          ) : visible.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               Нет заявок в складе
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {requests.map((req) => (
+              {visible.map((req) => (
                 <label
                   key={req.id}
                   className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
@@ -205,16 +223,17 @@ export default function WarehouseShipment() {
                     className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        #{req.id}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {getOrgName(req)}
-                      </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-900 dark:text-white">#{req.id}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{getOrgName(req)}</span>
                       <span className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
                         {req.deliveryType?.name || "FBO"}
                       </span>
+                      {(req as any).city && (
+                        <span className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 ml-auto">
+                          📍 {(req as any).city}
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {req.deliveryType?.name === "FBS"
@@ -229,7 +248,7 @@ export default function WarehouseShipment() {
         </div>
 
         {/* Ship Button */}
-        {requests.length > 0 && (
+        {visible.length > 0 && (
           <button
             onClick={handleShip}
             disabled={selectedIds.size === 0 || shipping}
