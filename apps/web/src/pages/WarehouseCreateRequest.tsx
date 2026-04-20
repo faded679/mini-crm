@@ -89,7 +89,8 @@ export default function WarehouseCreateRequest() {
           const priceNum = parseFloat(selected.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
           const volNum = parseFloat(selected.volume.replace(/[^\d.,]/g, "").replace(",", ".")) || 1;
           const perM3 = priceNum / volNum;
-          items = [{ description: selectedCity.fullName || selectedCity.shortName, unit: "м³", quantity: vol, price: perM3, amount: Math.round(perM3 * vol * 100) / 100 }];
+          const desc = selected.comment || selectedCity.fullName || selectedCity.shortName;
+          items = [{ description: desc, unit: "м³", quantity: vol, price: perM3, amount: Math.round(perM3 * vol * 100) / 100 }];
         }
       } else {
         const cnt = parseInt(boxCount, 10) || 1;
@@ -99,7 +100,8 @@ export default function WarehouseCreateRequest() {
           (packagingType === "boxes" ? r.boxTypeId === (selectedSize as WHBoxType)?.id : r.palletTypeId === (selectedSize as WHPalletType)?.id)
         );
         if (rate) {
-          items = [{ description: selectedCity.shortName, unit: packagingType === "pallets" ? "палета" : "место", quantity: cnt, price: rate.price, amount: rate.price * cnt }];
+          const desc = rate.comment || selectedCity.shortName;
+          items = [{ description: desc, unit: packagingType === "pallets" ? "палета" : "место", quantity: cnt, price: rate.price, amount: rate.price * cnt }];
         }
       }
 
