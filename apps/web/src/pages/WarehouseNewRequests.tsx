@@ -17,6 +17,7 @@ export default function WarehouseNewRequests() {
   const [requests, setRequests] = useState<WarehouseRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
 
   const load = () => {
     setLoading(true);
@@ -29,21 +30,29 @@ export default function WarehouseNewRequests() {
 
   useEffect(() => { load(); }, [filter]);
 
+  // Уникальные города из загруженных заявок
+  const cities = Array.from(new Set(requests.map((r) => r.city).filter(Boolean))).sort();
+
+  // Сбрасываем фильтр города при смене типа
+  const handleFilterChange = (f: Filter) => { setFilter(f); setCityFilter("all"); };
+
+  const visible = cityFilter === "all" ? requests : requests.filter((r) => r.city === cityFilter);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate("/warehouse")} className="text-2xl leading-none">←</button>
         <h1 className="font-bold text-gray-900">Новые заявки</h1>
-        <span className="ml-auto text-sm text-gray-400">{requests.length}</span>
+        <span className="ml-auto text-sm text-gray-400">{visible.length}</span>
       </div>
 
-      {/* Filter */}
+      {/* Filters row */}
       <div className="px-4 pt-3 flex gap-2">
         {(["all", "FBO", "FBS"] as Filter[]).map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => handleFilterChange(f)}
             className={`flex-1 py-2 rounded-lg font-medium text-sm transition ${
               filter === f
                 ? "bg-blue-600 text-white shadow-sm"
@@ -53,17 +62,28 @@ export default function WarehouseNewRequests() {
             {f === "all" ? "Все" : f === "FBO" ? "📦 FBO" : "🚚 FBS"}
           </button>
         ))}
+        {/* City filter */}
+        <select
+          value={cityFilter}
+          onChange={(e) => setCityFilter(e.target.value)}
+          className="flex-1 py-2 px-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 font-medium min-w-0"
+        >
+          <option value="all">📍 Все</option>
+          {cities.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       {/* List */}
       <div className="flex-1 px-4 pt-3 pb-4">
         {loading ? (
           <div className="text-center text-gray-400 py-12">Загрузка...</div>
-        ) : requests.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className="text-center text-gray-400 py-12">Нет новых заявок</div>
         ) : (
           <div className="space-y-2">
-            {requests.map((req) => {
+            {visible.map((req) => {
               const isFbs = req.deliveryType?.name === "FBS";
               const photoCount = req.photos?.length || 0;
               return (
@@ -79,11 +99,13 @@ export default function WarehouseNewRequests() {
                     }`}>
                       {req.deliveryType?.name || "FBO"}
                     </span>
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 ml-auto">
+                      📍 {req.city || "—"}
+                    </span>
                     {photoCount > 0 && <span className="text-xs text-gray-400">📸 {photoCount}</span>}
                   </div>
                   <div className="text-sm text-gray-700 font-medium">{getOrgName(req)}</div>
                   <div className="text-xs text-gray-400 mt-1 flex gap-3">
-                    <span>📍 {req.city}</span>
                     <span>
                       {isFbs
                         ? `📏 ${req.volume || "—"} м³`
