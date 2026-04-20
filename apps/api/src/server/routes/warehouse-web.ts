@@ -485,7 +485,12 @@ router.get("/cities", requireWarehouseAuth, async (_req: Request, res: Response,
 // GET /warehouse-web/cities-fbs
 router.get("/cities-fbs", requireWarehouseAuth, async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    res.json(await (prisma as any).cityFbs.findMany({ orderBy: { shortName: "asc" } }));
+    const citiesFbs = await (prisma as any).cityFbs.findMany({ orderBy: { shortName: "asc" } });
+    // Enrich with fullName from City table (for service description)
+    const cities = await (prisma as any).city.findMany({ select: { shortName: true, fullName: true } });
+    const cityMap = new Map(cities.map((c: any) => [c.shortName, c.fullName]));
+    const enriched = citiesFbs.map((c: any) => ({ ...c, cityFullName: cityMap.get(c.shortName) || c.fullName }));
+    res.json(enriched);
   } catch (err) { next(err); }
 });
 
@@ -593,7 +598,7 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
     });
 
     console.log("[warehouse-web] created request #" + request.id, "cityId:", request.cityId, "status:", request.status);
-    res.status(201).json(request);
+    res.status(201).json({ ...request, cityFullName: cityShortName });
   } catch (err) {
     next(err);
   }
