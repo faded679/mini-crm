@@ -18,6 +18,8 @@ export default function WarehouseNewRequests() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const load = () => {
     setLoading(true);
@@ -36,7 +38,9 @@ export default function WarehouseNewRequests() {
   // Сбрасываем фильтр города при смене типа
   const handleFilterChange = (f: Filter) => { setFilter(f); setCityFilter("all"); };
 
-  const visible = cityFilter === "all" ? requests : requests.filter((r) => r.city === cityFilter);
+  const visible = requests
+    .filter((r) => cityFilter === "all" || r.city === cityFilter)
+    .filter((r) => !search.trim() || getOrgName(r).toLowerCase().includes(search.trim().toLowerCase()));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -45,7 +49,25 @@ export default function WarehouseNewRequests() {
         <button onClick={() => navigate("/warehouse")} className="text-2xl leading-none">←</button>
         <h1 className="font-bold text-gray-900">Новые заявки</h1>
         <span className="ml-auto text-sm text-gray-400">{visible.length}</span>
+        <button
+          onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearch(""); }}
+          className={`w-8 h-8 flex items-center justify-center rounded-full text-lg transition ${searchOpen ? "bg-blue-100 text-blue-600" : "text-gray-400"}`}
+        >🔍</button>
       </div>
+
+      {/* Collapsible search */}
+      {searchOpen && (
+        <div className="px-4 pt-2 pb-1 bg-white border-b border-gray-100">
+          <input
+            autoFocus
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск по организации..."
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-gray-50 outline-none focus:border-blue-400"
+          />
+        </div>
+      )}
 
       {/* Filters row */}
       <div className="px-4 pt-3 flex gap-2">
