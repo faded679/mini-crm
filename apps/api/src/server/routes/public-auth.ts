@@ -257,8 +257,8 @@ router.post("/complete-profile", async (req, res, next) => {
       counterparty = await (prisma as any).counterparty.create({
         data: {
           inn: innDigits,
-          name: `Контрагент ИНН ${innDigits}`,
-          shortName: `ИНН ${innDigits}`,
+          name: `Контрагент ${innDigits}`,
+          shortName: innDigits,
         },
       });
     }
