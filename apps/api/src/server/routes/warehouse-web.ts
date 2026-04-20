@@ -121,6 +121,7 @@ router.get("/my-requests", requireWarehouseAuth, async (req: Request, res: Respo
         },
         deliveryType: true,
         boxType: true,
+        palletType: true,
       },
       orderBy: { id: "asc" },
     });
@@ -297,7 +298,10 @@ router.patch("/requests/:id/packaging", requireWarehouseAuth, async (req: Reques
     const { boxCount, boxTypeId, palletTypeId } = req.body;
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid ID");
 
-    const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
+    const request = await (prisma as any).shipmentRequest.findUnique({
+      where: { id },
+      include: { services: { orderBy: { id: "asc" }, take: 1 } },
+    });
     if (!request) throw new ApiError(404, "Not found");
     if (request.status !== "new") throw new ApiError(400, "Can only edit new requests");
 
@@ -307,11 +311,38 @@ router.patch("/requests/:id/packaging", requireWarehouseAuth, async (req: Reques
     if (palletTypeId !== undefined) data.palletTypeId = palletTypeId ? Number(palletTypeId) : null;
 
     const updated = await (prisma as any).shipmentRequest.update({ where: { id }, data });
+
     if (boxCount !== undefined) {
       await (prisma as any).requestFieldHistory.create({
         data: { requestId: id, managerId: 1, field: "boxCount", oldValue: request.boxCount?.toString() || null, newValue: String(boxCount) },
       });
     }
+
+    // Пересчитываем цену первой транспортной услуги при смене типа коробки/палеты или кол-ва
+    const newBoxTypeId = boxTypeId !== undefined ? (boxTypeId ? Number(boxTypeId) : null) : request.boxTypeId;
+    const newPalletTypeId = palletTypeId !== undefined ? (palletTypeId ? Number(palletTypeId) : null) : request.palletTypeId;
+    const newBoxCount = boxCount !== undefined ? Number(boxCount) : request.boxCount;
+
+    if ((boxTypeId !== undefined || palletTypeId !== undefined || boxCount !== undefined) && request.cityId) {
+      // Ищем тариф по городу + тип упаковки + тип коробки/палеты
+      const unit = request.packagingType === "pallets" ? "pallet" : "boxes";
+      const rateWhere: any = { cityId: request.cityId, unit };
+      if (unit === "boxes" && newBoxTypeId) rateWhere.boxTypeId = newBoxTypeId;
+      if (unit === "pallet" && newPalletTypeId) rateWhere.palletTypeId = newPalletTypeId;
+
+      const rate = await (prisma as any).priceRate.findFirst({ where: rateWhere });
+      if (rate && request.services && request.services.length > 0) {
+        const firstService = request.services[0];
+        const newPrice = rate.price;
+        const newAmount = newPrice * newBoxCount;
+        const desc = rate.comment || firstService.description;
+        await (prisma as any).requestService.update({
+          where: { id: firstService.id },
+          data: { price: newPrice, amount: newAmount, quantity: newBoxCount, description: desc },
+        });
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     next(err);
