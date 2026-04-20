@@ -648,7 +648,7 @@ export default function Requests() {
                 </th>
                 <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
                   <button onClick={() => toggleSort("client")} className="hover:text-gray-900 dark:hover:text-white">
-                    Клиент {sortIndicator("client")}
+                    Организация {sortIndicator("client")}
                   </button>
                 </th>
                 <th className="text-center px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
@@ -718,7 +718,7 @@ export default function Requests() {
                       }}
                       className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
                     >
-                      {r.client.firstName} {r.client.lastName || ""}
+                      {r.client.counterparties?.[0]?.counterparty?.shortName || r.client.counterparties?.[0]?.counterparty?.name || `${r.client.firstName ?? ""} ${r.client.lastName ?? ""}`.trim() || `#${r.client.id}`}
                     </a>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">

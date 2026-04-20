@@ -247,8 +247,9 @@ router.post("/complete-profile", async (req, res, next) => {
     });
 
     // Ищем или создаём контрагента по ИНН
-    let counterparty = await (prisma as any).counterparty.findUnique({
-      where: { inn: innDigits },
+    // Поиск по точному значению и по варианту "ИНН XXXXXXXXXX" (если в базе так записано)
+    let counterparty = await (prisma as any).counterparty.findFirst({
+      where: { inn: { in: [innDigits, `ИНН ${innDigits}`] } },
     });
 
     if (!counterparty) {
