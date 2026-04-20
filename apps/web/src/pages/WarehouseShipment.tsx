@@ -112,21 +112,21 @@ export default function WarehouseShipment() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button onClick={() => navigate("/warehouse")} className="text-2xl leading-none">←</button>
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-xl">🏢</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-xl font-bold text-gray-900">
                   Кладовщик: {worker?.name}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{worker?.email}</p>
+                <p className="text-sm text-gray-500">{worker?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export default function WarehouseShipment() {
                 onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearch(""); }}
                 className={`w-8 h-8 flex items-center justify-center rounded-full text-lg transition ${searchOpen ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
               >🔍</button>
-              <button onClick={logout} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Выход</button>
+              <button onClick={logout} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Выход</button>
             </div>
           </div>
           {searchOpen && (
@@ -145,7 +145,7 @@ export default function WarehouseShipment() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Поиск по организации..."
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none focus:border-blue-400"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-gray-50 outline-none focus:border-blue-400"
               />
             </div>
           )}
@@ -156,19 +156,19 @@ export default function WarehouseShipment() {
         {/* Stats */}
         {stats && (
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">В складе</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.inWarehouse}</div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="text-sm text-gray-500">В складе</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.inWarehouse}</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">Отгружено сегодня</div>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.shippedToday}</div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="text-sm text-gray-500">Отгружено сегодня</div>
+              <div className="text-2xl font-bold text-green-600">{stats.shippedToday}</div>
             </div>
           </div>
         )}
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
           <div className="flex gap-2">
             {(["all", "FBO", "FBS"] as DeliveryFilter[]).map((f) => (
               <button
@@ -177,7 +177,7 @@ export default function WarehouseShipment() {
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   filter === f
                     ? "bg-blue-600 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {f === "all" ? "Все" : f === "FBO" ? "📦 FBO" : "🚚 FBS"}
@@ -186,7 +186,7 @@ export default function WarehouseShipment() {
             <select
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium ml-auto"
+              className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 font-medium ml-auto"
             >
               <option value="all">📍 Все города</option>
               {cities.map((c) => (
@@ -197,15 +197,15 @@ export default function WarehouseShipment() {
         </div>
 
         {/* Requests List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">
               📦 Заявки в складе ({visible.length})
             </h2>
             {visible.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-sm text-blue-600 hover:underline"
               >
                 {selectedIds.size === visible.length ? "Снять все" : "Выбрать все"}
               </button>
@@ -219,11 +219,11 @@ export default function WarehouseShipment() {
               Нет заявок в складе
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-gray-200">
               {visible.map((req) => (
                 <label
                   key={req.id}
-                  className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                  className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -233,18 +233,18 @@ export default function WarehouseShipment() {
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900 dark:text-white">#{req.id}</span>
-                      <span className="text-gray-600 dark:text-gray-400">{getOrgName(req)}</span>
-                      <span className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                      <span className="font-semibold text-gray-900">#{req.id}</span>
+                      <span className="text-gray-600">{getOrgName(req)}</span>
+                      <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">
                         {req.deliveryType?.name || "FBO"}
                       </span>
                       {(req as any).city && (
-                        <span className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 ml-auto">
+                        <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 ml-auto">
                           📍 {(req as any).city}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="text-sm text-gray-500 mt-1">
                       {req.deliveryType?.name === "FBS"
                         ? `Объем: ${req.volume || "—"} м³`
                         : `Коробок: ${req.boxCount || "—"}`}

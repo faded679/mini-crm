@@ -23,7 +23,17 @@ export function WarehouseAuthProvider({ children }: { children: ReactNode }) {
     const token = getWarehouseToken();
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        // Проверяем локальное время входа (7 дней)
+        const loginTime = localStorage.getItem("warehouse_login_time");
+        if (loginTime) {
+          const elapsed = Date.now() - Number(loginTime);
+          if (elapsed > 7 * 24 * 60 * 60 * 1000) {
+            clearWarehouseToken();
+            localStorage.removeItem("warehouse_worker");
+            localStorage.removeItem("warehouse_login_time");
+            return;
+          }
+        }
         const workerData = localStorage.getItem("warehouse_worker");
         if (workerData) {
           setWorker(JSON.parse(workerData));
@@ -31,6 +41,7 @@ export function WarehouseAuthProvider({ children }: { children: ReactNode }) {
       } catch {
         clearWarehouseToken();
         localStorage.removeItem("warehouse_worker");
+        localStorage.removeItem("warehouse_login_time");
       }
     }
   }, []);
@@ -39,12 +50,14 @@ export function WarehouseAuthProvider({ children }: { children: ReactNode }) {
     const response = await warehouseLogin(email, password);
     setWarehouseToken(response.token);
     localStorage.setItem("warehouse_worker", JSON.stringify(response.worker));
+    localStorage.setItem("warehouse_login_time", String(Date.now()));
     setWorker(response.worker);
   };
 
   const logout = () => {
     clearWarehouseToken();
     localStorage.removeItem("warehouse_worker");
+    localStorage.removeItem("warehouse_login_time");
     setWorker(null);
   };
 
