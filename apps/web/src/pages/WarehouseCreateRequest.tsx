@@ -52,6 +52,7 @@ export default function WarehouseCreateRequest() {
   const [selectedSize, setSelectedSize] = useState<WHBoxType | WHPalletType | null>(null);
   const [boxCount, setBoxCount] = useState("1");
   const [volume, setVolume] = useState("");
+  const [comment, setComment] = useState("");
 
   useEffect(() => {
     getWarehouseClients().then(setClients).catch(() => {});
@@ -114,6 +115,7 @@ export default function WarehouseCreateRequest() {
         boxCount: isFbs ? 1 : parseInt(boxCount, 10) || 1,
         volume: isFbs ? parseFloat(volume) : null,
         items,
+        ...(comment.trim() ? { comment: comment.trim() } : {}),
       };
       if (!isFbs && packagingType === "boxes" && selectedSize) payload.boxTypeId = selectedSize.id;
       if (!isFbs && packagingType === "pallets" && selectedSize) payload.palletTypeId = selectedSize.id;
@@ -261,7 +263,7 @@ export default function WarehouseCreateRequest() {
 
         {step === "confirm" && (
           <div className="space-y-3">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-2">
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-2">                
               <div className="flex justify-between text-sm"><span className="text-gray-400">Тип</span><span className="font-medium">{reqType.toUpperCase()}</span></div>
               <div className="flex justify-between text-sm"><span className="text-gray-400">Организация</span><span className="font-medium">{selectedClient ? getClientOrgName(selectedClient) : "—"}</span></div>
               <div className="flex justify-between text-sm"><span className="text-gray-400">Направление</span><span className="font-medium">{selectedCity?.shortName || "—"}</span></div>
@@ -276,6 +278,13 @@ export default function WarehouseCreateRequest() {
                 </>
               )}
             </div>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={3}
+              placeholder="Комментарий к заявке (необязательно)..."
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none outline-none focus:border-blue-400 bg-white"
+            />
             <button onClick={handleCreate} disabled={busy}
               className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-xl py-4 text-base font-semibold transition shadow-sm disabled:opacity-50">
               {busy ? "Создание..." : "✅ Создать заявку"}

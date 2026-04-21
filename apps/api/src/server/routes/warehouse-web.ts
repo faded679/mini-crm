@@ -560,10 +560,30 @@ router.get("/price-fbs", requireWarehouseAuth, async (_req: Request, res: Respon
   } catch (err) { next(err); }
 });
 
+// PATCH /warehouse-web/requests/:id/comment — обновить комментарий
+router.patch("/requests/:id/comment", requireWarehouseAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid ID");
+    const { comment } = req.body as { comment?: string | null };
+
+    const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
+    if (!request) throw new ApiError(404, "Not found");
+
+    const updated = await (prisma as any).shipmentRequest.update({
+      where: { id },
+      data: { comment: comment === null || comment === undefined ? null : String(comment).trim() || null },
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /warehouse-web/create-request — создать заявку от кладовщика
 router.post("/create-request", requireWarehouseAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { clientId, cityId, deliveryDate, packagingType, boxCount, boxTypeId, palletTypeId, volume, deliveryTypeId, items } = req.body;
+    const { clientId, cityId, deliveryDate, packagingType, boxCount, boxTypeId, palletTypeId, volume, deliveryTypeId, items, comment } = req.body;
     console.log("[warehouse-web] create-request payload:", JSON.stringify({ clientId, cityId, deliveryDate, packagingType, boxCount, boxTypeId, palletTypeId, volume, deliveryTypeId }));
     if (!clientId || !deliveryDate || !deliveryTypeId) throw new ApiError(400, "Missing required fields");
 
@@ -607,6 +627,7 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
         deliveryTypeId: Number(deliveryTypeId),
         status: "new",
         size: "",
+        ...(comment ? { comment: String(comment).trim() } : {}),
       },
     });
 

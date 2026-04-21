@@ -1150,6 +1150,7 @@ export interface WarehouseRequest {
   photos?: WarehouseRequestPhoto[];
   services?: WarehouseRequestService[];
   cityRef?: { shortName: string; fullName: string };
+  comment?: string | null;
 }
 
 export interface WHBoxType { id: number; name: string; hint?: string; maxVolumeM3?: number; }
@@ -1196,6 +1197,12 @@ export function updateWarehousePackagingType(id: number, packagingType: "boxes" 
 export function moveWarehouseToWarehouse(id: number) {
   return warehouseRequest<any>(`/warehouse-web/requests/${id}/status`, {
     method: "PATCH", body: JSON.stringify({}),
+  });
+}
+
+export function updateWarehouseComment(id: number, comment: string | null) {
+  return warehouseRequest<any>(`/warehouse-web/requests/${id}/comment`, {
+    method: "PATCH", body: JSON.stringify({ comment }),
   });
 }
 

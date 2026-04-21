@@ -48,6 +48,7 @@ export default function FboRequest() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [comment, setComment] = useState("");
   const [deliveryTypeId] = useState<number | null>(2); // FBO
 
   useEffect(() => {
@@ -173,6 +174,7 @@ export default function FboRequest() {
         ...(deliveryTypeId ? { deliveryTypeId } : {}),
         ...(mpDate ? { mpAccountDate: mpDate } : {}),
         boxCount: totalQty,
+        ...(comment.trim() ? { comment: comment.trim() } : {}),
         /* comment: items
           .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
           .join("; ") +
@@ -347,13 +349,22 @@ export default function FboRequest() {
       )}
 
       {items.length > 0 && (
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="w-full py-3 rounded-2xl bg-accent text-white text-sm font-semibold disabled:opacity-50 transition active:bg-accent-dark"
-        >
-          {submitting ? "Отправка..." : "Отправить заявку"}
-        </button>
+        <>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            placeholder="Комментарий к заявке (необязательно)..."
+            className="w-full px-3 py-2.5 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm resize-none transition-all focus:border-accent"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full py-3 rounded-2xl bg-accent text-white text-sm font-semibold disabled:opacity-50 transition active:bg-accent-dark"
+          >
+            {submitting ? "Отправка..." : "Отправить заявку"}
+          </button>
+        </>
       )}
     </div>
   );

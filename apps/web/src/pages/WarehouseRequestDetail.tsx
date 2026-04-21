@@ -13,6 +13,7 @@ import {
   getWarehouseBoxTypes,
   getWarehousePalletTypes,
   getWarehouseServicePrices,
+  updateWarehouseComment,
   type WarehouseRequest,
   type WHBoxType,
   type WHPalletType,
@@ -39,7 +40,7 @@ function getPhotoUrl(photo: { fileId: string; fileUrl: string | null }): string 
   return "";
 }
 
-type Modal = null | "volume" | "boxCount" | "packaging" | "boxType" | "palletType" | "service" | "serviceQty" | "confirm_warehouse";
+type Modal = null | "volume" | "boxCount" | "packaging" | "boxType" | "palletType" | "service" | "serviceQty" | "confirm_warehouse" | "comment";
 
 export default function WarehouseRequestDetail() {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +56,7 @@ export default function WarehouseRequestDetail() {
   const [palletTypes, setPalletTypes] = useState<WHPalletType[]>([]);
   const [servicePrices, setServicePrices] = useState<WHServicePrice[]>([]);
   const [selectedService, setSelectedService] = useState<WHServicePrice | null>(null);
+  const [commentValue, setCommentValue] = useState("");
 
   const loadRequest = () => {
     if (!id) return;
@@ -156,6 +158,12 @@ export default function WarehouseRequestDetail() {
     setBusy(false);
   };
 
+  const handleSaveComment = async () => {
+    setBusy(true);
+    try { await updateWarehouseComment(req.id, commentValue.trim() || null); setModal(null); loadRequest(); } catch (e: any) { alert(e.message); }
+    setBusy(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-4">
       {/* Header */}
@@ -192,6 +200,17 @@ export default function WarehouseRequestDetail() {
               <div className="flex justify-between text-sm"><span className="text-gray-400">Количество</span><span className="font-medium text-gray-900">{req.boxCount} шт</span></div>
             </>
           )}
+          {/* Comment */}
+          <div className="pt-1 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 text-sm">Комментарий</span>
+              <button
+                onClick={() => { setCommentValue(req.comment || ""); setModal("comment"); }}
+                className="text-xs text-blue-600 font-medium"
+              >{req.comment ? "Изменить" : "+ Добавить"}</button>
+            </div>
+            {req.comment && <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{req.comment}</p>}
+          </div>
         </div>
 
         {/* Photos */}
@@ -382,6 +401,21 @@ export default function WarehouseRequestDetail() {
                   <button onClick={() => setModal(null)} className="flex-1 py-3 bg-gray-100 rounded-xl font-medium text-gray-700">Отмена</button>
                   <button onClick={handleToWarehouse} disabled={busy} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-medium disabled:opacity-50">✅ Подтвердить</button>
                 </div>
+              </>
+            )}
+
+            {modal === "comment" && (
+              <>
+                <h3 className="font-bold text-gray-900">Комментарий</h3>
+                <textarea
+                  autoFocus
+                  value={commentValue}
+                  onChange={(e) => setCommentValue(e.target.value)}
+                  rows={4}
+                  placeholder="Введите комментарий к заявке..."
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none outline-none focus:border-blue-400"
+                />
+                <button onClick={handleSaveComment} disabled={busy} className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium disabled:opacity-50">Сохранить</button>
               </>
             )}
 
