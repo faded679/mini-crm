@@ -276,15 +276,44 @@ router.patch("/requests/:id/volume", requireWarehouseAuth, async (req: Request, 
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid ID");
     if (!volume || Number(volume) <= 0) throw new ApiError(400, "Invalid volume");
 
-    const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
+    const vol = Number(volume);
+
+    const request = await (prisma as any).shipmentRequest.findUnique({
+      where: { id },
+      include: { services: { orderBy: { id: "asc" }, take: 1 } },
+    });
     if (!request) throw new ApiError(404, "Not found");
     if (request.status !== "new") throw new ApiError(400, "Can only edit new requests");
 
-    const worker = (req as any).warehouseWorker;
-    const updated = await (prisma as any).shipmentRequest.update({ where: { id }, data: { volume: Number(volume) } });
+    const updated = await (prisma as any).shipmentRequest.update({ where: { id }, data: { volume: vol } });
     await (prisma as any).requestFieldHistory.create({
-      data: { requestId: id, managerId: 1, field: "volume", oldValue: request.volume?.toString() || null, newValue: String(volume) },
+      data: { requestId: id, managerId: 1, field: "volume", oldValue: request.volume?.toString() || null, newValue: String(vol) },
     });
+
+    // Пересчитываем цену первой строки услуги по тарифу FBS
+    if (request.city) {
+      const cityPrices: any[] = await (prisma as any).priceFbs.findMany({
+        where: { destination: request.city },
+      });
+      // Найти подходящий тариф: первый, у которого volume >= vol (числовое значение)
+      const parseNum = (s: string) => parseFloat(s.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
+      const sorted = [...cityPrices].sort((a, b) => parseNum(a.volume) - parseNum(b.volume));
+      const matched = sorted.find((p) => parseNum(p.volume) >= vol) || sorted[sorted.length - 1];
+
+      if (matched && request.services && request.services.length > 0) {
+        const priceNum = parseNum(matched.price);
+        const volNum = parseNum(matched.volume) || 1;
+        const perM3 = priceNum / volNum;
+        const newPrice = perM3;
+        const newAmount = Math.round(perM3 * vol * 100) / 100;
+        const firstSvc = request.services[0];
+        await (prisma as any).requestService.update({
+          where: { id: firstSvc.id },
+          data: { quantity: vol, price: newPrice, amount: newAmount },
+        });
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     next(err);
