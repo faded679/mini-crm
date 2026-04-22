@@ -1229,6 +1229,12 @@ export function addWarehouseService(requestId: number, servicePriceId: number, q
   });
 }
 
+export function addWarehouseBoxLine(requestId: number, data: { boxTypeId?: number; palletTypeId?: number; quantity: number }) {
+  return warehouseRequest<any>(`/warehouse-web/requests/${requestId}/box-lines`, {
+    method: "POST", body: JSON.stringify(data),
+  });
+}
+
 export function deleteWarehouseService(requestId: number, serviceId: number) {
   return warehouseRequest<{ ok: boolean }>(`/warehouse-web/requests/${requestId}/services/${serviceId}`, { method: "DELETE" });
 }

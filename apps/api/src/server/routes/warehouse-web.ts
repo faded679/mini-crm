@@ -392,6 +392,56 @@ router.patch("/requests/:id/status", requireWarehouseAuth, async (req: Request, 
   }
 });
 
+// POST /warehouse-web/requests/:id/box-lines — добавить строку упаковки (коробка/палета + кол-во)
+router.post("/requests/:id/box-lines", requireWarehouseAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid ID");
+
+    const { boxTypeId, palletTypeId, quantity } = req.body;
+    const qty = Number(quantity);
+    if (!qty || qty <= 0) throw new ApiError(400, "quantity must be > 0");
+    if (!boxTypeId && !palletTypeId) throw new ApiError(400, "boxTypeId or palletTypeId required");
+
+    const request = await (prisma as any).shipmentRequest.findUnique({ where: { id } });
+    if (!request) throw new ApiError(404, "Not found");
+
+    // Ищем тариф
+    const unit = palletTypeId ? "pallet" : "boxes";
+    const rateWhere: any = { cityId: request.cityId, unit };
+    if (boxTypeId) rateWhere.boxTypeId = Number(boxTypeId);
+    if (palletTypeId) rateWhere.palletTypeId = Number(palletTypeId);
+
+    const rate = await (prisma as any).priceRate.findFirst({ where: rateWhere });
+
+    // Получаем название типа коробки/палеты
+    let typeName = "";
+    if (boxTypeId) {
+      const bt = await (prisma as any).boxType.findUnique({ where: { id: Number(boxTypeId) } });
+      typeName = bt?.name || "";
+    } else if (palletTypeId) {
+      const pt = await (prisma as any).palletType.findUnique({ where: { id: Number(palletTypeId) } });
+      typeName = pt?.name || "";
+    }
+
+    const price = rate?.price ?? 0;
+    const description = typeName ? `${request.city} — ${typeName}` : request.city || "";
+
+    const service = await (prisma as any).requestService.create({
+      data: {
+        requestId: id,
+        description,
+        quantity: qty,
+        price,
+        amount: price * qty,
+      },
+    });
+    res.status(201).json(service);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /warehouse-web/requests/:id/photo — загрузить фото (файл)
 router.post("/requests/:id/photo", requireWarehouseAuth, upload.single("photo"), async (req: Request, res: Response, next: NextFunction) => {
   try {

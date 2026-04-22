@@ -14,6 +14,7 @@ import {
   getWarehousePalletTypes,
   getWarehouseServicePrices,
   updateWarehouseComment,
+  addWarehouseBoxLine,
   type WarehouseRequest,
   type WHBoxType,
   type WHPalletType,
@@ -40,7 +41,7 @@ function getPhotoUrl(photo: { fileId: string; fileUrl: string | null }): string 
   return "";
 }
 
-type Modal = null | "volume" | "boxCount" | "packaging" | "boxType" | "palletType" | "service" | "serviceQty" | "confirm_warehouse" | "comment";
+type Modal = null | "volume" | "boxCount" | "packaging" | "boxType" | "palletType" | "service" | "serviceQty" | "confirm_warehouse" | "comment" | "addBoxLine" | "addBoxLineQty";
 
 export default function WarehouseRequestDetail() {
   const { id } = useParams<{ id: string }>();
@@ -57,6 +58,8 @@ export default function WarehouseRequestDetail() {
   const [servicePrices, setServicePrices] = useState<WHServicePrice[]>([]);
   const [selectedService, setSelectedService] = useState<WHServicePrice | null>(null);
   const [commentValue, setCommentValue] = useState("");
+  const [addLineType, setAddLineType] = useState<{ id: number; name: string; kind: "box" | "pallet" } | null>(null);
+  const [addLineQty, setAddLineQty] = useState("1");
 
   const loadRequest = () => {
     if (!id) return;
@@ -161,6 +164,24 @@ export default function WarehouseRequestDetail() {
   const handleSaveComment = async () => {
     setBusy(true);
     try { await updateWarehouseComment(req.id, commentValue.trim() || null); setModal(null); loadRequest(); } catch (e: any) { alert(e.message); }
+    setBusy(false);
+  };
+
+  const handleAddBoxLine = async () => {
+    if (!addLineType) return;
+    const qty = parseInt(addLineQty, 10);
+    if (!qty || qty <= 0) return;
+    setBusy(true);
+    try {
+      await addWarehouseBoxLine(req.id, {
+        ...(addLineType.kind === "box" ? { boxTypeId: addLineType.id } : { palletTypeId: addLineType.id }),
+        quantity: qty,
+      });
+      setModal(null);
+      setAddLineType(null);
+      setAddLineQty("1");
+      loadRequest();
+    } catch (e: any) { alert(e.message); }
     setBusy(false);
   };
 
@@ -287,6 +308,9 @@ export default function WarehouseRequestDetail() {
               <button onClick={() => { setModal(req.packagingType === "boxes" ? "boxType" : "palletType"); }} className="w-full bg-white border border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-700 active:bg-gray-50">
                 📏 Изменить размер
               </button>
+              <button onClick={() => { setAddLineQty("1"); setModal("addBoxLine"); }} className="w-full bg-white border border-blue-200 rounded-xl py-3 text-sm font-medium text-blue-700 active:bg-blue-50">
+                ➕ Добавить тип коробки
+              </button>
               <button onClick={() => { setInputValue(String(req.boxCount)); setModal("boxCount"); }} className="w-full bg-white border border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-700 active:bg-gray-50">
                 ✏️ Изменить кол-во
               </button>
@@ -401,6 +425,38 @@ export default function WarehouseRequestDetail() {
                   <button onClick={() => setModal(null)} className="flex-1 py-3 bg-gray-100 rounded-xl font-medium text-gray-700">Отмена</button>
                   <button onClick={handleToWarehouse} disabled={busy} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-medium disabled:opacity-50">✅ Подтвердить</button>
                 </div>
+              </>
+            )}
+
+            {modal === "addBoxLine" && (
+              <>
+                <h3 className="font-bold text-gray-900">Выберите тип</h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {(req.packagingType === "pallets" ? palletTypes : boxTypes).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => { setAddLineType({ id: t.id, name: t.name, kind: req.packagingType === "pallets" ? "pallet" : "box" }); setModal("addBoxLineQty"); }}
+                      className="w-full py-3 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 text-left active:bg-gray-100"
+                    >
+                      {t.name}{"hint" in t && t.hint ? ` — ${t.hint}` : "comment" in t && (t as any).comment ? ` — ${(t as any).comment}` : ""}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {modal === "addBoxLineQty" && addLineType && (
+              <>
+                <h3 className="font-bold text-gray-900">{addLineType.name}</h3>
+                <p className="text-sm text-gray-500">Укажите количество</p>
+                <input
+                  type="number" inputMode="numeric" min="1"
+                  value={addLineQty}
+                  onChange={(e) => setAddLineQty(e.target.value)}
+                  autoFocus
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg"
+                />
+                <button onClick={handleAddBoxLine} disabled={busy} className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium disabled:opacity-50">Добавить строку</button>
               </>
             )}
 
