@@ -14,6 +14,7 @@ export default function Login({ onSuccess }: LoginProps) {
   const [step, setStep] = useState<"phone" | "waiting" | "profile">("phone");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [consent, setConsent] = useState(false);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
@@ -110,8 +111,41 @@ export default function Login({ onSuccess }: LoginProps) {
           {step === "phone" ? (
             <>
               <h2 className="text-heading text-base font-bold mb-3">Вход по телефону</h2>
+
+              {/* Consent checkbox */}
+              <label className={`flex items-start gap-3 mb-4 p-3 rounded-2xl border cursor-pointer transition-colors ${consent ? "border-accent bg-accent/5" : "border-gray-200 bg-bg"}`}>
+                <div className="relative flex-shrink-0 mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${consent ? "bg-accent border-accent" : "border-gray-300 bg-white"}`}>
+                    {consent && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted leading-relaxed select-none">
+                  Я даю согласие на{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-accent underline"
+                  >
+                    обработку персональных данных
+                  </a>{" "}
+                  в соответствии с Федеральным законом №152-ФЗ
+                </p>
+              </label>
+
               <p className="text-muted text-sm mb-4">Введите ваш номер телефона для получения номера для звонка</p>
-              <div className="flex items-center h-12 px-4 rounded-2xl bg-bg border border-gray-200 mb-3 transition-all focus-within:border-accent">
+              <div className={`flex items-center h-12 px-4 rounded-2xl bg-bg border mb-3 transition-all ${consent ? "border-gray-200 focus-within:border-accent" : "border-gray-200 opacity-50 pointer-events-none"}`}>
                 <span className="text-heading text-sm mr-1">+7</span>
                 <input
                   type="tel"
@@ -119,12 +153,13 @@ export default function Login({ onSuccess }: LoginProps) {
                   onChange={handlePhoneChange}
                   placeholder="(___) ___-__-__"
                   className="flex-1 outline-none text-heading text-sm bg-transparent"
+                  disabled={!consent}
                 />
               </div>
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
               <button
                 onClick={handleRequestVerification}
-                disabled={loading}
+                disabled={loading || !consent}
                 className="w-full h-12 rounded-2xl bg-accent text-white font-semibold text-sm disabled:opacity-50 transition active:bg-accent-dark"
               >
                 {loading ? "Загрузка..." : "Продолжить"}
