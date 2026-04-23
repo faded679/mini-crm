@@ -112,6 +112,18 @@ export default function Login({ onSuccess }: LoginProps) {
             <>
               <h2 className="text-heading text-base font-bold mb-3">Вход по телефону</h2>
 
+              <p className="text-muted text-sm mb-4">Введите ваш номер телефона для получения номера для звонка</p>
+              <div className="flex items-center h-12 px-4 rounded-2xl bg-bg border border-gray-200 mb-3 transition-all focus-within:border-accent">
+                <span className="text-heading text-sm mr-1">+7</span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  placeholder="(___) ___-__-__"
+                  className="flex-1 outline-none text-heading text-sm bg-transparent"
+                />
+              </div>
+
               {/* Consent checkbox */}
               <label className={`flex items-start gap-3 mb-4 p-3 rounded-2xl border cursor-pointer transition-colors ${consent ? "border-accent bg-accent/5" : "border-gray-200 bg-bg"}`}>
                 <div className="relative flex-shrink-0 mt-0.5">
@@ -144,18 +156,6 @@ export default function Login({ onSuccess }: LoginProps) {
                 </p>
               </label>
 
-              <p className="text-muted text-sm mb-4">Введите ваш номер телефона для получения номера для звонка</p>
-              <div className={`flex items-center h-12 px-4 rounded-2xl bg-bg border mb-3 transition-all ${consent ? "border-gray-200 focus-within:border-accent" : "border-gray-200 opacity-50 pointer-events-none"}`}>
-                <span className="text-heading text-sm mr-1">+7</span>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  placeholder="(___) ___-__-__"
-                  className="flex-1 outline-none text-heading text-sm bg-transparent"
-                  disabled={!consent}
-                />
-              </div>
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
               <button
                 onClick={handleRequestVerification}
