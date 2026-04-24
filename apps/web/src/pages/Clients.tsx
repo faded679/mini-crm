@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getClients, type Client } from "../api";
 
-type SortField = "name" | "organization" | "requests" | "date";
+type SortField = "name" | "organization" | "requests" | "date" | "email";
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -37,6 +37,9 @@ export default function Clients() {
           break;
         case "date":
           compare = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case "email":
+          compare = (a.email || "").localeCompare(b.email || "", "ru");
           break;
       }
       
@@ -80,7 +83,12 @@ export default function Clients() {
                   Имя{getSortIcon("name")}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Username</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Почта</th>
+                <th
+                  className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => handleSort("email")}
+                >
+                  Почта{getSortIcon("email")}
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Телефон</th>
                 <th 
                   className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
