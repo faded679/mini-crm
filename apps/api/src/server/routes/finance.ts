@@ -210,4 +210,40 @@ router.get("/import-history", async (_req: Request, res: Response, next: NextFun
   }
 });
 
+// POST /admin/finance/import-from-email — fetch & import bank statements from email
+router.post("/import-from-email", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || "http://172.17.0.1:5001";
+    const daysBack = Number(req.body?.days_back) || 3;
+
+    const fetchRes = await fetch(`${EMAIL_SERVICE_URL}/fetch-bank-statements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days_back: daysBack, mark_read: false }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (!fetchRes.ok) {
+      const text = await fetchRes.text();
+      throw new ApiError(502, `Email service error: ${text}`);
+    }
+
+    const data = (await fetchRes.json()) as { statements: { filename: string; content: string }[]; count: number };
+
+    const results = [];
+    for (const stmt of data.statements || []) {
+      try {
+        const result = await importBankStatement(stmt.content, stmt.filename, "email-manual");
+        results.push({ filename: stmt.filename, ...result });
+      } catch (err: any) {
+        results.push({ filename: stmt.filename, error: err.message });
+      }
+    }
+
+    res.json({ statementsFound: data.count, results });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
