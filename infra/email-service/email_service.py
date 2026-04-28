@@ -16,9 +16,9 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.yandex.ru")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
-SENDER_EMAIL = os.environ.get("SMTP_USER", "expresssolo@yandex.ru")
+SMTP_SERVER = os.environ.get("SMTP_HOST", os.environ.get("SMTP_SERVER", "smtp.mail.ru"))
+SMTP_PORT = int(os.environ.get("SMTP_PORT", 465))
+SENDER_EMAIL = os.environ.get("SMTP_USER", "solovyov-express@mail.ru")
 APP_PASSWORD = os.environ.get("SMTP_PASS", "")
 SENDER_NAME = os.environ.get("SMTP_FROM_NAME", "Соловьев-Экспресс")
 
@@ -83,7 +83,7 @@ def handle_send_email():
 
 
 # ─── IMAP settings (for reading emails) ───
-IMAP_SERVER = os.environ.get("IMAP_SERVER", "imap.yandex.ru")
+IMAP_SERVER = os.environ.get("IMAP_SERVER", "imap.mail.ru")
 IMAP_PORT = int(os.environ.get("IMAP_PORT", 993))
 IMAP_USER = os.environ.get("IMAP_USER", SENDER_EMAIL)
 IMAP_PASS = os.environ.get("IMAP_PASS", APP_PASSWORD)
