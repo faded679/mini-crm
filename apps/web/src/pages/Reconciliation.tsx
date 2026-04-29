@@ -134,23 +134,17 @@ export default function Reconciliation() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Выставлено</div>
-          <div className="text-xl font-bold text-gray-900 dark:text-gray-200">{fmtMoney(bal.totalBilled)} ₽</div>
+          <div className="text-xl font-bold text-white">{fmtMoney(bal.totalBilled)} ₽</div>
         </div>
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Оплачено</div>
-          <div className="text-xl font-bold text-green-600 dark:text-green-400">{fmtMoney(bal.totalPaid)} ₽</div>
+          <div className="text-xl font-bold text-white">{fmtMoney(bal.totalPaid)} ₽</div>
         </div>
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-            {bal.balance > 0 ? "Долг контрагента" : bal.balance < 0 ? "Переплата" : "Баланс"}
+            {"Итог"}
           </div>
-          <div className={`text-xl font-bold ${
-            bal.balance > 0
-              ? "text-red-600 dark:text-red-400"
-              : bal.balance < 0
-              ? "text-green-600 dark:text-green-400"
-              : "text-gray-500"
-          }`}>
+          <div className="text-xl font-bold text-white">
             {fmtMoney(Math.abs(bal.balance))} ₽
           </div>
         </div>
@@ -178,7 +172,7 @@ export default function Reconciliation() {
                   <th className="px-4 py-2.5">Описание</th>
                   <th className="px-4 py-2.5 text-right">Начислено</th>
                   <th className="px-4 py-2.5 text-right">Оплата</th>
-                  <th className="px-4 py-2.5 text-right">Сальдо</th>
+                  <th className="px-4 py-2.5 text-right">Итог</th>
                 </tr>
               </thead>
               <tbody>
@@ -221,8 +215,8 @@ export default function Reconciliation() {
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       {entry.debit > 0 ? (
-                        <span className="font-medium text-gray-900 dark:text-gray-200">
-                          {fmtMoney(entry.debit)} ₽
+                        <span className="font-medium text-white">
+                          −{fmtMoney(entry.debit)} ₽
                         </span>
                       ) : (
                         <span className="text-gray-300 dark:text-gray-600">—</span>
@@ -230,20 +224,14 @@ export default function Reconciliation() {
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       {entry.credit > 0 ? (
-                        <span className="font-medium text-green-600 dark:text-green-400">
-                          {fmtMoney(entry.credit)} ₽
+                        <span className="font-medium text-white">
+                          +{fmtMoney(entry.credit)} ₽
                         </span>
                       ) : (
                         <span className="text-gray-300 dark:text-gray-600">—</span>
                       )}
                     </td>
-                    <td className={`px-4 py-2.5 text-right whitespace-nowrap font-semibold ${
-                      entry.runningBalance > 0
-                        ? "text-red-600 dark:text-red-400"
-                        : entry.runningBalance < 0
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-gray-500"
-                    }`}>
+                    <td className="px-4 py-2.5 text-right whitespace-nowrap font-semibold text-white">
                       {fmtMoney(entry.runningBalance)} ₽
                     </td>
                   </tr>
@@ -254,17 +242,13 @@ export default function Reconciliation() {
                   <td className="px-4 py-3" colSpan={3}>
                     <span className="text-gray-700 dark:text-gray-300">Итого</span>
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-900 dark:text-gray-200">
-                    {fmtMoney(ledger.reduce((s, e) => s + e.debit, 0))} ₽
+                  <td className="px-4 py-3 text-right text-white">
+                    −{fmtMoney(ledger.reduce((s, e) => s + e.debit, 0))} ₽
                   </td>
-                  <td className="px-4 py-3 text-right text-green-600 dark:text-green-400">
-                    {fmtMoney(ledger.reduce((s, e) => s + e.credit, 0))} ₽
+                  <td className="px-4 py-3 text-right text-white">
+                    +{fmtMoney(ledger.reduce((s, e) => s + e.credit, 0))} ₽
                   </td>
-                  <td className={`px-4 py-3 text-right ${
-                    (ledger[ledger.length - 1]?.runningBalance ?? 0) > 0
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-green-600 dark:text-green-400"
-                  }`}>
+                  <td className="px-4 py-3 text-right text-white font-bold">
                     {fmtMoney(ledger[ledger.length - 1]?.runningBalance ?? 0)} ₽
                   </td>
                 </tr>

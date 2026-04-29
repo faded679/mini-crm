@@ -238,14 +238,14 @@ export default function Finance() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[1100px]">
                   <thead>
                     <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
-                      <th className="pb-2 pr-3">Дата</th>
-                      <th className="pb-2 pr-3">Организация</th>
-                      <th className="pb-2 pr-3">ИНН</th>
-                      <th className="pb-2 pr-3 text-right">Сумма</th>
-                      <th className="pb-2 pr-3">Назначение</th>
+                      <th className="pb-2 pr-3 whitespace-nowrap">Дата</th>
+                      <th className="pb-2 pr-3 min-w-[180px]">Организация</th>
+                      <th className="pb-2 pr-3 whitespace-nowrap">ИНН</th>
+                      <th className="pb-2 pr-3 text-right whitespace-nowrap">Сумма</th>
+                      <th className="pb-2 pr-3 min-w-[300px]">Назначение</th>
                       <th className="pb-2 pr-3">Счета</th>
                       <th className="pb-2 pr-3">Статус</th>
                       <th className="pb-2"></th>
@@ -375,10 +375,10 @@ export default function Finance() {
                         <td className="py-2.5 pr-3 text-gray-400 font-mono text-xs">
                           {b.counterparty.inn || "—"}
                         </td>
-                        <td className="py-2.5 pr-3 text-right whitespace-nowrap">
+                        <td className="py-2.5 pr-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-200">
                           {fmtMoney(b.totalBilled)}
                         </td>
-                        <td className="py-2.5 pr-3 text-right whitespace-nowrap">
+                        <td className="py-2.5 pr-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-200">
                           {fmtMoney(b.totalPaid)}
                         </td>
                         <td className={`py-2.5 pr-3 text-right whitespace-nowrap font-semibold ${
