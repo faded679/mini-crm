@@ -82,10 +82,10 @@ export default function Reconciliation() {
     // Sort chronologically
     entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Calculate running balance (positive = they owe us)
+    // Calculate running balance: payment (+), invoice (−)
     let balance = 0;
     return entries.map((e) => {
-      balance += e.debit - e.credit;
+      balance += e.credit - e.debit;
       return { ...e, runningBalance: balance };
     });
   }, [summary]);
