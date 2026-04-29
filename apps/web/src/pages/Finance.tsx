@@ -238,17 +238,17 @@ export default function Finance() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[1100px]">
+                <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
-                      <th className="pb-2 pr-3 whitespace-nowrap">Дата</th>
-                      <th className="pb-2 pr-3 min-w-[180px]">Организация</th>
-                      <th className="pb-2 pr-3 whitespace-nowrap">ИНН</th>
-                      <th className="pb-2 pr-3 text-right whitespace-nowrap">Сумма</th>
-                      <th className="pb-2 pr-3 min-w-[300px]">Назначение</th>
-                      <th className="pb-2 pr-3">Счета</th>
-                      <th className="pb-2 pr-3">Статус</th>
-                      <th className="pb-2"></th>
+                      <th className="pb-2 pr-2 w-[80px]">Дата</th>
+                      <th className="pb-2 pr-2 w-[15%]">Организация</th>
+                      <th className="pb-2 pr-2 w-[90px]">ИНН</th>
+                      <th className="pb-2 pr-2 text-right w-[100px]">Сумма</th>
+                      <th className="pb-2 pr-2">Назначение</th>
+                      <th className="pb-2 pr-2 w-[90px]">Счета</th>
+                      <th className="pb-2 pr-2 w-[100px]">Статус</th>
+                      <th className="pb-2 w-[100px]"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -257,28 +257,28 @@ export default function Finance() {
                         key={tx.id}
                         className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                       >
-                        <td className="py-2 pr-3 whitespace-nowrap text-gray-900 dark:text-gray-200">{fmtDate(tx.documentDate)}</td>
-                        <td className="py-2 pr-3 whitespace-nowrap">
+                        <td className="py-2 pr-2 whitespace-nowrap text-gray-900 dark:text-gray-200">{fmtDate(tx.documentDate)}</td>
+                        <td className="py-2 pr-2 truncate" title={tx.counterparty ? (tx.counterparty.shortName || tx.counterparty.name) : tx.payerName}>
                           {tx.counterparty ? (
                             <span className="text-gray-900 dark:text-gray-200">
                               {tx.counterparty.shortName || tx.counterparty.name}
                             </span>
                           ) : (
-                            <span className="text-gray-400 max-w-[200px] truncate inline-block" title={tx.payerName}>
+                            <span className="text-gray-400">
                               {tx.payerName}
                             </span>
                           )}
                         </td>
-                        <td className="py-2 pr-3 whitespace-nowrap text-gray-400 font-mono text-xs">
+                        <td className="py-2 pr-2 text-gray-400 font-mono text-xs">
                           {tx.counterparty?.inn || tx.payerInn || "—"}
                         </td>
-                        <td className="py-2 pr-3 text-right whitespace-nowrap font-medium text-green-600 dark:text-green-400">
+                        <td className="py-2 pr-2 text-right whitespace-nowrap font-medium text-green-600 dark:text-green-400">
                           +{fmtMoney(tx.amount)}
                         </td>
-                        <td className="py-2 pr-3 max-w-[250px] truncate text-gray-500 dark:text-gray-400" title={tx.purpose}>
+                        <td className="py-2 pr-2 truncate text-gray-500 dark:text-gray-400" title={tx.purpose}>
                           {tx.purpose}
                         </td>
-                        <td className="py-2 pr-3">
+                        <td className="py-2 pr-2">
                           {tx.invoiceNumbers.length > 0 ? (
                             <span className="text-xs text-blue-600 dark:text-blue-400">
                               {tx.invoiceNumbers.join(", ")}
@@ -287,7 +287,7 @@ export default function Finance() {
                             <span className="text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="py-2 pr-3">
+                        <td className="py-2 pr-2">
                           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[tx.status]}`}>
                             {statusLabels[tx.status]}
                           </span>

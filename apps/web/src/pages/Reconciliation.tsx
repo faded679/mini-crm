@@ -145,7 +145,7 @@ export default function Reconciliation() {
             {"Итог"}
           </div>
           <div className="text-xl font-bold text-white">
-            {fmtMoney(Math.abs(bal.balance))} ₽
+            {fmtMoney(bal.totalPaid - bal.totalBilled)} ₽
           </div>
         </div>
       </div>
