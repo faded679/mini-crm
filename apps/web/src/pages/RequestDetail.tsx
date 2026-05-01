@@ -357,20 +357,27 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               {(() => {
                 const pp = (request.client as any)?.counterparties?.[0]?.counterparty?.preferredPayment;
                 if (!pp) return null;
-                const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт" };
+                const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
                 const colors: Record<string, string> = {
                   qr: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
                   link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
                   invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                  edo: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
+                  other: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
                 };
                 const methods = pp.split(",").map((s: string) => s.trim()).filter(Boolean);
                 return (
                   <>
-                    {methods.map((m: string) => (
-                      <span key={m} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[m] ?? "bg-gray-100 text-gray-600"}`}>
-                        💳 {labels[m] ?? m}
-                      </span>
-                    ))}
+                    {methods.map((m: string) => {
+                      const isOther = m.startsWith("other:");
+                      const key = isOther ? "other" : m;
+                      const label = isOther ? `Др.: ${m.slice(6) || "…"}` : (labels[m] ?? m);
+                      return (
+                        <span key={m} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[key] ?? "bg-gray-100 text-gray-600"}`}>
+                          💳 {label}
+                        </span>
+                      );
+                    })}
                   </>
                 );
               })()}

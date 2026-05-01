@@ -269,20 +269,27 @@ export default function Invoices() {
                       <div className="flex flex-col gap-1">
                         <span>{cpName}</span>
                         {inv.counterparty?.preferredPayment && (() => {
-                          const payLabels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт" };
+                          const payLabels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
                           const payColors: Record<string, string> = {
                             qr: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
                             link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
                             invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                            edo: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
+                            other: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
                           };
-                          const methods = inv.counterparty.preferredPayment.split(",").map(s => s.trim()).filter(Boolean);
+                          const parts = inv.counterparty.preferredPayment.split(",").map(s => s.trim()).filter(Boolean);
                           return (
                             <div className="flex flex-wrap gap-1">
-                              {methods.map(m => (
-                                <span key={m} className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${payColors[m] ?? "bg-gray-100 text-gray-600"}`}>
-                                  {payLabels[m] ?? m}
-                                </span>
-                              ))}
+                              {parts.map(m => {
+                                const isOther = m.startsWith("other:");
+                                const key = isOther ? "other" : m;
+                                const label = isOther ? `Др.: ${m.slice(6) || "…"}` : (payLabels[m] ?? m);
+                                return (
+                                  <span key={m} className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${payColors[key] ?? "bg-gray-100 text-gray-600"}`}>
+                                    {label}
+                                  </span>
+                                );
+                              })}
                             </div>
                           );
                         })()}

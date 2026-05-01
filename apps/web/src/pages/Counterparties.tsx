@@ -427,10 +427,11 @@ export default function Counterparties() {
 
               <div className="md:col-span-2">
                 <div className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Предпочтительная оплата</div>
-                <div className="flex flex-wrap gap-3">
-                  {(["qr", "link", "invoice_act"] as const).map((val) => {
-                    const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт" };
-                    const current = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
+                <div className="flex flex-wrap gap-3 mb-2">
+                  {(["qr", "link", "invoice_act", "edo"] as const).map((val) => {
+                    const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
+                    const rawParts = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
+                    const current = rawParts.map(p => p.startsWith("other:") ? "other" : p);
                     const checked = current.includes(val);
                     return (
                       <label key={val} className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-gray-100">
@@ -438,9 +439,10 @@ export default function Counterparties() {
                           type="checkbox"
                           checked={checked}
                           onChange={() => {
+                            const parts = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
                             const next = checked
-                              ? current.filter(v => v !== val)
-                              : [...current, val];
+                              ? parts.filter(p => p !== val)
+                              : [...parts, val];
                             setField("preferredPayment", next.join(",") || "");
                           }}
                           className="rounded"
@@ -449,6 +451,45 @@ export default function Counterparties() {
                       </label>
                     );
                   })}
+                  {/* Other checkbox */}
+                  {(() => {
+                    const parts = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
+                    const otherPart = parts.find(p => p.startsWith("other:") || p === "other");
+                    const otherChecked = !!otherPart;
+                    const otherText = otherPart?.startsWith("other:") ? otherPart.slice(6) : "";
+                    return (
+                      <>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-gray-100">
+                          <input
+                            type="checkbox"
+                            checked={otherChecked}
+                            onChange={() => {
+                              const next = otherChecked
+                                ? parts.filter(p => !p.startsWith("other"))
+                                : [...parts, "other:"];
+                              setField("preferredPayment", next.join(",") || "");
+                            }}
+                            className="rounded"
+                          />
+                          Другое
+                        </label>
+                        {otherChecked && (
+                          <input
+                            type="text"
+                            value={otherText}
+                            onChange={(e) => {
+                              const next = parts.map(p =>
+                                p.startsWith("other") ? `other:${e.target.value}` : p
+                              );
+                              setField("preferredPayment", next.join(",") || "");
+                            }}
+                            placeholder="Комментарий..."
+                            className="flex-1 min-w-[160px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
