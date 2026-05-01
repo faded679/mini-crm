@@ -478,10 +478,13 @@ export default function Counterparties() {
                   })}
                   {/* Other checkbox */}
                   {(() => {
-                    const parts = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
-                    const otherPart = parts.find(p => p.startsWith("other:") || p === "other");
+                    const raw = form.preferredPayment ?? "";
+                    // Split carefully: other: part may contain commas, so find it last
+                    const otherMatch = raw.match(/(^|,)(other:[^]*)/);
+                    const otherPart = otherMatch ? otherMatch[2] : null;
                     const otherChecked = !!otherPart;
-                    const otherText = otherPart?.startsWith("other:") ? otherPart.slice(6) : "";
+                    const otherText = otherPart ? otherPart.slice(6) : "";
+                    const simpleParts = raw.split(",").map(s => s.trim()).filter(s => Boolean(s) && !s.startsWith("other"));
                     return (
                       <>
                         <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-gray-100">
@@ -489,10 +492,12 @@ export default function Counterparties() {
                             type="checkbox"
                             checked={otherChecked}
                             onChange={() => {
-                              const next = otherChecked
-                                ? parts.filter(p => !p.startsWith("other"))
-                                : [...parts, "other:"];
-                              setField("preferredPayment", next.join(",") || "");
+                              if (otherChecked) {
+                                setField("preferredPayment", simpleParts.join(",") || "");
+                              } else {
+                                const next = [...simpleParts, "other:"];
+                                setField("preferredPayment", next.join(",") || "");
+                              }
                             }}
                             className="rounded"
                           />
@@ -503,9 +508,7 @@ export default function Counterparties() {
                             type="text"
                             value={otherText}
                             onChange={(e) => {
-                              const next = parts.map(p =>
-                                p.startsWith("other") ? `other:${e.target.value}` : p
-                              );
+                              const next = [...simpleParts, `other:${e.target.value}`];
                               setField("preferredPayment", next.join(",") || "");
                             }}
                             placeholder="Комментарий..."
