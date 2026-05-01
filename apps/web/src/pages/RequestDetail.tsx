@@ -363,10 +363,15 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
                   invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
                 };
+                const methods = pp.split(",").map((s: string) => s.trim()).filter(Boolean);
                 return (
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[pp] ?? "bg-gray-100 text-gray-600"}`}>
-                    💳 {labels[pp] ?? pp}
-                  </span>
+                  <>
+                    {methods.map((m: string) => (
+                      <span key={m} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[m] ?? "bg-gray-100 text-gray-600"}`}>
+                        💳 {labels[m] ?? m}
+                      </span>
+                    ))}
+                  </>
                 );
               })()}
               <span className="text-gray-400 dark:text-gray-100">(

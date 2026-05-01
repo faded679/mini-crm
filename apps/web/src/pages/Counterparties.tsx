@@ -43,7 +43,7 @@ function toFormState(c?: Counterparty): FormState {
     director: c.director,
     directorPost: c.directorPost,
     contract: c.contract,
-    preferredPayment: c.preferredPayment,
+    preferredPayment: c.preferredPayment ?? "",
     contactClientIds: c.contacts.map((x) => x.client.id),
   };
 }
@@ -194,7 +194,7 @@ export default function Counterparties() {
         director: form.director ?? null,
         directorPost: form.directorPost ?? null,
         contract: form.contract ?? null,
-        preferredPayment: form.preferredPayment ?? null,
+        preferredPayment: (form.preferredPayment && form.preferredPayment.trim()) ? form.preferredPayment.trim() : null,
         contactClientIds: form.contactClientIds ?? [],
       };
 
@@ -426,17 +426,30 @@ export default function Counterparties() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Предпочтительная оплата</label>
-                <select
-                  value={form.preferredPayment ?? ""}
-                  onChange={(e) => setField("preferredPayment", e.target.value || null)}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">— не указано —</option>
-                  <option value="qr">QR</option>
-                  <option value="link">Ссылка</option>
-                  <option value="invoice_act">Счёт и Акт</option>
-                </select>
+                <div className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Предпочтительная оплата</div>
+                <div className="flex flex-wrap gap-3">
+                  {(["qr", "link", "invoice_act"] as const).map((val) => {
+                    const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт" };
+                    const current = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
+                    const checked = current.includes(val);
+                    return (
+                      <label key={val} className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-gray-100">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? current.filter(v => v !== val)
+                              : [...current, val];
+                            setField("preferredPayment", next.join(",") || "");
+                          }}
+                          className="rounded"
+                        />
+                        {labels[val]}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>

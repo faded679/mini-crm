@@ -265,7 +265,29 @@ export default function Invoices() {
                   <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">{inv.number}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatDateRu(inv.date)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{cpName}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex flex-col gap-1">
+                        <span>{cpName}</span>
+                        {inv.counterparty?.preferredPayment && (() => {
+                          const payLabels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт" };
+                          const payColors: Record<string, string> = {
+                            qr: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+                            link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                            invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                          };
+                          const methods = inv.counterparty.preferredPayment.split(",").map(s => s.trim()).filter(Boolean);
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {methods.map(m => (
+                                <span key={m} className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${payColors[m] ?? "bg-gray-100 text-gray-600"}`}>
+                                  {payLabels[m] ?? m}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {inv.requests && inv.requests.length > 0 
                         ? inv.requests.map(ir => `#${ir.request.id}`).join(", ")
