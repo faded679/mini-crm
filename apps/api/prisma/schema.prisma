@@ -67,6 +67,7 @@ model Counterparty {
   director              String?
   directorPost          String?               @map("director_post")
   contract              String?
+  preferredPayment      String?               @map("preferred_payment")
   createdAt             DateTime              @default(now()) @map("created_at")
   updatedAt             DateTime              @updatedAt @map("updated_at")
 

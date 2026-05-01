@@ -350,11 +350,26 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
           <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
 
-            <p className="text-sm text-gray-900 dark:text-gray-100">
+            <p className="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap">
               {(request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
                 (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
                 "—"}
-              <span className="text-gray-400 dark:text-gray-100 ml-1">(
+              {(() => {
+                const pp = (request.client as any)?.counterparties?.[0]?.counterparty?.preferredPayment;
+                if (!pp) return null;
+                const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт" };
+                const colors: Record<string, string> = {
+                  qr: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+                  link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                  invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                };
+                return (
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[pp] ?? "bg-gray-100 text-gray-600"}`}>
+                    💳 {labels[pp] ?? pp}
+                  </span>
+                );
+              })()}
+              <span className="text-gray-400 dark:text-gray-100">(
                 <a
                   href={`/admin/clients/${request.client.id}`}
                   onClick={(e) => {

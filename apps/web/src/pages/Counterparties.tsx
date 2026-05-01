@@ -43,6 +43,7 @@ function toFormState(c?: Counterparty): FormState {
     director: c.director,
     directorPost: c.directorPost,
     contract: c.contract,
+    preferredPayment: c.preferredPayment,
     contactClientIds: c.contacts.map((x) => x.client.id),
   };
 }
@@ -193,6 +194,7 @@ export default function Counterparties() {
         director: form.director ?? null,
         directorPost: form.directorPost ?? null,
         contract: form.contract ?? null,
+        preferredPayment: form.preferredPayment ?? null,
         contactClientIds: form.contactClientIds ?? [],
       };
 
@@ -421,6 +423,20 @@ export default function Counterparties() {
                   onChange={(e) => setField("contract", e.target.value)}
                   className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Предпочтительная оплата</label>
+                <select
+                  value={form.preferredPayment ?? ""}
+                  onChange={(e) => setField("preferredPayment", e.target.value || null)}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">— не указано —</option>
+                  <option value="qr">QR</option>
+                  <option value="link">Ссылка</option>
+                  <option value="invoice_act">Счёт и Акт</option>
+                </select>
               </div>
 
               <div>

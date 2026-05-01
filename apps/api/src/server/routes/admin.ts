@@ -89,6 +89,7 @@ type CounterpartyPayload = {
   director?: string | null;
   directorPost?: string | null;
   contract?: string | null;
+  preferredPayment?: string | null;
   contactClientIds?: number[];
 };
 
@@ -1416,6 +1417,7 @@ router.post("/counterparties", async (req: Request, res: Response, next: NextFun
         director: toNullIfEmpty(body.director),
         directorPost: toNullIfEmpty(body.directorPost),
         contract: toNullIfEmpty(body.contract),
+        preferredPayment: toNullIfEmpty(body.preferredPayment),
         contacts: {
           create: contactClientIds.map((clientId) => ({ clientId })),
         },
@@ -1465,6 +1467,7 @@ router.patch("/counterparties/:id", async (req: Request, res: Response, next: Ne
         director: body.director !== undefined ? toNullIfEmpty(body.director) : undefined,
         directorPost: body.directorPost !== undefined ? toNullIfEmpty(body.directorPost) : undefined,
         contract: body.contract !== undefined ? toNullIfEmpty(body.contract) : undefined,
+        preferredPayment: body.preferredPayment !== undefined ? toNullIfEmpty(body.preferredPayment) : undefined,
         contacts:
           contactClientIds !== undefined
             ? {

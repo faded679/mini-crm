@@ -70,6 +70,7 @@ export interface Counterparty {
   director: string | null;
   directorPost: string | null;
   contract: string | null;
+  preferredPayment: string | null;
   contacts: CounterpartyContact[];
   createdAt: string;
   updatedAt: string;
@@ -91,6 +92,7 @@ export interface CounterpartyPayload {
   director?: string | null;
   directorPost?: string | null;
   contract?: string | null;
+  preferredPayment?: string | null;
   contactClientIds?: number[];
 }
 
