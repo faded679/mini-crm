@@ -582,11 +582,19 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
     const { isPaid } = req.body as { isPaid: boolean };
     if (typeof isPaid !== "boolean") throw new ApiError(400, "isPaid must be boolean");
 
+    const currentInvoice = await (prisma as any).invoice.findUnique({ where: { id } });
+    if (!currentInvoice) throw new ApiError(404, "Invoice not found");
+
+    const newStatus = isPaid
+      ? "paid"
+      : currentInvoice.status === "paid" ? "sent" : currentInvoice.status;
+
     const updated = await (prisma as any).invoice.update({
       where: { id },
       data: {
         isPaid,
         paidAt: isPaid ? new Date() : null,
+        status: newStatus,
       },
       include: { items: true, counterparty: true },
     });

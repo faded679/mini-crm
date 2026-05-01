@@ -755,10 +755,12 @@ export default function Requests() {
                     {(() => {
                       const inv = r.invoices;
                       if (!inv || inv.length === 0) return <span className="text-xs text-gray-400">—</span>;
-                      const allPaid = inv.every((i) => i.isPaid);
-                      const anyPaid = inv.some((i) => i.isPaid);
+                      const allPaid = inv.every((i) => i.isPaid || i.status === "paid");
+                      const anyPaid = inv.some((i) => i.isPaid || i.status === "paid");
+                      const anyAwaiting = inv.some((i) => i.status === "awaiting_payment");
                       if (allPaid) return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Оплачен</span>;
                       if (anyPaid) return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Частично</span>;
+                      if (anyAwaiting) return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Ожидает оплаты</span>;
                       return <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">Выставлен</span>;
                     })()}
                   </td>

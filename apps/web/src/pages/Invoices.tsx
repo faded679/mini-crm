@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, type Invoice } from "../api";
+import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, type Invoice } from "../api";
 import { cn } from "../lib/utils";
 
 function formatDateRu(iso: string) {
@@ -37,6 +37,7 @@ export default function Invoices() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [actionId, setActionId] = useState<number | null>(null);
+  const [paidToggling, setPaidToggling] = useState<number | null>(null);
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
@@ -417,6 +418,26 @@ export default function Invoices() {
                             QR/Оплата
                           </button>
                         )}
+                        <button
+                          type="button"
+                          disabled={paidToggling === inv.id}
+                          onClick={async () => {
+                            if (paidToggling) return;
+                            setPaidToggling(inv.id);
+                            try {
+                              await setInvoicePaymentStatus(inv.id, !inv.isPaid);
+                              await reload();
+                            } catch { alert("Ошибка при изменении статуса оплаты"); }
+                            finally { setPaidToggling(null); }
+                          }}
+                          className={`px-2 py-1 text-xs rounded-lg font-medium border transition disabled:opacity-50 ${
+                            inv.isPaid
+                              ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700"
+                              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
+                          }`}
+                        >
+                          {paidToggling === inv.id ? "..." : inv.isPaid ? "✓ Оплачен" : "Отметить оплаченным"}
+                        </button>
                         <button
                           onClick={() => handleDelete(inv.id)}
                           disabled={deletingId === inv.id || inv.isPaid}
