@@ -9,6 +9,7 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,8 +18,21 @@ export default function Clients() {
       .finally(() => setLoading(false));
   }, []);
 
+  const filteredClients = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return clients;
+    return clients.filter((c) => {
+      const name = `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim().toLowerCase();
+      const username = (c.username ?? "").toLowerCase();
+      const phone = (c.phone ?? "").toLowerCase();
+      const org = (c.counterparties?.[0]?.counterparty?.shortName ?? c.counterparties?.[0]?.counterparty?.name ?? "").toLowerCase();
+      const inn = (c.counterparties?.[0]?.counterparty?.inn ?? "").toLowerCase();
+      return name.includes(q) || username.includes(q) || phone.includes(q) || org.includes(q) || inn.includes(q);
+    });
+  }, [clients, search]);
+
   const sortedClients = useMemo(() => {
-    return [...clients].sort((a, b) => {
+    return [...filteredClients].sort((a, b) => {
       let compare = 0;
       
       switch (sortField) {
@@ -45,7 +59,7 @@ export default function Clients() {
       
       return sortDirection === "asc" ? compare : -compare;
     });
-  }, [clients, sortField, sortDirection]);
+  }, [filteredClients, sortField, sortDirection]);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -67,7 +81,19 @@ export default function Clients() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Клиенты</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Клиенты</h1>
+        <span className="text-xs text-gray-400 dark:text-gray-500">Найдено: {sortedClients.length}</span>
+      </div>
+
+      <div className="mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Поиск по имени, @username, телефону, организации, ИНН..."
+          className="w-full max-w-sm px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 placeholder:text-gray-400"
+        />
+      </div>
 
       {clients.length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Клиентов нет</div>

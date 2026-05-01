@@ -56,6 +56,7 @@ export default function Counterparties() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>({ name: "", contactClientIds: [] });
   const [dadataLoading, setDadataLoading] = useState(false);
@@ -83,6 +84,21 @@ export default function Counterparties() {
     for (const c of clients) m.set(c.id, c);
     return m;
   }, [clients]);
+
+  const filteredCounterparties = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return counterparties;
+    return counterparties.filter((c) => {
+      const name = (c.shortName ?? c.name ?? "").toLowerCase();
+      const fullName = (c.name ?? "").toLowerCase();
+      const inn = (c.inn ?? "").toLowerCase();
+      const contacts = c.contacts.map((x) => {
+        const cl = x.client;
+        return `${cl.firstName ?? ""} ${cl.lastName ?? ""} ${cl.username ?? ""}`.toLowerCase();
+      }).join(" ");
+      return name.includes(q) || fullName.includes(q) || inn.includes(q) || contacts.includes(q);
+    });
+  }, [counterparties, search]);
 
   async function reload() {
     setLoading(true);
@@ -238,7 +254,7 @@ export default function Counterparties() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Организации</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Всего: {counterparties.length}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Найдено: {filteredCounterparties.length} из {counterparties.length}</p>
         </div>
         <button
           onClick={openCreate}
@@ -254,6 +270,15 @@ export default function Counterparties() {
         </div>
       )}
 
+      <div className="mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Поиск по названию, ИНН, контактам..."
+          className="w-full max-w-sm px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 placeholder:text-gray-400"
+        />
+      </div>
+
       {counterparties.length === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500">Организаций нет</div>
       ) : (
@@ -268,7 +293,7 @@ export default function Counterparties() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {counterparties.map((c) => (
+              {filteredCounterparties.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">{c.shortName || c.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.inn || "—"}</td>
