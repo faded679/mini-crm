@@ -99,6 +99,8 @@ export default function Requests() {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItemPayload[]>([]);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
 
+  const [searchOrg, setSearchOrg] = useState("");
+
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
   const filterDate = searchParams.get("date") || "all";
@@ -198,6 +200,15 @@ export default function Requests() {
     if (filterType !== "all") {
       if (filterType === "fbs" && r.deliveryTypeId !== 1) return false;
       if (filterType === "fbo" && r.deliveryTypeId !== 2) return false;
+    }
+    if (searchOrg.trim()) {
+      const q = searchOrg.trim().toLowerCase();
+      const cp = (r.client as any)?.counterparties?.[0]?.counterparty;
+      const orgName = (cp?.shortName ?? cp?.name ?? "").toLowerCase();
+      const inn = (cp?.inn ?? "").toLowerCase();
+      const clientName = `${r.client.firstName ?? ""} ${r.client.lastName ?? ""}`.trim().toLowerCase();
+      const username = (r.client.username ?? "").toLowerCase();
+      if (!orgName.includes(q) && !inn.includes(q) && !clientName.includes(q) && !username.includes(q)) return false;
     }
     return true;
   });
@@ -500,6 +511,13 @@ export default function Requests() {
             <option key={d} value={d}>{formatDateRu(d)}</option>
           ))}
         </select>
+
+        <input
+          value={searchOrg}
+          onChange={(e) => setSearchOrg(e.target.value)}
+          placeholder="Поиск по организации, клиенту..."
+          className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 placeholder:text-gray-400 min-w-[220px]"
+        />
 
         <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
           Найдено: {sorted.length}
