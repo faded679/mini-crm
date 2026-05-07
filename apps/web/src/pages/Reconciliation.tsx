@@ -134,17 +134,17 @@ export default function Reconciliation() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Выставлено</div>
-          <div className="text-xl font-bold text-white">{fmtMoney(bal.totalBilled)} ₽</div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white">{fmtMoney(bal.totalBilled)} ₽</div>
         </div>
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Оплачено</div>
-          <div className="text-xl font-bold text-white">{fmtMoney(bal.totalPaid)} ₽</div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white">{fmtMoney(bal.totalPaid)} ₽</div>
         </div>
         <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
             {"Итог"}
           </div>
-          <div className="text-xl font-bold text-white">
+          <div className="text-xl font-bold text-gray-900 dark:text-white">
             {fmtMoney(bal.totalPaid - bal.totalBilled)} ₽
           </div>
         </div>
@@ -215,23 +215,23 @@ export default function Reconciliation() {
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       {entry.debit > 0 ? (
-                        <span className="font-medium text-white">
+                        <span className="font-medium text-gray-900 dark:text-white">
                           −{fmtMoney(entry.debit)} ₽
                         </span>
                       ) : (
-                        <span className="text-gray-300 dark:text-gray-600">—</span>
+                        <span className="text-gray-400 dark:text-gray-600">—</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       {entry.credit > 0 ? (
-                        <span className="font-medium text-white">
+                        <span className="font-medium text-gray-900 dark:text-white">
                           +{fmtMoney(entry.credit)} ₽
                         </span>
                       ) : (
-                        <span className="text-gray-300 dark:text-gray-600">—</span>
+                        <span className="text-gray-400 dark:text-gray-600">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap font-semibold text-white">
+                    <td className="px-4 py-2.5 text-right whitespace-nowrap font-semibold text-gray-900 dark:text-white">
                       {fmtMoney(entry.runningBalance)} ₽
                     </td>
                   </tr>
@@ -242,13 +242,13 @@ export default function Reconciliation() {
                   <td className="px-4 py-3" colSpan={3}>
                     <span className="text-gray-700 dark:text-gray-300">Итого</span>
                   </td>
-                  <td className="px-4 py-3 text-right text-white">
+                  <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
                     −{fmtMoney(ledger.reduce((s, e) => s + e.debit, 0))} ₽
                   </td>
-                  <td className="px-4 py-3 text-right text-white">
+                  <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
                     +{fmtMoney(ledger.reduce((s, e) => s + e.credit, 0))} ₽
                   </td>
-                  <td className="px-4 py-3 text-right text-white font-bold">
+                  <td className="px-4 py-3 text-right text-gray-900 dark:text-white font-bold">
                     {fmtMoney(ledger[ledger.length - 1]?.runningBalance ?? 0)} ₽
                   </td>
                 </tr>
