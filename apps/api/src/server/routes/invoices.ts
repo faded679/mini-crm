@@ -140,7 +140,23 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
           message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
             `Для оплаты перейдите по ссылке:\n${invoice.tbankPaymentUrl}\n\nСсылка на оплату действует 24 часа.`;
 
-          await notifyClient(client.telegramId, message);
+          notifyClient(client.telegramId, message).catch((err: any) =>
+            console.error("Telegram notification failed (resend):", err?.message ?? err)
+          );
+
+          // Отправляем email при пересылке существующей ссылки
+          if (client.email && invoice.tbankPaymentUrl) {
+            const reqNums = invoice.requests?.map((ir: any) => `#${ir.request.id}`);
+            console.log(`[email] Resend: sending to ${client.email}`);
+            sendPaymentLinkEmail({
+              to: client.email,
+              invoiceNumber: invoice.number,
+              amount: totalAmount,
+              paymentUrl: invoice.tbankPaymentUrl,
+              requestNumbers: reqNums,
+            }).then(() => console.log(`[email] Resend delivered to ${client.email}`))
+              .catch((err: any) => console.error(`[email] Resend FAILED to ${client.email}:`, err?.message ?? err));
+          }
 
           return res.json({
             success: true,
@@ -204,8 +220,8 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       },
     });
 
-    // Отправляем ссылку клиенту через бот
-    try {
+    // Отправляем ссылку клиенту через бот (неблокирующе)
+    {
       let message = `💳 <b>Ссылка на оплату №${invoice.number}</b>\n`;
       if (invoice.requests && invoice.requests.length > 0) {
         const requestNumbers = invoice.requests.map((ir: any) => `#${ir.request.id}`).join(", ");
@@ -214,10 +230,9 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       message += `\nСумма: ${totalAmount.toLocaleString("ru-RU")} ₽\n\n` +
         `Для оплаты перейдите по ссылке:\n${paymentResult.PaymentURL}\n\nСсылка на оплату действует 24 часа.`;
 
-      await notifyClient(client.telegramId, message);
-    } catch (notifErr) {
-      console.error("Failed to send payment link notification:", notifErr);
-      throw new ApiError(500, "Failed to send payment link to client");
+      notifyClient(client.telegramId, message).catch((err: any) =>
+        console.error("Telegram notification failed:", err?.message ?? err)
+      );
     }
 
     // Отправляем ссылку на email если есть
