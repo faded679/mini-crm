@@ -45,7 +45,19 @@ export type InvoicePdfParams = {
   invoiceDate: string;
   counterparty: Counterparty;
   items: InvoiceItem[];
+  requestNumbers?: string[];
 };
+
+function abbreviateCompanyName(name: string): string {
+  return name
+    .replace(/ИНДИВИДУАЛЬНЫЙ\s+ПРЕДПРИНИМАТЕЛЬ/gi, "ИП")
+    .replace(/Индивидуальный\s+предприниматель/gi, "ИП")
+    .replace(/Индивидуальное\s+предприятие/gi, "ИП")
+    .replace(/ООО\s+/gi, "ООО ")
+    .replace(/АО\s+/gi, "АО ")
+    .replace(/ПАО\s+/gi, "ПАО ")
+    .trim();
+}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
@@ -301,17 +313,25 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     doc.font("Main").fontSize(9);
     doc.font("Bold").text("Исполнитель:", M, y, { continued: true, width: W });
     doc.font("Main").text(
-      `  ${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}`,
+      `  ${abbreviateCompanyName(SELLER.name)}, ИНН ${SELLER.inn}, ${SELLER.address}`,
       { width: W, lineGap: 0 },
     );
     y = doc.y + 4;
 
     // ============ BUYER ============
     doc.font("Bold").text("Заказчик:", M, y, { continued: true, width: W });
-    const cpParts = [counterparty.name];
+    const cpParts = [abbreviateCompanyName(counterparty.name)];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
+    if (counterparty.address) cpParts.push(counterparty.address);
     doc.font("Main").text(`  ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
     y = doc.y + 4;
+
+    // ============ REQUEST NUMBERS ============
+    if (params.requestNumbers && params.requestNumbers.length > 0) {
+      doc.font("Bold").text("Заявки:", M, y, { continued: true, width: W });
+      doc.font("Main").text(`  ${params.requestNumbers.join(", ")}`, { width: W, lineGap: 0 });
+      y = doc.y + 4;
+    }
 
     // ============ NOTE ============
     if (counterparty.contract) {

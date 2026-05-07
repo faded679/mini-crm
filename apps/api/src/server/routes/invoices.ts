@@ -221,15 +221,23 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
     }
 
     // Отправляем ссылку на email если есть
+    console.log(`[email] client.email=${client.email ?? "null"}, EMAIL_SERVICE_URL=${process.env.EMAIL_SERVICE_URL ?? "(default 172.17.0.1:5001)"}`);
     if (client.email && paymentResult.PaymentURL) {
       const requestNumbers = invoice.requests?.map((ir: any) => `#${ir.request.id}`);
+      console.log(`[email] Sending payment link to ${client.email}`);
       sendPaymentLinkEmail({
         to: client.email,
         invoiceNumber: invoice.number,
         amount: totalAmount,
         paymentUrl: paymentResult.PaymentURL as string,
         requestNumbers,
-      }).catch((err: any) => console.error("Payment link email error:", err));
+      }).then(() => {
+        console.log(`[email] Payment link email delivered to ${client.email}`);
+      }).catch((err: any) => {
+        console.error(`[email] Payment link email FAILED to ${client.email}:`, err?.message ?? err);
+      });
+    } else {
+      console.warn(`[email] Skipped: client.email=${client.email ?? "null"}, paymentURL=${paymentResult.PaymentURL ? "ok" : "null"}`);
     }
 
     res.json({

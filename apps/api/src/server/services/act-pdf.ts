@@ -47,6 +47,17 @@ export type ActPdfParams = {
   items: ActItem[];
 };
 
+function abbreviateCompanyName(name: string): string {
+  return name
+    .replace(/ИНДИВИДУАЛЬНЫЙ\s+ПРЕДПРИНИМАТЕЛЬ/gi, "ИП")
+    .replace(/Индивидуальный\s+предприниматель/gi, "ИП")
+    .replace(/Индивидуальное\s+предприятие/gi, "ИП")
+    .replace(/ООО\s+/gi, "ООО ")
+    .replace(/АО\s+/gi, "АО ")
+    .replace(/ПАО\s+/gi, "ПАО ")
+    .trim();
+}
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
 }
@@ -164,19 +175,20 @@ export async function generateActPdfBuffer(params: ActPdfParams): Promise<Buffer
     doc.font("Main").fontSize(8);
     doc.text("Исполнитель:", M, y, { width: labelW });
     doc.font("Bold").text(
-      `${SELLER.name}, ИНН ${SELLER.inn}, ${SELLER.address}, р/с ${SELLER.account}, в банке ${SELLER.bank}, БИК ${SELLER.bik}, к/с ${SELLER.correspondentAccount}`,
+      `${abbreviateCompanyName(SELLER.name)}, ИНН ${SELLER.inn}, ${SELLER.address}, р/с ${SELLER.account}, в банке ${SELLER.bank}, БИК ${SELLER.bik}, к/с ${SELLER.correspondentAccount}`,
       M + labelW, y, { width: W - labelW, lineGap: 0 },
     );
     y = doc.y + 6;
 
     // ============ ЗАКАЗЧИК ============
     doc.font("Main").text("Заказчик:", M, y, { width: labelW });
-    const cpParts = [counterparty.name];
+    const cpParts = [abbreviateCompanyName(counterparty.name)];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
     if (counterparty.account) cpParts.push(`р/с ${counterparty.account}`);
     if (counterparty.bank) cpParts.push(`в банке ${counterparty.bank}`);
     if (counterparty.bik) cpParts.push(`БИК ${counterparty.bik}`);
     if (counterparty.correspondentAccount) cpParts.push(`к/с ${counterparty.correspondentAccount}`);
+    if (counterparty.address) cpParts.push(counterparty.address);
     doc.font("Bold").text(cpParts.join(", "), M + labelW, y, { width: W - labelW, lineGap: 0 });
     y = doc.y + 6;
 

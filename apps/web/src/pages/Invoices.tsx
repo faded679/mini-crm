@@ -438,13 +438,19 @@ export default function Invoices() {
                         >
                           {paidToggling === inv.id ? "..." : inv.isPaid ? "✓ Оплачен" : "Отметить оплаченным"}
                         </button>
-                        <button
-                          onClick={() => handleDelete(inv.id)}
-                          disabled={deletingId === inv.id || inv.isPaid}
-                          className="px-2 py-1 text-xs rounded-lg font-medium bg-red-600/[0.46] text-white hover:bg-red-700/[0.46] disabled:opacity-50 transition"
-                        >
-                          {deletingId === inv.id ? "..." : "Удалить"}
-                        </button>
+                        {(() => {
+                          const hasDone = inv.requests?.some(ir => ir.request?.status === "done");
+                          return (
+                            <button
+                              onClick={() => handleDelete(inv.id)}
+                              disabled={deletingId === inv.id || inv.isPaid || !!hasDone}
+                              title={hasDone ? "Нельзя удалить: заявка выполнена" : undefined}
+                              className="px-2 py-1 text-xs rounded-lg font-medium bg-red-600/[0.46] text-white hover:bg-red-700/[0.46] disabled:opacity-50 transition"
+                            >
+                              {deletingId === inv.id ? "..." : "Удалить"}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </td>
                   </tr>

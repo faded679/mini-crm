@@ -611,6 +611,19 @@ router.delete("/invoices/:id", async (req: Request, res: Response, next: NextFun
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
+    const invoiceWithRequests = await (prisma as any).invoice.findUnique({
+      where: { id },
+      include: { requests: { include: { request: true } } },
+    });
+    if (!invoiceWithRequests) throw new ApiError(404, "Invoice not found");
+
+    const hasDoneRequest = invoiceWithRequests.requests?.some(
+      (ir: any) => ir.request?.status === "done"
+    );
+    if (hasDoneRequest) {
+      throw new ApiError(400, "Нельзя удалить счёт: одна из заявок уже выполнена");
+    }
+
     await (prisma as any).invoice.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {
@@ -626,9 +639,11 @@ router.get("/invoices/:id/pdf", async (req: Request, res: Response, next: NextFu
 
     const invoice = await (prisma as any).invoice.findUnique({
       where: { id },
-      include: { items: true, counterparty: true },
+      include: { items: true, counterparty: true, requests: { include: { request: true } } },
     });
     if (!invoice) throw new ApiError(404, "Invoice not found");
+
+    const requestNumbers = invoice.requests?.map((ir: any) => `#${ir.request.id}`) ?? [];
 
     const pdf = await generateInvoicePdfBuffer({
       invoiceNumber: invoice.number,
@@ -641,6 +656,7 @@ router.get("/invoices/:id/pdf", async (req: Request, res: Response, next: NextFu
         price: it.price,
         amount: it.amount,
       }))) as any,
+      requestNumbers,
     });
 
     const fileName = `Счет_${invoice.number}.pdf`;
