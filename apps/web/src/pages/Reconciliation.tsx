@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getCounterpartyFinanceSummary,
+  downloadReconciliationPdf,
   type CounterpartyFinanceSummary,
   type Invoice,
   type BankTransaction,
@@ -27,22 +28,41 @@ function fmtMoney(n: number) {
   return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function currentYear() {
+  return new Date().getFullYear();
+}
+
 export default function Reconciliation() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [summary, setSummary] = useState<CounterpartyFinanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [dateFrom, setDateFrom] = useState(`${currentYear()}-01-01`);
+  const [dateTo, setDateTo] = useState(new Date().toISOString().slice(0, 10));
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     setError("");
-    getCounterpartyFinanceSummary(Number(id))
+    getCounterpartyFinanceSummary(Number(id), dateFrom, dateTo)
       .then(setSummary)
       .catch((e) => setError(e?.message || "Ошибка загрузки"))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, dateFrom, dateTo]);
+
+  async function handleDownloadPdf() {
+    if (!id) return;
+    setPdfLoading(true);
+    try {
+      await downloadReconciliationPdf(Number(id), dateFrom, dateTo);
+    } catch (e: any) {
+      alert(e?.message || "Ошибка генерации PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   const ledger = useMemo<LedgerEntry[]>(() => {
     if (!summary) return [];
@@ -113,7 +133,7 @@ export default function Reconciliation() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <button
             onClick={() => navigate(-1)}
@@ -122,11 +142,36 @@ export default function Reconciliation() {
             ← Назад
           </button>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Сверка — {cp.shortName || cp.name}
+            Акт сверки — {cp.shortName || cp.name}
           </h1>
           {cp.inn && (
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">ИНН: {cp.inn}</div>
           )}
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-500 dark:text-gray-400">С:</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+            <label className="text-sm text-gray-500 dark:text-gray-400">По:</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+          >
+            {pdfLoading ? "Генерация..." : "⬇ Скачать PDF"}
+          </button>
         </div>
       </div>
 

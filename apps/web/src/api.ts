@@ -1024,8 +1024,33 @@ export function getFinanceBalances() {
   return request<CounterpartyBalance[]>("/admin/finance/balances");
 }
 
-export function getCounterpartyFinanceSummary(counterpartyId: number) {
-  return request<CounterpartyFinanceSummary>(`/admin/finance/counterparty/${counterpartyId}/summary`);
+export function getCounterpartyFinanceSummary(counterpartyId: number, dateFrom?: string, dateTo?: string) {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  const q = params.toString() ? `?${params.toString()}` : "";
+  return request<CounterpartyFinanceSummary>(`/admin/finance/counterparty/${counterpartyId}/summary${q}`);
+}
+
+export async function downloadReconciliationPdf(counterpartyId: number, dateFrom?: string, dateTo?: string): Promise<void> {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  const q = params.toString() ? `?${params.toString()}` : "";
+  const token = getToken();
+  const res = await fetch(`/api/admin/finance/counterparty/${counterpartyId}/reconciliation-pdf${q}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Ошибка генерации PDF");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const disp = res.headers.get("content-disposition") || "";
+  const match = disp.match(/filename\*=UTF-8''(.+)/);
+  a.download = match ? decodeURIComponent(match[1]) : `act-sverki-${counterpartyId}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export function getFinanceImportHistory() {

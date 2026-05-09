@@ -10,6 +10,7 @@ import {
   getCounterpartyTransactions,
   recalculateBalance,
 } from "../services/bank-import-service.js";
+import { generateReconciliationPdfBuffer, type ReconciliationEntry } from "../services/reconciliation-pdf.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -126,6 +127,8 @@ router.get("/counterparty/:id/summary", async (req: Request, res: Response, next
     const counterpartyId = Number(req.params.id);
     if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
 
+    const { dateFrom, dateTo } = req.query as { dateFrom?: string; dateTo?: string };
+
     // Get counterparty info
     const counterparty = await (prisma as any).counterparty.findUnique({
       where: { id: counterpartyId },
@@ -138,17 +141,26 @@ router.get("/counterparty/:id/summary", async (req: Request, res: Response, next
       where: { counterpartyId },
     });
 
+    // Date filters
+    const dateFilter: any = {};
+    if (dateFrom) dateFilter.gte = new Date(dateFrom);
+    if (dateTo) { const d = new Date(dateTo); d.setHours(23, 59, 59, 999); dateFilter.lte = d; }
+
     // Get invoices
+    const invoiceWhere: any = { counterpartyId };
+    if (dateFrom || dateTo) invoiceWhere.date = dateFilter;
     const invoices = await (prisma as any).invoice.findMany({
-      where: { counterpartyId },
+      where: invoiceWhere,
       include: { items: true },
-      orderBy: { date: "desc" },
+      orderBy: { date: "asc" },
     });
 
     // Get matched payments
+    const paymentWhere: any = { counterpartyId, status: "matched" };
+    if (dateFrom || dateTo) paymentWhere.documentDate = dateFilter;
     const payments = await (prisma as any).bankTransaction.findMany({
-      where: { counterpartyId, status: "matched" },
-      orderBy: { documentDate: "desc" },
+      where: paymentWhere,
+      orderBy: { documentDate: "asc" },
     });
 
     res.json({
@@ -241,6 +253,96 @@ router.post("/import-from-email", async (req: Request, res: Response, next: Next
     }
 
     res.json({ statementsFound: data.count, results });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/finance/counterparty/:id/reconciliation-pdf — generate reconciliation act PDF
+router.get("/counterparty/:id/reconciliation-pdf", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counterpartyId = Number(req.params.id);
+    if (!Number.isFinite(counterpartyId)) throw new ApiError(400, "Invalid counterpartyId");
+
+    const { dateFrom, dateTo } = req.query as { dateFrom?: string; dateTo?: string };
+
+    const counterparty = await (prisma as any).counterparty.findUnique({
+      where: { id: counterpartyId },
+      select: { id: true, name: true, shortName: true, inn: true, kpp: true, address: true, director: true },
+    });
+    if (!counterparty) throw new ApiError(404, "Counterparty not found");
+
+    // Date range
+    const from = dateFrom ? new Date(dateFrom) : new Date(new Date().getFullYear(), 0, 1);
+    const to = dateTo ? new Date(dateTo) : new Date();
+    to.setHours(23, 59, 59, 999);
+
+    // Invoices in period
+    const invoices = await (prisma as any).invoice.findMany({
+      where: {
+        counterpartyId,
+        date: { gte: from, lte: to },
+      },
+      include: { items: true },
+      orderBy: { date: "asc" },
+    });
+
+    // Payments in period
+    const payments = await (prisma as any).bankTransaction.findMany({
+      where: {
+        counterpartyId,
+        status: "matched",
+        documentDate: { gte: from, lte: to },
+      },
+      orderBy: { documentDate: "asc" },
+    });
+
+    // Build entries
+    const entries: ReconciliationEntry[] = [];
+
+    for (const inv of invoices) {
+      const total = inv.items.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0);
+      entries.push({
+        date: inv.date.toISOString(),
+        description: `Счёт №${inv.number}`,
+        debit: total,
+        credit: 0,
+      });
+    }
+
+    for (const p of payments) {
+      entries.push({
+        date: p.documentDate.toISOString(),
+        description: `Оплата: ${p.purpose.slice(0, 80)}`,
+        debit: 0,
+        credit: p.amount,
+      });
+    }
+
+    entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const pdfBuffer = await generateReconciliationPdfBuffer({
+      counterparty: {
+        name: counterparty.name,
+        inn: counterparty.inn,
+        kpp: counterparty.kpp,
+        address: counterparty.address,
+        director: counterparty.director,
+      },
+      dateFrom: from.toISOString(),
+      dateTo: to.toISOString(),
+      entries,
+      openingBalance: 0,
+    });
+
+    const safeName = (counterparty.shortName || counterparty.name).replace(/[^\wА-яа-я\s]/gi, "").slice(0, 40);
+    const fromStr = from.toLocaleDateString("ru-RU").replace(/\./g, "-");
+    const toStr = to.toLocaleDateString("ru-RU").replace(/\./g, "-");
+    const filename = `Акт_сверки_${safeName}_${fromStr}_${toStr}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.send(pdfBuffer);
   } catch (err) {
     next(err);
   }
