@@ -304,7 +304,8 @@ export default function Counterparties() {
                           .map((x) => {
                             const cl = x.client;
                             const n = `${cl.firstName ?? ""} ${cl.lastName ?? ""}`.trim();
-                            return n || cl.username || cl.telegramId;
+                            const phoneFromId = cl.telegramId?.startsWith("phone_") ? `+${cl.telegramId.split("_")[1]}` : null;
+                            return n || (cl.username ? `@${cl.username}` : null) || cl.phone || phoneFromId || cl.telegramId;
                           })
                           .join(", ")}
                   </td>
