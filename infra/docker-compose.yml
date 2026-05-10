@@ -100,7 +100,17 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - default
+      - mini_crm_demo_net
 
 volumes:
   mini_crm_pgdata:
   mini_crm_uploads:
+
+networks:
+  default:
+    name: infra_default
+  mini_crm_demo_net:
+    external: true
+    name: mini_crm_demo_net
