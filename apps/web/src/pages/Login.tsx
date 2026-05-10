@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { login } from "../api";
 import { useAuth } from "../auth";
 
+const IS_DEMO = import.meta.env.VITE_IS_DEMO === "true";
+
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(IS_DEMO ? "demo@demo.com" : "");
+  const [password, setPassword] = useState(IS_DEMO ? "demo1234" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { setAuth } = useAuth();
@@ -32,6 +34,12 @@ export default function Login() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Mini CRM</h1>
           <p className="text-gray-500 dark:text-gray-400 text-center mb-6">Панель менеджера</p>
+          {IS_DEMO && (
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-4 text-center">
+              <div className="text-amber-800 font-semibold text-sm mb-1">🟡 Демо-режим</div>
+              <div className="text-amber-700 text-xs">Данные сбрасываются каждые 24 часа.<br/>Логин и пароль уже заполнены.</div>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg p-3 mb-4">

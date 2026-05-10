@@ -1,0 +1,67 @@
+services:
+  db-demo:
+    image: postgres:16-alpine
+    container_name: mini-crm-db-demo
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:-demo_pg_pass}
+      POSTGRES_DB: mini_crm_demo
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    volumes:
+      - mini_crm_demo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - demo_net
+
+  api-demo:
+    build:
+      context: ../apps/api
+    container_name: mini-crm-api-demo
+    restart: unless-stopped
+    depends_on:
+      db-demo:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${DEMO_POSTGRES_PASSWORD:-demo_pg_pass}@db-demo:5432/mini_crm_demo?schema=public
+      JWT_SECRET: ${DEMO_JWT_SECRET:-demo-jwt-secret-not-for-production-use}
+      JWT_EXPIRES_IN: 8h
+      TELEGRAM_BOT_TOKEN: ""
+      CORS_ORIGINS: ${DEMO_CORS_ORIGINS:-https://demo.sologo.ru}
+      PORT: "3000"
+      DADATA_TOKEN: ""
+      TBANK_TERMINAL_KEY: ""
+      TBANK_SECRET_KEY: ""
+      TBANK_API_URL: ""
+      API_BASE_URL: ${DEMO_API_BASE_URL:-https://demo.sologo.ru/api}
+      ZVONOK_PUBLIC_KEY: ""
+      ZVONOK_CAMPAIGN_ID: ""
+      ZVONOK_VERIFICATION_NUMBER: ""
+      EMAIL_SERVICE_URL: ""
+      IS_DEMO: "true"
+    networks:
+      - demo_net
+
+  web-demo:
+    build:
+      context: ../apps/web
+      args:
+        VITE_API_URL: ${DEMO_API_BASE_URL:-https://demo.sologo.ru/api}
+        VITE_BASE_PATH: /
+        VITE_IS_DEMO: "true"
+    container_name: mini-crm-web-demo
+    restart: unless-stopped
+    networks:
+      - demo_net
+
+networks:
+  demo_net:
+    name: mini_crm_demo_net
+
+volumes:
+  mini_crm_demo_pgdata:
