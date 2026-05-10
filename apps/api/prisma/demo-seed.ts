@@ -112,11 +112,11 @@ async function main() {
 
   // ─── Clients ───────────────────────────────────────────────────────────────
   const clientsData = [
-    { telegramId: "demo_tg_101", firstName: "Алексей", lastName: "Иванов", username: "alexivanov", phone: "79161234567" },
-    { telegramId: "demo_tg_102", firstName: "Мария", lastName: "Петрова", username: "mariapetrova", phone: "79262345678" },
-    { telegramId: "demo_tg_103", firstName: "Дмитрий", lastName: "Сидоров", username: "dmitrysid", phone: "79363456789" },
-    { telegramId: "demo_tg_104", firstName: "Елена", lastName: "Козлова", username: null, phone: "79164567890" },
-    { telegramId: "demo_tg_105", firstName: "Сергей", lastName: "Новиков", username: "sergnovikov", phone: "79265678901" },
+    { telegramId: "demo_tg_101", firstName: "Демо", lastName: "Клиент1", username: "demo_client_1", phone: "70000000001" },
+    { telegramId: "demo_tg_102", firstName: "Демо", lastName: "Клиент2", username: "demo_client_2", phone: "70000000002" },
+    { telegramId: "demo_tg_103", firstName: "Демо", lastName: "Клиент3", username: "demo_client_3", phone: "70000000003" },
+    { telegramId: "demo_tg_104", firstName: "Демо", lastName: "Клиент4", username: null, phone: "70000000004" },
+    { telegramId: "demo_tg_105", firstName: "Демо", lastName: "Клиент5", username: "demo_client_5", phone: "70000000005" },
   ];
   const clients: any[] = [];
   for (const c of clientsData) {
