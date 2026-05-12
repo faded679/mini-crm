@@ -32,13 +32,13 @@ services:
       JWT_SECRET: ${DEMO_JWT_SECRET:-demo-jwt-secret-not-for-production-use}
       JWT_EXPIRES_IN: 8h
       TELEGRAM_BOT_TOKEN: ""
-      CORS_ORIGINS: ${DEMO_CORS_ORIGINS:-https://demo.vvcode.ru}
+      CORS_ORIGINS: ${DEMO_CORS_ORIGINS:-https://demo.sologo.ru}
       PORT: "3000"
       DADATA_TOKEN: ""
       TBANK_TERMINAL_KEY: ""
       TBANK_SECRET_KEY: ""
       TBANK_API_URL: ""
-      API_BASE_URL: ${DEMO_API_BASE_URL:-https://demo.vvcode.ru/api}
+      API_BASE_URL: ${DEMO_API_BASE_URL:-https://demo.sologo.ru/api}
       ZVONOK_PUBLIC_KEY: ""
       ZVONOK_CAMPAIGN_ID: ""
       ZVONOK_VERIFICATION_NUMBER: ""
@@ -51,7 +51,7 @@ services:
     build:
       context: ../apps/web
       args:
-        VITE_API_URL: ${DEMO_API_BASE_URL:-https://demo.vvcode.ru/api}
+        VITE_API_URL: ${DEMO_API_BASE_URL:-https://demo.sologo.ru/api}
         VITE_BASE_PATH: /
         VITE_IS_DEMO: "true"
     container_name: mini-crm-web-demo
