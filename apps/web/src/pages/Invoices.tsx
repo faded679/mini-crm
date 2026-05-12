@@ -41,6 +41,8 @@ export default function Invoices() {
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -79,8 +81,17 @@ export default function Invoices() {
     if (filterStatus) {
       list = list.filter((inv) => inv.status === filterStatus);
     }
+    if (filterDateFrom) {
+      const from = new Date(filterDateFrom);
+      list = list.filter((inv) => new Date(inv.date) >= from);
+    }
+    if (filterDateTo) {
+      const to = new Date(filterDateTo);
+      to.setHours(23, 59, 59, 999);
+      list = list.filter((inv) => new Date(inv.date) <= to);
+    }
     return list;
-  }, [invoices, filterCounterparty, filterStatus]);
+  }, [invoices, filterCounterparty, filterStatus, filterDateFrom, filterDateTo]);
 
   const sorted = useMemo(() => {
     const dirFactor = sortDir === "asc" ? 1 : -1;
@@ -217,6 +228,30 @@ export default function Invoices() {
           <option value="paid">Оплачен</option>
           <option value="cancelled">Отменён</option>
         </select>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 dark:text-gray-400">с</span>
+          <input
+            type="date"
+            value={filterDateFrom}
+            onChange={(e) => setFilterDateFrom(e.target.value)}
+            className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+          />
+          <span className="text-sm text-gray-500 dark:text-gray-400">по</span>
+          <input
+            type="date"
+            value={filterDateTo}
+            onChange={(e) => setFilterDateTo(e.target.value)}
+            className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+          />
+          {(filterDateFrom || filterDateTo) && (
+            <button
+              onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); }}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {sorted.length === 0 ? (
