@@ -425,9 +425,11 @@ model BankTransaction {
   status              TransactionStatus @default(new)
   matchedAt           DateTime?         @map("matched_at")
 
-  importBatchId       String            @map("import_batch_id")
-  importBatch         BankImportBatch   @relation(fields: [importBatchId], references: [id])
+  importBatchId       String?           @map("import_batch_id")
+  importBatch         BankImportBatch?  @relation(fields: [importBatchId], references: [id])
   rawData             Json?             @map("raw_data")
+
+  tbankPaymentId      String?           @unique @map("tbank_payment_id")
 
   createdAt           DateTime          @default(now()) @map("created_at")
 

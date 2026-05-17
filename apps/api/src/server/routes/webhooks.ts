@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { prisma } from "../db/prisma.js";
 import { tbankPayment } from "../../services/tbank-payment.js";
 import { notifyClient } from "../services/telegram-notifier.js";
+import { recalculateBalance } from "../services/bank-import-service.js";
 
 const router = Router();
 
@@ -73,6 +74,38 @@ router.post("/tbank", async (req: Request, res: Response, next: NextFunction) =>
       });
 
       console.log(`Invoice ${invoice.number} marked as paid (wasAlreadyPaid: ${wasAlreadyPaid})`);
+
+      // Создаём BankTransaction и пересчитываем баланс ТОЛЬКО если счет не был оплачен ранее
+      if (!wasAlreadyPaid && invoice.counterpartyId) {
+        try {
+          const existingTx = await (prisma as any).bankTransaction.findFirst({
+            where: { tbankPaymentId: PaymentId },
+          });
+          if (!existingTx) {
+            await (prisma as any).bankTransaction.create({
+              data: {
+                counterpartyId: invoice.counterpartyId,
+                direction: "incoming",
+                status: "matched",
+                amount: totalAmount,
+                purpose: `Оплата счёта №${invoice.number} (T-Bank QR/ссылка)`,
+                documentDate: new Date(),
+                documentNumber: `TBANK-${PaymentId}`,
+                payerName: invoice.counterparty?.shortName || invoice.counterparty?.name || "T-Bank",
+                recipientName: "Sologo",
+                invoiceNumbers: [invoice.number],
+                matchedAt: new Date(),
+                tbankPaymentId: PaymentId,
+              },
+            });
+            console.log(`BankTransaction created for invoice ${invoice.number}, amount=${totalAmount}`);
+          }
+          await recalculateBalance(invoice.counterpartyId);
+          console.log(`Balance recalculated for counterpartyId=${invoice.counterpartyId}`);
+        } catch (balanceErr) {
+          console.error("Failed to create BankTransaction or recalculate balance:", balanceErr);
+        }
+      }
 
       // Отправляем уведомление клиенту ТОЛЬКО если счет не был оплачен ранее
       if (!wasAlreadyPaid) {
