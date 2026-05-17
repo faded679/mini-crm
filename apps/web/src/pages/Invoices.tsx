@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, type Invoice } from "../api";
+import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, checkInvoicePayment, type Invoice } from "../api";
 import { cn } from "../lib/utils";
 
 function formatDateRu(iso: string) {
@@ -38,6 +38,7 @@ export default function Invoices() {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [actionId, setActionId] = useState<number | null>(null);
   const [paidToggling, setPaidToggling] = useState<number | null>(null);
+  const [checkingPayment, setCheckingPayment] = useState<number | null>(null);
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
@@ -473,6 +474,30 @@ export default function Invoices() {
                         >
                           {paidToggling === inv.id ? "..." : inv.isPaid ? "✓ Оплачен" : "Отметить оплаченным"}
                         </button>
+                        {inv.tbankPaymentId && inv.status !== "paid" && (
+                          <button
+                            type="button"
+                            disabled={checkingPayment === inv.id}
+                            onClick={async () => {
+                              if (checkingPayment) return;
+                              setCheckingPayment(inv.id);
+                              try {
+                                const result = await checkInvoicePayment(inv.id);
+                                alert(result.message);
+                                if (result.checked && result.status === "CONFIRMED") {
+                                  await reload();
+                                }
+                              } catch (err) {
+                                alert(err instanceof Error ? err.message : "Ошибка проверки");
+                              } finally {
+                                setCheckingPayment(null);
+                              }
+                            }}
+                            className="px-2 py-1 text-xs rounded-lg font-medium bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 transition"
+                          >
+                            {checkingPayment === inv.id ? "..." : "Проверить оплату"}
+                          </button>
+                        )}
                         {(() => {
                           const hasDone = inv.requests?.some(ir => ir.request?.status === "done");
                           return (

@@ -345,6 +345,7 @@ export interface Invoice {
   isPaid: boolean;
   paidAt: string | null;
   tbankPaymentUrl?: string | null;
+  tbankPaymentId?: string | null;
   amount: number;
   counterpartyId: number;
   createdAt: string;
@@ -388,6 +389,13 @@ export function setInvoicePaymentStatus(id: number, isPaid: boolean) {
     method: "PATCH",
     body: JSON.stringify({ isPaid }),
   });
+}
+
+export function checkInvoicePayment(id: number) {
+  return request<{ checked: boolean; status?: string; alreadyPaid?: boolean; message: string }>(
+    `/admin/invoices/${id}/check-payment`,
+    { method: "POST" }
+  );
 }
 
 export function getInvoicePdfUrlById(id: number): string {

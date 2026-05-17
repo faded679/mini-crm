@@ -4,6 +4,7 @@ import { ApiError } from "../errors.js";
 import { tbankPayment } from "../../services/tbank-payment.js";
 import { notifyClient } from "../services/telegram-notifier.js";
 import { sendPaymentLinkEmail } from "../services/email-service.js";
+import { recalculateBalance } from "../services/bank-import-service.js";
 
 const router = Router();
 
@@ -323,6 +324,76 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
     }
 
     res.json(invoice);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/invoices/:id/check-payment — вручную проверить статус платежа в T-Bank
+router.post("/:id/check-payment", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const invoiceId = Number(req.params.id);
+    if (!Number.isFinite(invoiceId)) throw new ApiError(400, "Invalid id");
+
+    const invoice = await (prisma as any).invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        items: true,
+        counterparty: true,
+      },
+    });
+    if (!invoice) throw new ApiError(404, "Invoice not found");
+
+    if (!invoice.tbankPaymentId) {
+      return res.json({ checked: false, message: "У счёта нет PaymentId T-Bank — ссылка на оплату не создавалась" });
+    }
+
+    // Запрашиваем статус у T-Bank
+    const state = await tbankPayment.getPaymentState(invoice.tbankPaymentId);
+    console.log(`[check-payment] Invoice #${invoiceId} PaymentId=${invoice.tbankPaymentId} Status=${state.Status}`);
+
+    if (state.Success && state.Status === "CONFIRMED") {
+      if (invoice.status === "paid") {
+        return res.json({ checked: true, status: "CONFIRMED", alreadyPaid: true, message: "Счёт уже помечен оплаченным" });
+      }
+
+      // Помечаем счёт оплаченным
+      await (prisma as any).invoice.update({
+        where: { id: invoiceId },
+        data: { status: "paid", isPaid: true, paidAt: new Date() },
+      });
+
+      // Создаём BankTransaction если её ещё нет
+      if (invoice.counterpartyId) {
+        const totalAmount = invoice.items.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0);
+        const existingTx = await (prisma as any).bankTransaction.findFirst({
+          where: { tbankPaymentId: invoice.tbankPaymentId },
+        });
+        if (!existingTx) {
+          await (prisma as any).bankTransaction.create({
+            data: {
+              counterpartyId: invoice.counterpartyId,
+              direction: "incoming",
+              status: "matched",
+              amount: totalAmount,
+              purpose: `Оплата счёта №${invoice.number} (T-Bank, ручная проверка)`,
+              documentDate: new Date(),
+              documentNumber: `TBANK-${invoice.tbankPaymentId}`,
+              payerName: invoice.counterparty?.shortName || invoice.counterparty?.name || "T-Bank",
+              recipientName: "Sologo",
+              invoiceNumbers: [invoice.number],
+              matchedAt: new Date(),
+              tbankPaymentId: invoice.tbankPaymentId,
+            },
+          });
+        }
+        await recalculateBalance(invoice.counterpartyId);
+      }
+
+      return res.json({ checked: true, status: "CONFIRMED", alreadyPaid: false, message: "Оплата подтверждена, счёт и баланс обновлены" });
+    }
+
+    return res.json({ checked: true, status: state.Status, alreadyPaid: false, message: `Статус T-Bank: ${state.Status}` });
   } catch (err) {
     next(err);
   }
