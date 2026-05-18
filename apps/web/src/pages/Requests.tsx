@@ -103,7 +103,7 @@ export default function Requests() {
 
   const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
   const filterCity = searchParams.get("city") || "all";
-  const filterDate = searchParams.get("date") || "all";
+  const filterDate = searchParams.get("date") || "";
   const filterType = searchParams.get("type") || "all";
   const sortParam = searchParams.get("sort");
   const sortKey = isSortKey(sortParam) ? sortParam : "id";
@@ -196,7 +196,7 @@ export default function Requests() {
   const filtered = requests.filter((r) => {
     if (filterStatus !== "all" && r.status !== filterStatus) return false;
     if (filterCity !== "all" && r.city !== filterCity) return false;
-    if (filterDate !== "all" && !r.deliveryDate.startsWith(filterDate)) return false;
+    if (filterDate && !r.deliveryDate.startsWith(filterDate)) return false;
     if (filterType !== "all") {
       if (filterType === "fbs" && r.deliveryTypeId !== 1) return false;
       if (filterType === "fbo" && r.deliveryTypeId !== 2) return false;
@@ -213,7 +213,6 @@ export default function Requests() {
     return true;
   });
 
-  // Reset selection when filters change
   useEffect(() => {
     setSelectedIds(new Set());
   }, [filterStatus, filterCity, filterDate, filterType]);
@@ -339,11 +338,13 @@ export default function Requests() {
       knownWeightKg: 0,
       missingWeightCount: 0,
       missingWeightPlaces: 0,
+      totalVolume: 0,
     };
 
     for (const r of filtered) {
       s.totalPlaces += r.boxCount;
       s.placesByPackaging[r.packagingType] += r.boxCount;
+      if (r.volume != null) s.totalVolume += r.volume;
 
       if (r.weight == null) {
         s.missingWeightCount += 1;
@@ -354,6 +355,7 @@ export default function Requests() {
     }
 
     s.knownWeightKg = Math.round(s.knownWeightKg * 100) / 100;
+    s.totalVolume = Math.round(s.totalVolume * 1000) / 1000;
     return s;
   }, [filtered]);
 
@@ -439,7 +441,7 @@ export default function Requests() {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
 
-  const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || filterDate !== "all" || filterType !== "all";
+  const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || !!filterDate || filterType !== "all";
 
   return (
     <div>
@@ -501,16 +503,20 @@ export default function Requests() {
           ))}
         </select>
 
-        <select
+        <input
+          type="date"
           value={filterDate}
           onChange={(e) => setFilterDate(e.target.value)}
           className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
-        >
-          <option value="all">Все даты</option>
-          {uniqueDates.map((d) => (
-            <option key={d} value={d}>{formatDateRu(d)}</option>
-          ))}
-        </select>
+        />
+        {filterDate && (
+          <button
+            onClick={() => setFilterDate("all")}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            ✕ Дата
+          </button>
+        )}
 
         <input
           value={searchOrg}
@@ -580,6 +586,15 @@ export default function Requests() {
               </span>
             )}
           </div>
+
+          {summary.totalVolume > 0 && (
+            <div className="text-gray-600 dark:text-gray-300">
+              <span className="text-gray-400 dark:font-medium">Объём FBS:</span>{" "}
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {summary.totalVolume.toLocaleString("ru-RU")} м³
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -738,7 +753,12 @@ export default function Requests() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {r.deliveryType?.name || "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                  <td className={`px-4 py-3 text-sm ${
+                    r.mpAccountDate && r.deliveryDate &&
+                    r.mpAccountDate.slice(0, 10) !== r.deliveryDate.slice(0, 10)
+                      ? "text-red-600 dark:text-red-400 font-medium"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}>
                     {r.mpAccountDate ? new Date(r.mpAccountDate).toLocaleDateString("ru-RU") : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-right">

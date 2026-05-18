@@ -685,32 +685,6 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
               )}
             </div>
 
-              <div className="flex items-center gap-3">
-                  <button
-                    onClick={async () => {
-                      if (!request) return;
-                      try {
-                        const suggestion = await suggestRequestService(request.id);
-                        if (!suggestion.found) {
-                          alert(suggestion.message || "Подходящий тариф не найден");
-                          return;
-                        }
-                        const svc = await createRequestService(request.id, {
-                          description: suggestion.description!,
-                          unit: suggestion.unit!,
-                          quantity: suggestion.quantity!,
-                          price: suggestion.price!,
-                        });
-                        setServices((prev) => [...prev, svc]);
-                      } catch {
-                        alert("Ошибка при подборе тарифа");
-                      }
-                    }}
-                    className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"
-                  >
-                    <FileText size={14} /> Подставить
-                  </button>
-                </div>
 
           </div>
 
