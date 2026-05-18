@@ -198,6 +198,7 @@ interface CreateWebRequestPayload {
   deliveryTypeId?: number;
   weight?: number;
   boxCount: number;
+  volume?: number;
   comment?: string;
   mpAccountDate?: string;
   items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];

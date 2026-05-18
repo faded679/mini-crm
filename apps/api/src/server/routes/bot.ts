@@ -852,6 +852,7 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
       comment,
       deliveryTypeId,
       mpAccountDate,
+      volume: bodyVolume,
     } = req.body;
 
     if (!phone || !city || !deliveryDate || !boxCount || !packagingType) {
@@ -959,7 +960,9 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
         packagingType,
         comment: comment || null,
         status: "new",
-        ...(extractedVolume !== undefined ? { volume: extractedVolume } : {}),
+        ...(bodyVolume !== undefined && bodyVolume !== null && Number(bodyVolume) > 0
+          ? { volume: Number(bodyVolume) }
+          : extractedVolume !== undefined ? { volume: extractedVolume } : {}),
         ...(parsedWeight !== undefined ? { weight: parsedWeight } : {}),
         ...(deliveryTypeId !== undefined && deliveryTypeId !== null ? { deliveryTypeId: Number(deliveryTypeId) } : {}),
         ...(mpAccountDate ? { mpAccountDate: new Date(mpAccountDate) } : {}),

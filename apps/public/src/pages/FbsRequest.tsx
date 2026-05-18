@@ -153,6 +153,7 @@ export default function FbsRequest() {
         deliveryDate: deliveryDate || new Date().toISOString(),
         packagingType: "boxes",
         boxCount: totalQty,
+        volume: totalVolume,
         deliveryTypeId: 1,
         ...(comment.trim() ? { comment: comment.trim() } : {}),
         /* comment:
