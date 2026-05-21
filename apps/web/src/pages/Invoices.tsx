@@ -420,9 +420,10 @@ export default function Invoices() {
                               
                               setActionId(inv.id);
                               try {
-                                // Отправляем и счёт и акт
-                                await sendInvoicePdf(inv.id, telegramId);
-                                await sendActPdf(inv.id, telegramId);
+                                await Promise.all([
+                                  sendInvoicePdf(inv.id, telegramId),
+                                  sendActPdf(inv.id, telegramId),
+                                ]);
                                 alert("Счёт и акт отправлены клиенту!");
                                 await reload();
                               } catch (err) { 

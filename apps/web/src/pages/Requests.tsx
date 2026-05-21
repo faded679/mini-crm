@@ -58,6 +58,16 @@ function getRequestTotal(r: ShipmentRequest) {
   return total > 0 ? total : null;
 }
 
+function getEffectiveVolume(r: ShipmentRequest): number | null {
+  if (r.volume != null) return r.volume;
+  const services = (r as any).services as { unit?: string; quantity?: number }[] | undefined;
+  if (!services) return null;
+  const m3svcs = services.filter((s) => s.unit === "м³");
+  if (m3svcs.length === 0) return null;
+  const total = m3svcs.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
+  return total > 0 ? total : null;
+}
+
 export default function Requests() {
   const [requests, setRequests] = useState<ShipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -344,7 +354,8 @@ export default function Requests() {
     for (const r of filtered) {
       s.totalPlaces += r.boxCount;
       s.placesByPackaging[r.packagingType] += r.boxCount;
-      if (r.volume != null) s.totalVolume += r.volume;
+      const vol = getEffectiveVolume(r);
+      if (vol != null) s.totalVolume += vol;
 
       if (r.weight == null) {
         s.missingWeightCount += 1;
@@ -736,7 +747,9 @@ export default function Requests() {
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {formatDateRu(r.deliveryDate)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{r.volume ?? "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {(() => { const v = getEffectiveVolume(r); return v != null ? v : "—"; })()}
+                  </td>
                   {/* weight cell hidden */}
                   <td className="px-4 py-3 text-sm" onClick={(e) => e.stopPropagation()}>
                     <a
