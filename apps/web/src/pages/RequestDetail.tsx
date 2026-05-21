@@ -1343,8 +1343,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           if (!request || invoiceSending) return;
                           setInvoiceSending(true);
                           try {
-                            await sendInvoicePdf(createdInvoice.id, request.client.telegramId);
-                            alert("Счёт отправлен клиенту!");
+                            await Promise.all([
+                              sendInvoicePdf(createdInvoice.id, request.client.telegramId),
+                              sendActPdf(createdInvoice.id, request.client.telegramId),
+                            ]);
+                            alert("Счёт и акт отправлены клиенту!");
                           } catch (err) {
                             alert(err instanceof Error ? err.message : "Ошибка отправки");
                           } finally {
@@ -1352,7 +1355,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           }
                         }}
                       >
-                        {invoiceSending ? "Отправка..." : "Отправить счёт"}
+                        {invoiceSending ? "Отправка..." : "Отправить счёт и акт"}
                       </button>
                     </div>
                   </div>
