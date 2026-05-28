@@ -442,6 +442,13 @@ export function getClients() {
   return request<Client[]>("/admin/clients");
 }
 
+export function createClient(data: { firstName?: string; lastName?: string; phone?: string; email?: string }) {
+  return request<Client>("/admin/clients", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export function getClientById(id: number) {
   return request<ClientDetail>(`/admin/clients/${id}`);
 }

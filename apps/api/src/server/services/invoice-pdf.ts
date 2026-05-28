@@ -423,19 +423,27 @@ doc.strokeOpacity(1);
     // ============ STAMPS WITH SIGNATURES (on the lines) ============
     const stampPath = path.join(__dirname, "..", "..", "..", "assets", "examples", "печать2.png");
     if (fs.existsSync(stampPath)) {
-      // Печать для Руководителя (слева)
       doc.image(stampPath, M + 100, lineY - 50, { width: 100, height: 100 });
-      // Печать для Бухгалтера (справа)
       doc.image(stampPath, sigMid + 90, lineY - 50, { width: 100, height: 100 });
     }
 
-    // Add QR code in top-right corner
+    // ============ QR CODE ============
     if (qrImageBuffer) {
-      doc.image(qrImageBuffer, M + W - 150, lineY + 70, { width: 150, height: 150 });
+      const qrSize = 130;
+      const pageHeight = 841.89; // A4 height in points
+      const qrY = lineY + 30;
+      if (qrY + qrSize + M > pageHeight) {
+        doc.addPage();
+        doc.image(qrImageBuffer, M, M, { width: qrSize, height: qrSize });
+        doc.font("Main").fontSize(7).fillColor("#555");
+        doc.text("QR-код для оплаты", M, M + qrSize + 4, { width: qrSize, align: "center" });
+      } else {
+        doc.image(qrImageBuffer, M + W - qrSize, qrY, { width: qrSize, height: qrSize });
+        doc.font("Main").fontSize(7).fillColor("#555");
+        doc.text("QR-код для оплаты", M + W - qrSize, qrY + qrSize + 2, { width: qrSize, align: "center" });
+      }
     }
-    
 
-    y = lineY + 60;
     doc.end();
   });
 }

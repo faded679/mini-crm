@@ -266,10 +266,20 @@ export default function Requests() {
     // Получаем выбранные заявки
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
     
-    // Проверяем, что все заявки от одного клиента/организации
-    const clientIds = new Set(selectedRequests.map(r => r.client.id));
-    if (clientIds.size > 1) {
-      alert("Выберите заявки от одного клиента");
+    // Проверяем, что все заявки от одной организации (counterparty).
+    // Берём все counterparty ids клиента и ищем пересечение — если у всех заявок
+    // есть хотя бы один общий контрагент, ошибки нет.
+    const cpIdSets = selectedRequests.map(r => {
+      const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
+      return new Set((cps ?? []).map(c => c.counterparty.id));
+    });
+    // Найдём пересечение всех наборов
+    let intersection: Set<number> = cpIdSets[0] ?? new Set();
+    for (let i = 1; i < cpIdSets.length; i++) {
+      intersection = new Set([...intersection].filter(id => cpIdSets[i].has(id)));
+    }
+    if (intersection.size === 0 && cpIdSets.some(s => s.size > 0)) {
+      alert("Выберите заявки от одной организации");
       return;
     }
 
@@ -311,10 +321,19 @@ export default function Requests() {
     }
 
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
-    const counterpartyId = selectedRequests[0]?.client?.counterparties?.[0]?.counterparty?.id;
-    
+    // Ищем общий counterparty через пересечение всех наборов
+    const cpIdSetsCreate = selectedRequests.map(r => {
+      const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
+      return new Set((cps ?? []).map(c => c.counterparty.id));
+    });
+    let commonCpIds: Set<number> = cpIdSetsCreate[0] ?? new Set();
+    for (let i = 1; i < cpIdSetsCreate.length; i++) {
+      commonCpIds = new Set([...commonCpIds].filter(id => cpIdSetsCreate[i].has(id)));
+    }
+    const counterpartyId = commonCpIds.size > 0 ? [...commonCpIds][0] : undefined;
+
     if (!counterpartyId) {
-      alert("Не найдена организация для клиента. Убедитесь, что клиент привязан к организации.");
+      alert("Не найдена организация для клиентов. Убедитесь, что все клиенты привязаны к одной организации.");
       return;
     }
 

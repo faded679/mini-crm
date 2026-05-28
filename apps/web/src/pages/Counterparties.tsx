@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  createClient,
   createCounterparty,
   dadataFindParty,
   deleteCounterparty,
@@ -60,6 +61,14 @@ export default function Counterparties() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>({ name: "", contactClientIds: [] });
   const [dadataLoading, setDadataLoading] = useState(false);
+
+  // New contact form inside counterparty modal
+  const [showNewContact, setShowNewContact] = useState(false);
+  const [newContactFirstName, setNewContactFirstName] = useState("");
+  const [newContactLastName, setNewContactLastName] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [creatingContact, setCreatingContact] = useState(false);
 
   // Finance modal
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -133,11 +142,21 @@ export default function Counterparties() {
 
   function openCreate() {
     setForm({ name: "", contactClientIds: [] });
+    setShowNewContact(false);
+    setNewContactFirstName("");
+    setNewContactLastName("");
+    setNewContactPhone("");
+    setNewContactEmail("");
     setOpen(true);
   }
 
   function openEdit(c: Counterparty) {
     setForm(toFormState(c));
+    setShowNewContact(false);
+    setNewContactFirstName("");
+    setNewContactLastName("");
+    setNewContactPhone("");
+    setNewContactEmail("");
     setOpen(true);
   }
 
@@ -188,6 +207,40 @@ export default function Counterparties() {
         contactClientIds: exists ? current.filter((x) => x !== id) : [...current, id],
       };
     });
+  }
+
+  async function createNewContact() {
+    if (creatingContact) return;
+    if (!newContactFirstName.trim() && !newContactPhone.trim() && !newContactEmail.trim()) {
+      setError("Укажите хотя бы имя, телефон или email нового контакта");
+      return;
+    }
+    setCreatingContact(true);
+    setError("");
+    try {
+      const newClient = await createClient({
+        firstName: newContactFirstName.trim() || undefined,
+        lastName: newContactLastName.trim() || undefined,
+        phone: newContactPhone.trim() || undefined,
+        email: newContactEmail.trim() || undefined,
+      });
+      // Refresh clients list and auto-select the new one
+      const updatedClients = await getClients();
+      setClients(updatedClients);
+      setForm(prev => ({
+        ...prev,
+        contactClientIds: [...(prev.contactClientIds ?? []), newClient.id],
+      }));
+      setNewContactFirstName("");
+      setNewContactLastName("");
+      setNewContactPhone("");
+      setNewContactEmail("");
+      setShowNewContact(false);
+    } catch (e: any) {
+      setError(e?.message || "Ошибка создания контакта");
+    } finally {
+      setCreatingContact(false);
+    }
   }
 
   async function onSave() {
@@ -556,7 +609,57 @@ export default function Counterparties() {
               </div>
 
               <div className="md:col-span-2">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Контактные лица</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Контактные лица</div>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewContact((v) => !v)}
+                    className="text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300"
+                  >
+                    {showNewContact ? "Отмена" : "+ Новый контакт"}
+                  </button>
+                </div>
+
+                {showNewContact && (
+                  <div className="mb-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 space-y-2">
+                    <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Создать нового контакта</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        value={newContactFirstName}
+                        onChange={(e) => setNewContactFirstName(e.target.value)}
+                        placeholder="Имя"
+                        className="px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                      />
+                      <input
+                        value={newContactLastName}
+                        onChange={(e) => setNewContactLastName(e.target.value)}
+                        placeholder="Фамилия"
+                        className="px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                      />
+                      <input
+                        value={newContactPhone}
+                        onChange={(e) => setNewContactPhone(e.target.value)}
+                        placeholder="Телефон"
+                        className="px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                      />
+                      <input
+                        value={newContactEmail}
+                        onChange={(e) => setNewContactEmail(e.target.value)}
+                        placeholder="Email"
+                        className="px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={createNewContact}
+                      disabled={creatingContact}
+                      className="w-full px-3 py-1.5 text-sm rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                    >
+                      {creatingContact ? "Создание..." : "Создать и привязать"}
+                    </button>
+                  </div>
+                )}
+
                 <div className="max-h-40 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700">
                   {clients.map((c) => {
                     const checked = (form.contactClientIds ?? []).includes(c.id);

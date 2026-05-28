@@ -1278,6 +1278,38 @@ router.delete("/delivery-types/:id", async (req: Request, res: Response, next: N
   }
 });
 
+// POST /admin/clients — create a new client manually
+router.post("/clients", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { firstName, lastName, phone, email } = req.body as {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      email?: string;
+    };
+
+    if (!firstName?.trim() && !phone?.trim() && !email?.trim()) {
+      throw new ApiError(400, "Укажите хотя бы имя, телефон или email");
+    }
+
+    const telegramId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    const client = await prisma.client.create({
+      data: {
+        telegramId,
+        firstName: firstName?.trim() || null,
+        lastName: lastName?.trim() || null,
+        phone: phone?.trim() || null,
+        email: email?.trim() || null,
+      },
+    });
+
+    res.status(201).json(client);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/clients
 router.get("/clients", async (_req: Request, res: Response, next: NextFunction) => {
   try {
