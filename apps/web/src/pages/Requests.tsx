@@ -283,22 +283,32 @@ export default function Requests() {
       return;
     }
 
-    // Автозаполняем позиции счета из услуг заявок
-    const items: InvoiceItemPayload[] = [];
+    // Автозаполняем позиции счета из услуг заявок, группируя одинаковые услуги
+    const itemMap = new Map<string, InvoiceItemPayload>();
     selectedRequests.forEach(req => {
-      const services = (req as any).services as { description?: string; amount?: number; quantity?: number; price?: number }[] | undefined;
+      const services = (req as any).services as { description?: string; amount?: number; quantity?: number; price?: number; unit?: string }[] | undefined;
       if (services && services.length > 0) {
         services.forEach(service => {
-          items.push({
-            description: service.description || "Услуга",
-            quantity: service.quantity || 1,
-            unit: "шт",
-            price: service.price || 0,
-            amount: service.amount || 0,
-          });
+          const desc = service.description || "Услуга";
+          const price = service.price || 0;
+          const key = `${desc}__${price}`;
+          const existing = itemMap.get(key);
+          if (existing) {
+            existing.quantity = (existing.quantity || 0) + (service.quantity || 1);
+            existing.amount = (existing.amount || 0) + (service.amount || 0);
+          } else {
+            itemMap.set(key, {
+              description: desc,
+              quantity: service.quantity || 1,
+              unit: service.unit || "шт",
+              price,
+              amount: service.amount || 0,
+            });
+          }
         });
       }
     });
+    const items: InvoiceItemPayload[] = [...itemMap.values()];
 
     // Генерируем номер счета
     const now = new Date();
