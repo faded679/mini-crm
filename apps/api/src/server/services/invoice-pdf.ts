@@ -304,8 +304,21 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
       width: W - 160,
       align: "left",
     });
-    
-    y = doc.y + 6;
+
+    // Save y after title text
+    const afterTitleY = doc.y;
+
+    // Draw QR code in top-right corner immediately (while y is still near top)
+    if (qrImageBuffer) {
+      const qrSize = 110;
+      doc.image(qrImageBuffer, M + W - qrSize, titleY, { width: qrSize, height: qrSize });
+      doc.font("Main").fontSize(6).fillColor("#555");
+      doc.text("QR для оплаты", M + W - qrSize, titleY + qrSize + 2, { width: qrSize, align: "center", lineGap: 0 });
+      doc.fillColor("#000");
+    }
+
+    // Restore y to after-title position (QR is floating, doesn't affect layout)
+    y = afterTitleY + 6;
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
 
@@ -425,23 +438,6 @@ doc.strokeOpacity(1);
     if (fs.existsSync(stampPath)) {
       doc.image(stampPath, M + 100, lineY - 50, { width: 100, height: 100 });
       doc.image(stampPath, sigMid + 90, lineY - 50, { width: 100, height: 100 });
-    }
-
-    // ============ QR CODE ============
-    if (qrImageBuffer) {
-      const qrSize = 130;
-      const pageHeight = 841.89; // A4 height in points
-      const qrY = lineY + 30;
-      if (qrY + qrSize + M > pageHeight) {
-        doc.addPage();
-        doc.image(qrImageBuffer, M, M, { width: qrSize, height: qrSize });
-        doc.font("Main").fontSize(7).fillColor("#555");
-        doc.text("QR-код для оплаты", M, M + qrSize + 4, { width: qrSize, align: "center" });
-      } else {
-        doc.image(qrImageBuffer, M + W - qrSize, qrY, { width: qrSize, height: qrSize });
-        doc.font("Main").fontSize(7).fillColor("#555");
-        doc.text("QR-код для оплаты", M + W - qrSize, qrY + qrSize + 2, { width: qrSize, align: "center" });
-      }
     }
 
     doc.end();
