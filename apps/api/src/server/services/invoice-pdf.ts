@@ -177,8 +177,8 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     const key = `${item.description}__${item.price}`;
     const existing = itemMap.get(key);
     if (existing) {
-      existing.quantity = (existing.quantity || 0) + (item.quantity || 1);
-      existing.amount = (existing.amount || 0) + item.amount;
+      existing.quantity = Math.round(((existing.quantity || 0) + (item.quantity || 1)) * 10000) / 10000;
+      existing.amount = Math.round(((existing.amount || 0) + item.amount) * 100) / 100;
     } else {
       itemMap.set(key, { ...item });
     }
@@ -392,7 +392,10 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
       const textY = y + 3;
       doc.text(String(idx + 1), colX[0] + 2, textY, { width: colWidths[0] - 4, align: "center", lineGap: 0 });
       doc.text(item.description, colX[1] + 3, textY, { width: colWidths[1] - 6, lineGap: 0 });
-      doc.text(String(item.quantity), colX[2] + 2, textY, { width: colWidths[2] - 4, align: "right", lineGap: 0 });
+      const qtyStr = Number.isInteger(item.quantity)
+        ? String(item.quantity)
+        : parseFloat(item.quantity.toFixed(4)).toString();
+      doc.text(qtyStr, colX[2] + 2, textY, { width: colWidths[2] - 4, align: "right", lineGap: 0 });
       doc.text(item.unit, colX[3] + 2, textY, { width: colWidths[3] - 4, align: "center", lineGap: 0 });
       doc.text(formatMoney(item.price), colX[4] + 2, textY, { width: colWidths[4] - 4, align: "right", lineGap: 0 });
       doc.text(formatMoney(item.amount), colX[5] + 2, textY, { width: colWidths[5] - 4, align: "right", lineGap: 0 });
