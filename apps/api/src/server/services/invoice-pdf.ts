@@ -170,8 +170,20 @@ function findFont(name: string): string {
 
 export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promise<Buffer> {
   const { invoiceNumber, invoiceDate, counterparty, items: rawItems } = params;
-  // Filter out empty items - only show rows with actual data
-  const items = rawItems.filter(item => item.description && item.description.trim() !== "");
+  // Filter out empty items, then group identical rows (same description + price) summing qty and amount
+  const filtered = rawItems.filter(item => item.description && item.description.trim() !== "");
+  const itemMap = new Map<string, InvoiceItem>();
+  for (const item of filtered) {
+    const key = `${item.description}__${item.price}`;
+    const existing = itemMap.get(key);
+    if (existing) {
+      existing.quantity = (existing.quantity || 0) + (item.quantity || 1);
+      existing.amount = (existing.amount || 0) + item.amount;
+    } else {
+      itemMap.set(key, { ...item });
+    }
+  }
+  const items = [...itemMap.values()];
   const total = items.reduce((s, i) => s + i.amount, 0);
 
   const FONT = findFont("DejaVuSans");
@@ -299,26 +311,26 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
     // ============ TITLE + QR CODE ============
     y += 8;
     const titleY = y;
-    doc.font("Bold").fontSize(14).fillColor("#000");
-    doc.text(`Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, y, {
-      width: W - 160,
-      align: "left",
-    });
+    const qrSize = 115;
+    const textW = W - qrSize - 8; // leave room for QR on the right
 
-    // Save y after title text
-    const afterTitleY = doc.y;
-
-    // Draw QR code in top-right corner immediately (while y is still near top)
+    // Draw QR code in top-right corner (fixed position, doesn't affect text flow)
     if (qrImageBuffer) {
-      const qrSize = 110;
       doc.image(qrImageBuffer, M + W - qrSize, titleY, { width: qrSize, height: qrSize });
       doc.font("Main").fontSize(6).fillColor("#555");
       doc.text("QR для оплаты", M + W - qrSize, titleY + qrSize + 2, { width: qrSize, align: "center", lineGap: 0 });
       doc.fillColor("#000");
     }
 
-    // Restore y to after-title position (QR is floating, doesn't affect layout)
-    y = afterTitleY + 6;
+    doc.font("Bold").fontSize(14).fillColor("#000");
+    doc.text(`Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`, M, titleY, {
+      width: textW,
+      align: "left",
+    });
+    y = doc.y + 6;
+    // Make sure we don't overlap the QR
+    if (y < titleY + qrSize + 10) y = titleY + qrSize + 10;
+
     drawLine(doc, M, y, M + W, y, 1.5);
     y += 8;
 
