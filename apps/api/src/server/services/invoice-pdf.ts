@@ -336,32 +336,32 @@ export async function generateInvoicePdfBuffer(params: InvoicePdfParams): Promis
 
     // ============ SELLER ============
     doc.font("Main").fontSize(9);
-    doc.font("Bold").text("Исполнитель:", M, y, { continued: true, width: W });
+    doc.font("Bold").text("Исполнитель:", M, y, { continued: true, width: textW });
     doc.font("Main").text(
       `  ${abbreviateCompanyName(SELLER.name)}, ИНН ${SELLER.inn}, ${SELLER.address}`,
-      { width: W, lineGap: 0 },
+      { width: textW, lineGap: 0 },
     );
     y = doc.y + 4;
 
     // ============ BUYER ============
-    doc.font("Bold").text("Заказчик:", M, y, { continued: true, width: W });
+    doc.font("Bold").text("Заказчик:", M, y, { continued: true, width: textW });
     const cpParts = [abbreviateCompanyName(counterparty.name)];
     if (counterparty.inn) cpParts.push(`ИНН ${counterparty.inn}`);
     if (counterparty.address) cpParts.push(counterparty.address);
-    doc.font("Main").text(`  ${cpParts.join(", ")}`, { width: W, lineGap: 0 });
+    doc.font("Main").text(`  ${cpParts.join(", ")}`, { width: textW, lineGap: 0 });
     y = doc.y + 4;
 
     // ============ REQUEST NUMBERS ============
     if (params.requestNumbers && params.requestNumbers.length > 0) {
-      doc.font("Bold").text("Заявки:", M, y, { continued: true, width: W });
-      doc.font("Main").text(`  ${params.requestNumbers.join(", ")}`, { width: W, lineGap: 0 });
+      doc.font("Bold").text("Заявки:", M, y, { continued: true, width: textW });
+      doc.font("Main").text(`  ${params.requestNumbers.join(", ")}`, { width: textW, lineGap: 0 });
       y = doc.y + 4;
     }
 
     // ============ NOTE ============
     if (counterparty.contract) {
-      doc.font("Bold").text("Примечание:", M, y, { continued: true, width: W });
-      doc.font("Main").text(`  ${counterparty.contract}`, { width: W, lineGap: 0 });
+      doc.font("Bold").text("Примечание:", M, y, { continued: true, width: textW });
+      doc.font("Main").text(`  ${counterparty.contract}`, { width: textW, lineGap: 0 });
       y = doc.y + 4;
     }
 
