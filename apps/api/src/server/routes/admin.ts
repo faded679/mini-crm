@@ -713,11 +713,13 @@ router.post("/invoices/:id/send", async (req: Request, res: Response, next: Next
       `Счёт ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
     );
 
-    // Отправляем на email если есть
-    const clientEmail = invoice.counterparty?.contacts?.[0]?.client?.email;
-    if (clientEmail) {
-      sendInvoiceEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf })
-        .catch((err: any) => console.error("Invoice email error:", err));
+    // Отправляем на email всем контактам организации
+    const emails = invoice.counterparty?.contacts
+      ?.map((c: any) => c.client?.email)
+      ?.filter((email: string | undefined) => !!email) || [];
+    for (const email of emails) {
+      sendInvoiceEmail({ to: email, invoiceNumber: invoice.number, pdfBuffer: pdf })
+        .catch((err: any) => console.error(`Invoice email error for ${email}:`, err));
     }
 
     // Обновляем статус счета на "sent" если он был "new"
@@ -817,11 +819,13 @@ router.post("/invoices/:id/send-act", async (req: Request, res: Response, next: 
       `Акт выполненных работ ${invoice.number} на сумму ${total.toLocaleString("ru-RU")} руб.`,
     );
 
-    // Отправляем на email если есть
-    const clientEmail = invoice.counterparty?.contacts?.[0]?.client?.email;
-    if (clientEmail) {
-      sendActEmail({ to: clientEmail, invoiceNumber: invoice.number, pdfBuffer: pdf })
-        .catch((err: any) => console.error("Act email error:", err));
+    // Отправляем на email всем контактам организации
+    const emails = invoice.counterparty?.contacts
+      ?.map((c: any) => c.client?.email)
+      ?.filter((email: string | undefined) => !!email) || [];
+    for (const email of emails) {
+      sendActEmail({ to: email, invoiceNumber: invoice.number, pdfBuffer: pdf })
+        .catch((err: any) => console.error(`Act email error for ${email}:`, err));
     }
 
     res.json({ ok: true });

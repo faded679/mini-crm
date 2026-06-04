@@ -116,6 +116,11 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       throw new ApiError(400, "Client telegram ID not found. Привяжите заявку к счету или добавьте контактное лицо к организации.");
     }
 
+    // Собираем все email'ы контактов организации для рассылки
+    const contactEmails = invoice.counterparty?.contacts
+      ?.map((c: any) => c.client?.email)
+      ?.filter((email: string | undefined) => !!email) || [];
+
     // Вычисляем сумму из items если amount не заполнен
     const items = await (prisma as any).invoiceItem.findMany({ where: { invoiceId } });
     const totalAmount = invoice.amount > 0
@@ -145,18 +150,20 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
             console.error("Telegram notification failed (resend):", err?.message ?? err)
           );
 
-          // Отправляем email при пересылке существующей ссылки
-          if (client.email && invoice.tbankPaymentUrl) {
+          // Отправляем email при пересылке существующей ссылки всем контактам организации
+          if (contactEmails.length > 0 && invoice.tbankPaymentUrl) {
             const reqNums = invoice.requests?.map((ir: any) => `#${ir.request.id}`);
-            console.log(`[email] Resend: sending to ${client.email}`);
-            sendPaymentLinkEmail({
-              to: client.email,
-              invoiceNumber: invoice.number,
-              amount: totalAmount,
-              paymentUrl: invoice.tbankPaymentUrl,
-              requestNumbers: reqNums,
-            }).then(() => console.log(`[email] Resend delivered to ${client.email}`))
-              .catch((err: any) => console.error(`[email] Resend FAILED to ${client.email}:`, err?.message ?? err));
+            for (const email of contactEmails) {
+              console.log(`[email] Resend: sending to ${email}`);
+              sendPaymentLinkEmail({
+                to: email,
+                invoiceNumber: invoice.number,
+                amount: totalAmount,
+                paymentUrl: invoice.tbankPaymentUrl,
+                requestNumbers: reqNums,
+              }).then(() => console.log(`[email] Resend delivered to ${email}`))
+                .catch((err: any) => console.error(`[email] Resend FAILED to ${email}:`, err?.message ?? err));
+            }
           }
 
           return res.json({
@@ -236,24 +243,26 @@ router.post("/:id/send-payment-link", async (req: Request, res: Response, next: 
       );
     }
 
-    // Отправляем ссылку на email если есть
-    console.log(`[email] client.email=${client.email ?? "null"}, EMAIL_SERVICE_URL=${process.env.EMAIL_SERVICE_URL ?? "(default 172.17.0.1:5001)"}`);
-    if (client.email && paymentResult.PaymentURL) {
+    // Отправляем ссылку на email всем контактам организации
+    console.log(`[email] contactEmails=[${contactEmails.join(", ")}], EMAIL_SERVICE_URL=${process.env.EMAIL_SERVICE_URL ?? "(default 172.17.0.1:5001)"}`);
+    if (contactEmails.length > 0 && paymentResult.PaymentURL) {
       const requestNumbers = invoice.requests?.map((ir: any) => `#${ir.request.id}`);
-      console.log(`[email] Sending payment link to ${client.email}`);
-      sendPaymentLinkEmail({
-        to: client.email,
-        invoiceNumber: invoice.number,
-        amount: totalAmount,
-        paymentUrl: paymentResult.PaymentURL as string,
-        requestNumbers,
-      }).then(() => {
-        console.log(`[email] Payment link email delivered to ${client.email}`);
-      }).catch((err: any) => {
-        console.error(`[email] Payment link email FAILED to ${client.email}:`, err?.message ?? err);
-      });
+      for (const email of contactEmails) {
+        console.log(`[email] Sending payment link to ${email}`);
+        sendPaymentLinkEmail({
+          to: email,
+          invoiceNumber: invoice.number,
+          amount: totalAmount,
+          paymentUrl: paymentResult.PaymentURL as string,
+          requestNumbers,
+        }).then(() => {
+          console.log(`[email] Payment link email delivered to ${email}`);
+        }).catch((err: any) => {
+          console.error(`[email] Payment link email FAILED to ${email}:`, err?.message ?? err);
+        });
+      }
     } else {
-      console.warn(`[email] Skipped: client.email=${client.email ?? "null"}, paymentURL=${paymentResult.PaymentURL ? "ok" : "null"}`);
+      console.warn(`[email] Skipped: contactEmails count=${contactEmails.length}, paymentURL=${paymentResult.PaymentURL ? "ok" : "null"}`);
     }
 
     res.json({
