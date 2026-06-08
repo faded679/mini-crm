@@ -13,6 +13,7 @@ export default function Login({ onSuccess }: LoginProps) {
   const [verificationNumber, setVerificationNumber] = useState("");
   const [step, setStep] = useState<"phone" | "waiting" | "profile">("phone");
   const [loading, setLoading] = useState(false);
+  const [retryLoading, setRetryLoading] = useState(false);
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -41,6 +42,20 @@ export default function Login({ onSuccess }: LoginProps) {
       setError(err instanceof Error ? err.message : "Ошибка");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRetry = async () => {
+    setRetryLoading(true);
+    setError("");
+    try {
+      const response = await requestVerification("+7" + phone);
+      setSessionId(response.sessionId);
+      setVerificationNumber(response.verificationNumber);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка повторного запроса");
+    } finally {
+      setRetryLoading(false);
     }
   };
 
@@ -221,8 +236,15 @@ export default function Login({ onSuccess }: LoginProps) {
               </div>
               {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
               <button
+                onClick={handleRetry}
+                disabled={retryLoading}
+                className="w-full h-11 rounded-2xl bg-accent text-white font-semibold text-sm disabled:opacity-50 transition active:bg-accent-dark mb-2"
+              >
+                {retryLoading ? "Запрашиваем звонок..." : "Позвонить повторно"}
+              </button>
+              <button
                 onClick={() => { setStep("phone"); setSessionId(""); setError(""); }}
-                className="w-full mt-2 text-muted text-xs underline"
+                className="w-full mt-1 text-muted text-xs underline"
               >
                 Изменить номер
               </button>
