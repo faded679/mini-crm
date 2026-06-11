@@ -378,6 +378,8 @@ export default function Requests() {
       missingWeightCount: 0,
       missingWeightPlaces: 0,
       totalVolume: 0,
+      totalAmount: 0,
+      requestsWithAmount: 0,
     };
 
     for (const r of filtered) {
@@ -392,10 +394,17 @@ export default function Requests() {
       } else {
         s.knownWeightKg += r.weight;
       }
+
+      const amt = getRequestTotal(r);
+      if (amt != null) {
+        s.totalAmount += amt;
+        s.requestsWithAmount += 1;
+      }
     }
 
     s.knownWeightKg = Math.round(s.knownWeightKg * 100) / 100;
     s.totalVolume = Math.round(s.totalVolume * 1000) / 1000;
+    s.totalAmount = Math.round(s.totalAmount * 100) / 100;
     return s;
   }, [filtered]);
 
@@ -633,6 +642,20 @@ export default function Requests() {
               <span className="font-medium text-gray-900 dark:text-gray-100">
                 {summary.totalVolume.toLocaleString("ru-RU")} м³
               </span>
+            </div>
+          )}
+
+          {summary.totalAmount > 0 && (
+            <div className="text-gray-600 dark:text-gray-300">
+              <span className="text-gray-400 dark:font-medium">Сумма:</span>{" "}
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {summary.totalAmount.toLocaleString("ru-RU")} ₽
+              </span>
+              {summary.requestsWithAmount < summary.requestCount && (
+                <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                  ({summary.requestsWithAmount} из {summary.requestCount})
+                </span>
+              )}
             </div>
           )}
         </div>
