@@ -725,7 +725,7 @@ router.post("/create-request", requireWarehouseAuth, async (req: Request, res: R
     }
 
     await (prisma as any).requestStatusHistory.create({
-      data: { requestId: request.id, oldStatus: "new", newStatus: "new" },
+      data: { requestId: request.id, oldStatus: "new", newStatus: "new", comment: `Создана кладовщиком: ${worker?.name ?? "Кладовщик"}` },
     });
 
     console.log("[warehouse-web] created request #" + request.id, "cityId:", request.cityId, "status:", request.status);

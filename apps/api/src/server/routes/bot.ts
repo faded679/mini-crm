@@ -161,6 +161,10 @@ if (volume !== undefined && volume !== null && Number.isFinite(Number(volume)) &
       });
     }
 
+    await (prisma as any).requestStatusHistory.create({
+      data: { requestId: request.id, oldStatus: "new", newStatus: "new", comment: "Создана клиентом" },
+    });
+
     const full = await (prisma as any).shipmentRequest.findUnique({
       where: { id: request.id },
       include: { services: true },
@@ -984,6 +988,10 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
       });
     }
 
+    await (prisma as any).requestStatusHistory.create({
+      data: { requestId: request.id, oldStatus: "new", newStatus: "new", comment: "Создана клиентом" },
+    });
+
     const full = await (prisma as any).shipmentRequest.findUnique({
       where: { id: request.id },
       include: { services: true },
@@ -1171,6 +1179,10 @@ router.post("/warehouse/create-request", async (req: Request, res: Response, nex
         });
       }
     }
+
+    await (prisma as any).requestStatusHistory.create({
+      data: { requestId: request.id, oldStatus: "new", newStatus: "new", comment: "Создана кладовщиком" },
+    });
 
     res.json(request);
   } catch (err) {

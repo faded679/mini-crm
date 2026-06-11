@@ -260,6 +260,17 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       });
     }
 
+    const managerId = ((req as any).manager as { managerId: number })?.managerId;
+    let managerName = "Менеджер";
+    if (managerId) {
+      const mgr = await (prisma as any).manager.findUnique({ where: { id: managerId }, select: { name: true } });
+      if (mgr?.name) managerName = mgr.name;
+    }
+
+    await (prisma as any).requestStatusHistory.create({
+      data: { requestId: created.id, oldStatus: "new", newStatus: "new", comment: `Создана менеджером: ${managerName}` },
+    });
+
     const full = await (prisma as any).shipmentRequest.findUnique({
       where: { id: created.id },
       include: { client: true, boxType: true, services: true, deliveryType: true },

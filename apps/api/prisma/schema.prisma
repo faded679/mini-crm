@@ -311,6 +311,7 @@ model RequestStatusHistory {
   oldStatus RequestStatus @map("old_status")
   newStatus RequestStatus @map("new_status")
   changedAt DateTime      @default(now()) @map("changed_at")
+  comment   String?
 
   request   ShipmentRequest @relation(fields: [requestId], references: [id])
 
