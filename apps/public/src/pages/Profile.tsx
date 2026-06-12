@@ -83,6 +83,9 @@ export default function Profile() {
             {balance?.organizationCount === 0 && (
               <p className="text-sm text-muted mt-2">Нет привязанных организаций</p>
             )}
+            <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mt-3">
+              ⚠️ Функция находится в стадии доработки. Отображаемая сумма может отличаться от реального баланса.
+            </p>
           </>
         )}
       </section>
