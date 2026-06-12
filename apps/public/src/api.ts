@@ -235,3 +235,17 @@ export function patchRequest(id: number, data: {
     body: JSON.stringify(data),
   });
 }
+
+export interface BalanceResponse {
+  totalBilled: number;
+  totalPaid: number;
+  balance: number; // положительный = долг, отрицательный = переплата
+  organizationCount: number;
+}
+
+export function getBalance(token: string) {
+  return api<BalanceResponse>("/public-auth/balance", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+}

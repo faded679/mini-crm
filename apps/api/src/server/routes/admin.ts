@@ -7,6 +7,7 @@ import { requireAuth } from "../auth/middleware.js";
 import { ApiError } from "../errors.js";
 import { notifyClient } from "../services/telegram-notifier.js";
 import { sendClientDocument } from "../services/telegram-notifier.js";
+import { recalculateBalance } from "../services/bank-import-service.js";
 import { RequestStatus } from "@prisma/client";
 import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
 import { generateActPdfBuffer } from "../services/act-pdf.js";
@@ -584,7 +585,7 @@ router.get("/invoices/:id", async (req: Request, res: Response, next: NextFuncti
   }
 });
 
-// PATCH /admin/invoices/:id/payment
+// PATCH /admin/invoices/:id/payment — отметить счёт оплаченным вручную
 router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
@@ -593,7 +594,10 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
     const { isPaid } = req.body as { isPaid: boolean };
     if (typeof isPaid !== "boolean") throw new ApiError(400, "isPaid must be boolean");
 
-    const currentInvoice = await (prisma as any).invoice.findUnique({ where: { id } });
+    const currentInvoice = await (prisma as any).invoice.findUnique({
+      where: { id },
+      include: { items: true, counterparty: true },
+    });
     if (!currentInvoice) throw new ApiError(404, "Invoice not found");
 
     const newStatus = isPaid
@@ -609,6 +613,40 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
       },
       include: { items: true, counterparty: true },
     });
+
+    // Если отметили оплаченным — создаём запись об оплате и пересчитываем баланс
+    if (isPaid && currentInvoice.counterpartyId) {
+      const totalAmount = currentInvoice.items?.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0) || 0;
+
+      // Создаём BankTransaction если её ещё нет
+      const existingTx = await (prisma as any).bankTransaction.findFirst({
+        where: {
+          counterpartyId: currentInvoice.counterpartyId,
+          purpose: { contains: `Счёт №${currentInvoice.number}` },
+        },
+      });
+
+      if (!existingTx) {
+        await (prisma as any).bankTransaction.create({
+          data: {
+            counterpartyId: currentInvoice.counterpartyId,
+            direction: "incoming",
+            status: "matched",
+            amount: totalAmount,
+            purpose: `Оплата счёта №${currentInvoice.number} (ручная отметка)`,
+            documentDate: new Date(),
+            documentNumber: `MANUAL-${Date.now()}`,
+            payerName: currentInvoice.counterparty?.shortName || currentInvoice.counterparty?.name || "Клиент",
+            recipientName: "Sologo",
+            invoiceNumbers: [currentInvoice.number],
+            matchedAt: new Date(),
+          },
+        });
+      }
+
+      // Пересчитываем баланс контрагента
+      await recalculateBalance(currentInvoice.counterpartyId);
+    }
 
     res.json(updated);
   } catch (err) {

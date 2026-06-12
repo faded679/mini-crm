@@ -295,4 +295,70 @@ router.post("/complete-profile", async (req, res, next) => {
   }
 });
 
+// GET /public-auth/balance - получить баланс клиента (итоговый долг/переплата)
+router.get("/balance", async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new ApiError(401, "Authorization required");
+    }
+
+    const token = authHeader.slice(7);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      throw new ApiError(401, "Invalid token");
+    }
+
+    const clientId = decoded.clientId;
+    if (!clientId) {
+      throw new ApiError(401, "Invalid token payload");
+    }
+
+    // Находим клиента со связанными контрагентами
+    const client = await (prisma as any).client.findUnique({
+      where: { id: clientId },
+      include: {
+        counterparties: {
+          include: {
+            counterparty: {
+              include: {
+                balance: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!client) {
+      throw new ApiError(404, "Client not found");
+    }
+
+    // Суммируем балансы всех связанных контрагентов
+    let totalBilled = 0;
+    let totalPaid = 0;
+    let balance = 0;
+
+    for (const link of client.counterparties || []) {
+      const cp = link.counterparty;
+      if (cp?.balance) {
+        totalBilled += Number(cp.balance.totalBilled) || 0;
+        totalPaid += Number(cp.balance.totalPaid) || 0;
+        balance += Number(cp.balance.balance) || 0;
+      }
+    }
+
+    res.json({
+      totalBilled,
+      totalPaid,
+      balance, // положительный = долг, отрицательный = переплата
+      organizationCount: client.counterparties?.length || 0,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

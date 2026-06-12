@@ -64,6 +64,11 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
       },
     });
 
+    // Пересчитываем баланс контрагента
+    if (invoice.counterpartyId) {
+      await recalculateBalance(invoice.counterpartyId);
+    }
+
     res.status(201).json(invoice);
   } catch (err) {
     next(err);
