@@ -665,7 +665,7 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
               day: "numeric",
               month: "long",
               year: "numeric",
-            }) + " г."
+            })
           : "";
 
         await (prisma as any).bankTransaction.create({
