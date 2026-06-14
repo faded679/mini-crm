@@ -13,6 +13,7 @@ import {
 const statusLabels: Record<RequestStatus, string> = {
   new: "Новый",
   warehouse: "Склад",
+  billed: "Счёт выставлен",
   shipped: "Отгружен",
   done: "Выполнена",
   archived: "Архив",
@@ -21,6 +22,7 @@ const statusLabels: Record<RequestStatus, string> = {
 const statusColors: Record<RequestStatus, string> = {
   new: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   warehouse: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  billed: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
   shipped: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
