@@ -455,26 +455,36 @@ export default function Invoices() {
                             QR/Оплата
                           </button>
                         )}
-                        <button
-                          type="button"
-                          disabled={paidToggling === inv.id}
-                          onClick={async () => {
-                            if (paidToggling) return;
-                            setPaidToggling(inv.id);
-                            try {
-                              await setInvoicePaymentStatus(inv.id, !inv.isPaid);
-                              await reload();
-                            } catch { alert("Ошибка при изменении статуса оплаты"); }
-                            finally { setPaidToggling(null); }
-                          }}
-                          className={`px-2 py-1 text-xs rounded-lg font-medium border transition disabled:opacity-50 ${
-                            inv.isPaid
-                              ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700"
-                              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
-                          }`}
-                        >
-                          {paidToggling === inv.id ? "..." : inv.isPaid ? "✓ Оплачен" : "Отметить оплаченным"}
-                        </button>
+                        {!inv.isPaid && (
+                          <button
+                            type="button"
+                            disabled={paidToggling === inv.id}
+                            onClick={async () => {
+                              if (paidToggling) return;
+                              setPaidToggling(inv.id);
+                              try {
+                                await setInvoicePaymentStatus(inv.id, true);
+                                await reload();
+                              } catch { alert("Ошибка при изменении статуса оплаты"); }
+                              finally { setPaidToggling(null); }
+                            }}
+                            className="px-2 py-1 text-xs rounded-lg font-medium border transition disabled:opacity-50 bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
+                          >
+                            {paidToggling === inv.id ? "..." : "Отметить оплаченным"}
+                          </button>
+                        )}
+                        {/* DISABLED: Cancel payment functionality - clicking paid invoice cannot cancel payment
+                        {inv.isPaid && (
+                          <button
+                            type="button"
+                            disabled={true}
+                            className="px-2 py-1 text-xs rounded-lg font-medium border transition disabled:opacity-50 bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700 cursor-not-allowed"
+                            title="Оплата подтверждена (отмена недоступна)"
+                          >
+                            ✓ Оплачен
+                          </button>
+                        )}
+                        */}
                         {inv.tbankPaymentId && inv.status !== "paid" && (
                           <button
                             type="button"
