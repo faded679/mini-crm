@@ -362,8 +362,8 @@ router.delete("/transactions/:id", async (req: Request, res: Response, next: Nex
     });
     if (!tx) throw new ApiError(404, "Transaction not found");
 
-    // Проверяем что это ручная отметка (поддерживаем старый и новый формат)
-    const isManualPayment = tx.purpose?.includes("(ручная отметка)") || tx.purpose?.includes("(р.о.)");
+    // Проверяем что это ручная отметка (поддерживаем все форматы)
+    const isManualPayment = tx.purpose?.includes("(ручная отметка)") || tx.purpose?.includes("(р.о.)") || tx.purpose?.includes("(данные из банковской выписки)");
     if (!isManualPayment) {
       throw new ApiError(400, "Can only delete manual payments");
     }
