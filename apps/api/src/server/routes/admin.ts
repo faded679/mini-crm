@@ -512,8 +512,8 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
           create: requestIdsToLink.map(id => ({ requestId: id })),
         } : undefined,
       },
-      include: { 
-        items: true, 
+      include: {
+        items: true,
         counterparty: true,
         requests: {
           include: {
@@ -522,6 +522,38 @@ router.post("/invoices", async (req: Request, res: Response, next: NextFunction)
         },
       },
     });
+
+    // Обновляем статус связанных заявок на billed и создаем записи в истории
+    if (requestIdsToLink.length > 0) {
+      const manager = (req as any).manager;
+      const managerName = manager?.name || manager?.email || "Менеджер";
+
+      for (const reqId of requestIdsToLink) {
+        // Получаем текущий статус заявки
+        const request = await (prisma as any).shipmentRequest.findUnique({
+          where: { id: reqId },
+          select: { status: true },
+        });
+
+        if (request && request.status !== "billed") {
+          // Обновляем статус на billed
+          await (prisma as any).shipmentRequest.update({
+            where: { id: reqId },
+            data: { status: "billed" },
+          });
+
+          // Создаем запись в истории
+          await (prisma as any).requestStatusHistory.create({
+            data: {
+              requestId: reqId,
+              oldStatus: request.status,
+              newStatus: "billed",
+              comment: `Выставлен счёт ${invoice.number}. Менеджер: ${managerName}`,
+            },
+          });
+        }
+      }
+    }
 
     res.status(201).json(invoice);
   } catch (err) {

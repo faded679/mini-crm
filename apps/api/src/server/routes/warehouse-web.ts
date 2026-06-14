@@ -411,9 +411,15 @@ router.patch("/requests/:id/status", requireWarehouseAuth, async (req: Request, 
     if (request.status !== "new") throw new ApiError(400, "Can only move new requests to warehouse");
 
     const worker = (req as any).warehouseWorker;
+    const workerName = worker?.name || worker?.login || "Кладовщик";
     const updated = await (prisma as any).shipmentRequest.update({ where: { id }, data: { status: "warehouse" } });
     await (prisma as any).requestStatusHistory.create({
-      data: { requestId: id, oldStatus: "new", newStatus: "warehouse" },
+      data: {
+        requestId: id,
+        oldStatus: "new",
+        newStatus: "warehouse",
+        comment: `Переведено на склад. Кладовщик: ${workerName}`,
+      },
     });
     res.json(updated);
   } catch (err) {

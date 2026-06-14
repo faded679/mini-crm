@@ -8,6 +8,7 @@ import RequestDetail from "./RequestDetail";
 const statusLabels: Record<RequestStatus, string> = {
   new: "Новый",
   warehouse: "Склад",
+  billed: "Счёт выставлен",
   shipped: "Отгружен",
   done: "Выполнена",
   archived: "Архив",
@@ -16,6 +17,7 @@ const statusLabels: Record<RequestStatus, string> = {
 const statusColors: Record<RequestStatus, string> = {
   new: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   warehouse: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  billed: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
   shipped: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
@@ -525,7 +527,7 @@ export default function Requests() {
         </div>
 
         <div className="flex gap-1.5">
-          {(["all", "new", "warehouse", "shipped", "done"] as const).map((s) => (
+          {(["all", "new", "warehouse", "billed", "shipped", "done"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
@@ -671,7 +673,7 @@ export default function Requests() {
             onChange={(e) => setBulkStatus(e.target.value as RequestStatus)}
             className="px-3 py-1.5 text-sm rounded-lg border border-blue-300 bg-white text-gray-700 dark:bg-gray-800 dark:border-blue-700 dark:text-gray-300"
           >
-            {(["new", "warehouse", "shipped", "done"] as RequestStatus[]).map((s) => (
+            {(["new", "warehouse", "billed", "shipped", "done"] as RequestStatus[]).map((s) => (
               <option key={s} value={s}>{statusLabels[s]}</option>
             ))}
           </select>
