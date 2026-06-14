@@ -284,7 +284,7 @@ export default function Reconciliation() {
                       {fmtMoney(entry.runningBalance)} ₽
                     </td>
                     {/* TODO: TEMPORARY - Remove after manual payment cleanup */}
-                    {entry.type === "payment" && entry.description.includes("(ручная отметка)") && (
+                    {entry.type === "payment" && (entry.description.includes("(ручная отметка)") || entry.description.includes("(р.о.)")) && (
                       <td className="px-2 py-2.5">
                         <button
                           onClick={async () => {

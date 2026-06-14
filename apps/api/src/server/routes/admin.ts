@@ -659,13 +659,22 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
       });
 
       if (!existingTx) {
+        // Форматируем дату счёта: "15 апреля 2026 г."
+        const invoiceDate = currentInvoice.date
+          ? new Date(currentInvoice.date).toLocaleDateString("ru-RU", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }) + " г."
+          : "";
+
         await (prisma as any).bankTransaction.create({
           data: {
             counterpartyId: currentInvoice.counterpartyId,
             direction: "incoming",
             status: "matched",
             amount: totalAmount,
-            purpose: `Оплата счёта №${currentInvoice.number} (ручная отметка)`,
+            purpose: `Оплата по счету №${currentInvoice.number} от ${invoiceDate} (р.о.)`,
             documentDate: new Date(),
             documentNumber: `MANUAL-${Date.now()}`,
             payerName: currentInvoice.counterparty?.shortName || currentInvoice.counterparty?.name || "Клиент",
