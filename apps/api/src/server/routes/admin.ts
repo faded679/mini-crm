@@ -674,7 +674,7 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
             direction: "incoming",
             status: "matched",
             amount: totalAmount,
-            purpose: `Оплата по счету №${currentInvoice.number} от ${invoiceDate} (р.о.)`,
+            purpose: `Оплата по счету №${currentInvoice.number} от ${invoiceDate} (данные из банковской выписки)`,
             documentDate: new Date(),
             documentNumber: `MANUAL-${Date.now()}`,
             payerName: currentInvoice.counterparty?.shortName || currentInvoice.counterparty?.name || "Клиент",
