@@ -368,30 +368,6 @@ router.delete("/transactions/:id", async (req: Request, res: Response, next: Nex
       throw new ApiError(400, "Can only delete manual payments");
     }
 
-    // Ищем связанный счёт по номеру
-    const invoiceNumberMatch = tx.purpose.match(/Сч[её]та? №([^\s)]+)/i);
-    const invoiceNumber = invoiceNumberMatch ? invoiceNumberMatch[1] : null;
-
-    // Обновляем статус счёта если нашли
-    if (invoiceNumber && tx.counterpartyId) {
-      const invoice = await (prisma as any).invoice.findFirst({
-        where: {
-          number: invoiceNumber,
-          counterpartyId: tx.counterpartyId,
-        },
-      });
-      if (invoice) {
-        await (prisma as any).invoice.update({
-          where: { id: invoice.id },
-          data: {
-            isPaid: false,
-            paidAt: null,
-            status: "sent", // или "new" в зависимости от логики
-          },
-        });
-      }
-    }
-
     // Удаляем транзакцию
     await (prisma as any).bankTransaction.delete({ where: { id } });
 
