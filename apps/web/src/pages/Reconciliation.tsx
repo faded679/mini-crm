@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   getCounterpartyFinanceSummary,
   downloadReconciliationPdf,
+  deleteManualPayment,
   type CounterpartyFinanceSummary,
   type Invoice,
   type BankTransaction,
@@ -41,6 +42,7 @@ export default function Reconciliation() {
   const [dateFrom, setDateFrom] = useState(`${currentYear()}-01-01`);
   const [dateTo, setDateTo] = useState(new Date().toISOString().slice(0, 10));
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null); // TODO: TEMPORARY
 
   useEffect(() => {
     if (!id) return;
@@ -218,6 +220,8 @@ export default function Reconciliation() {
                   <th className="px-4 py-2.5 text-right">Начислено</th>
                   <th className="px-4 py-2.5 text-right">Оплата</th>
                   <th className="px-4 py-2.5 text-right">Итог</th>
+                  {/* TODO: TEMPORARY - Remove after manual payment cleanup */}
+                  <th className="px-2 py-2.5" />
                 </tr>
               </thead>
               <tbody>
@@ -279,12 +283,40 @@ export default function Reconciliation() {
                     <td className="px-4 py-2.5 text-right whitespace-nowrap font-semibold text-gray-900 dark:text-white">
                       {fmtMoney(entry.runningBalance)} ₽
                     </td>
+                    {/* TODO: TEMPORARY - Remove after manual payment cleanup */}
+                    {entry.type === "payment" && entry.description.includes("(ручная отметка)") && (
+                      <td className="px-2 py-2.5">
+                        <button
+                          onClick={async () => {
+                            if (!confirm("Удалить эту ручную оплату? Статус счёта будет сброшен.")) return;
+                            setDeletingId(entry.sourceId);
+                            try {
+                              await deleteManualPayment(entry.sourceId);
+                              // Перезагружаем данные
+                              if (id) {
+                                const data = await getCounterpartyFinanceSummary(Number(id), dateFrom, dateTo);
+                                setSummary(data);
+                              }
+                            } catch (e: any) {
+                              alert(e?.message || "Ошибка при удалении");
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }}
+                          disabled={deletingId === entry.sourceId}
+                          className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                          title="Удалить ручную оплату"
+                        >
+                          {deletingId === entry.sourceId ? "..." : "×"}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
 
                 {/* Total row */}
                 <tr className="bg-gray-50 dark:bg-gray-700/50 border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
-                  <td className="px-4 py-3" colSpan={3}>
+                  <td className="px-4 py-3" colSpan={4}>
                     <span className="text-gray-700 dark:text-gray-300">Итого</span>
                   </td>
                   <td className="px-4 py-3 text-right text-gray-900 dark:text-white">

@@ -1072,6 +1072,13 @@ export async function downloadReconciliationPdf(counterpartyId: number, dateFrom
   URL.revokeObjectURL(url);
 }
 
+// TODO: TEMPORARY - Remove after manual payment cleanup
+export function deleteManualPayment(transactionId: number) {
+  return request<{ success: boolean }>(`/admin/finance/transactions/${transactionId}`, {
+    method: "DELETE",
+  });
+}
+
 export function getFinanceImportHistory() {
   return request<BankImportBatch[]>("/admin/finance/import-history");
 }
