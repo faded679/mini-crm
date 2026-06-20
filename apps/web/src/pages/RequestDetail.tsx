@@ -690,6 +690,39 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
 
           </div>
 
+          {/* Carrier / Logist block */}
+          {(request as any).carrierRecord && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium mb-3">Перевозчик (логист)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Марка / номер</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {(request as any).carrierRecord.carBrand} · {(request as any).carrierRecord.carNumber}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">ФИО водителя</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {(request as any).carrierRecord.driverName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Телефон</p>
+                  <a href={`tel:${(request as any).carrierRecord.driverPhone}`} className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    {(request as any).carrierRecord.driverPhone}
+                  </a>
+                </div>
+                {(request as any).carrierRecord.logistInfo && (
+                  <div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Данные логиста</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{(request as any).carrierRecord.logistInfo}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Status change */}
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2">

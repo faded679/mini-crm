@@ -309,7 +309,8 @@ router.get("/requests", async (_req: Request, res: Response, next: NextFunction)
               select: { id: true, number: true, isPaid: true, status: true, amount: true } 
             } 
           } 
-        } 
+        },
+        carrierRecord: { select: { id: true, driverName: true, carBrand: true, carNumber: true, driverPhone: true } }
       },
       orderBy: { createdAt: "desc" },
     });
@@ -341,7 +342,8 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
         history: { orderBy: { changedAt: "desc" } },
         fieldHistory: { orderBy: { changedAt: "desc" }, include: { manager: { select: { id: true, name: true } } } },
         services: { orderBy: { id: "asc" } },
-        photos: true,  // <- добавить эту строку
+        photos: true,
+        carrierRecord: true,
       },
     });
     if (!request) throw new ApiError(404, "Request not found");

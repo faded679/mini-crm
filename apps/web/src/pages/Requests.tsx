@@ -768,6 +768,9 @@ export default function Requests() {
                     Статус {sortIndicator("status")}
                   </button>
                 </th>
+                <th className="text-left px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 uppercase">
+                  Логист
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -851,6 +854,16 @@ export default function Requests() {
                     <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-medium", statusColors[r.status])}>
                       {statusLabels[r.status]}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    {r.carrierRecord ? (
+                      <div>
+                        <div className="font-medium text-gray-800 dark:text-gray-200 text-xs">{r.carrierRecord.driverName}</div>
+                        <div className="text-xs text-gray-400">{r.carrierRecord.carBrand} {r.carrierRecord.carNumber}</div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

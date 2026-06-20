@@ -34,7 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://sologo.ru,https://crm.sologo.ru,https://app.sologo.ru,https://warehouse.sologo.ru,https://test.ved31.ru}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://sologo.ru,https://crm.sologo.ru,https://app.sologo.ru,https://warehouse.sologo.ru,https://logist.sologo.ru,https://test.ved31.ru}
       PORT: "3000"
       DADATA_TOKEN: ${DADATA_TOKEN}
       TBANK_TERMINAL_KEY: ${TBANK_TERMINAL_KEY:-}
@@ -85,6 +85,14 @@ services:
     container_name: mini-crm-public
     restart: unless-stopped
 
+  logist:
+    build:
+      context: ../apps/logist
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://sologo.ru/api}
+    container_name: mini-crm-logist
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     container_name: mini-crm-nginx
@@ -94,6 +102,7 @@ services:
       - mini-app
       - web
       - public
+      - logist
     ports:
       - "80:80"
       - "443:443"

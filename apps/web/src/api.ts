@@ -160,6 +160,13 @@ export interface ShipmentRequest {
   services?: RequestService[];
   photos?: RequestPhoto[];
   invoices?: ShipmentRequestInvoice[];
+  carrierRecord?: {
+    id: number;
+    driverName: string;
+    carBrand: string;
+    carNumber: string;
+    driverPhone: string;
+  } | null;
 }
 
 export interface StatusHistoryEntry {

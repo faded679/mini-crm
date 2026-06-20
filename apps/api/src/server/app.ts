@@ -16,10 +16,26 @@ import publicAuthRouter from "./routes/public-auth.js";
 import financeRouter from "./routes/finance.js";
 import warehouseRouter from "./routes/warehouse.js";
 import warehouseWebRouter from "./routes/warehouse-web.js";
+import logistRouter from "./routes/logist.js";
 import { prisma } from "./db/prisma.js";
+import bcrypt from "bcryptjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+async function seedLogist() {
+  try {
+    const email = "logist@mail.ru";
+    const existing = await (prisma as any).logist.findUnique({ where: { email } });
+    if (!existing) {
+      const passwordHash = await bcrypt.hash("logsolo3212", 10);
+      await (prisma as any).logist.create({ data: { email, passwordHash, name: "Логист" } });
+      console.log("[seed] Logist account created:", email);
+    }
+  } catch (e) {
+    console.error("[seed] seedLogist error:", e);
+  }
+}
 
 async function seedBoxTypes() {
   await (prisma as any).boxType.upsert({
@@ -43,6 +59,7 @@ export function createApp() {
   const app = express();
 
   void seedBoxTypes();
+  void seedLogist();
 
   app.use(cors({ origin: env.CORS_ORIGINS.split(",") }));
   app.use(express.json({ limit: "10mb" }));
@@ -65,6 +82,7 @@ export function createApp() {
   app.use("/bot", botRouter);
   app.use("/warehouse", warehouseRouter);
   app.use("/warehouse-web", warehouseWebRouter);
+  app.use("/logist", logistRouter);
   app.use("/schedule", scheduleRouter);
   app.use("/webhooks", webhooksRouter);
 
