@@ -131,12 +131,26 @@ export default function Orders() {
 
             return (
               <section key={r.id} className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)]">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-1">
                   <p className="text-heading font-bold text-sm">Заявка #{r.id}</p>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${st.color}`}>
                     {st.label}
                   </span>
                 </div>
+                {(r.invoices && r.invoices.length > 0 || r.carrierRecord) && (
+                  <div className="flex gap-3 mb-3">
+                    {r.invoices && r.invoices.length > 0 && (
+                      <span className="text-[11px] text-muted">
+                        Счёт: <span className="font-semibold text-heading">{r.invoices.map((inv) => inv.invoice.number).join(", ")}</span>
+                      </span>
+                    )}
+                    {r.carrierRecord && (
+                      <span className="text-[11px] text-muted">
+                        Авто: <span className="font-semibold text-heading">{r.carrierRecord.carNumber}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {isEditing && editState ? (
                   <div className="space-y-2">
@@ -290,20 +304,6 @@ export default function Orders() {
                         <div className="flex justify-between">
                           <span className="text-xs text-muted">Сумма</span>
                           <span className="text-xs text-accent font-bold">{r._totalAmount.toLocaleString("ru-RU")} ₽</span>
-                        </div>
-                      )}
-                      {r.invoices && r.invoices.length > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-xs text-muted">Н счёта</span>
-                          <span className="text-xs text-heading font-medium">
-                            {r.invoices.map((inv) => inv.invoice.number).join(", ")}
-                          </span>
-                        </div>
-                      )}
-                      {r.carrierRecord && (
-                        <div className="flex justify-between">
-                          <span className="text-xs text-muted">Н авто</span>
-                          <span className="text-xs text-heading font-medium">{r.carrierRecord.carNumber}</span>
                         </div>
                       )}
                       {r.comment && (
