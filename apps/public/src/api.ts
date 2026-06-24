@@ -75,6 +75,8 @@ export interface ShipmentRequest {
   palletType?: { id: number; name: string } | null;
   deliveryType?: { id: number; name: string } | null;
   _totalAmount?: number;
+  invoices?: { invoice: { id: number; number: string; isPaid: boolean; status: string } }[];
+  carrierRecord?: { id: number; carNumber: string; driverName: string; driverPhone: string } | null;
 }
 
 export interface CityFbs {

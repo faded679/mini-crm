@@ -292,6 +292,20 @@ export default function Orders() {
                           <span className="text-xs text-accent font-bold">{r._totalAmount.toLocaleString("ru-RU")} ₽</span>
                         </div>
                       )}
+                      {r.invoices && r.invoices.length > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-xs text-muted">Н счёта</span>
+                          <span className="text-xs text-heading font-medium">
+                            {r.invoices.map((inv) => inv.invoice.number).join(", ")}
+                          </span>
+                        </div>
+                      )}
+                      {r.carrierRecord && (
+                        <div className="flex justify-between">
+                          <span className="text-xs text-muted">Н авто</span>
+                          <span className="text-xs text-heading font-medium">{r.carrierRecord.carNumber}</span>
+                        </div>
+                      )}
                       {r.comment && (
                         <div className="flex justify-between gap-3">
                           <span className="text-xs text-muted flex-shrink-0">Комментарий</span>

@@ -1046,6 +1046,12 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
         palletType: { select: { id: true, name: true } },
         deliveryType: { select: { id: true, name: true } },
         services: true,
+        invoices: {
+          include: {
+            invoice: { select: { id: true, number: true, isPaid: true, status: true } },
+          },
+        },
+        carrierRecord: { select: { id: true, carNumber: true, driverName: true, driverPhone: true } },
       },
     });
     const result = requests.map((r: any) => ({
