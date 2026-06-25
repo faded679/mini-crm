@@ -452,6 +452,7 @@ export default function Finance() {
                   <p className="text-gray-500 dark:text-gray-400 mb-3">
                     Перетащите файл банковской выписки (.txt) сюда
                   </p>
+                  {/* TODO: TEMPORARY — hide file upload button
                   <label className="inline-block px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition">
                     Выбрать файл
                     <input
@@ -461,6 +462,7 @@ export default function Finance() {
                       className="hidden"
                     />
                   </label>
+                  */}
                   <p className="text-xs text-gray-400 mt-2">
                     Формат: 1CClientBankExchange (выписка из Т-Банк / Сбербанк и др.)
                   </p>
