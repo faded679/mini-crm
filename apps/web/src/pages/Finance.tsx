@@ -9,7 +9,6 @@ import {
   ignoreBankTransaction,
   getCounterparties,
   recalculateAllBalances,
-  deleteManualPayment,
   type BankTransaction,
   type CounterpartyBalance,
   type BankImportBatch,
@@ -186,17 +185,6 @@ export default function Finance() {
     } catch { /* ignore */ }
   }, [loadTransactions]);
 
-  // TODO: TEMPORARY - Remove after manual payment cleanup
-  const handleDeleteTx = useCallback(async (tx: BankTransaction) => {
-    if (!confirm(`Удалить запись #${tx.id}?\n${tx.purpose}\nСумма: ${tx.amount} ₽`)) return;
-    try {
-      await deleteManualPayment(tx.id);
-      loadTransactions();
-    } catch (err: any) {
-      alert("Ошибка удаления: " + (err.message || ""));
-    }
-  }, [loadTransactions]);
-
   const tabClass = (t: Tab) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg transition ${
       tab === t
@@ -305,31 +293,22 @@ export default function Finance() {
                           </span>
                         </td>
                         <td className="py-2">
-                          <div className="flex gap-1 flex-wrap">
-                            {tx.status === "unmatched" && (
-                              <>
-                                <button
-                                  onClick={() => openMatchModal(tx)}
-                                  className="px-2 py-1 text-xs rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-                                >
-                                  Привязать
-                                </button>
-                                <button
-                                  onClick={() => handleIgnore(tx.id)}
-                                  className="px-2 py-1 text-xs rounded bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
-                                >
-                                  Игнор
-                                </button>
-                              </>
-                            )}
-                            {/* TODO: TEMPORARY - Remove after cleanup */}
-                            <button
-                              onClick={() => handleDeleteTx(tx)}
-                              className="px-2 py-1 text-xs rounded bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                            >
-                              ✕
-                            </button>
-                          </div>
+                          {tx.status === "unmatched" && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => openMatchModal(tx)}
+                                className="px-2 py-1 text-xs rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                              >
+                                Привязать
+                              </button>
+                              <button
+                                onClick={() => handleIgnore(tx.id)}
+                                className="px-2 py-1 text-xs rounded bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
+                              >
+                                Игнор
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
