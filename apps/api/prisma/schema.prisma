@@ -10,7 +10,6 @@ datasource db {
 enum RequestStatus {
   new
   warehouse
-  billed
   shipped
   done
   archived

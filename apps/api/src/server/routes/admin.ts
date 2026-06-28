@@ -1043,7 +1043,6 @@ router.patch("/requests/:id/status", async (req: Request, res: Response, next: N
     const statusLabels: Record<RequestStatus, string> = {
       new: "Новый",
       warehouse: "Склад",
-      billed: "Счёт выставлен",
       shipped: "Отгружен",
       done: "Выполнена",
       archived: "Архив",
@@ -1079,7 +1078,6 @@ router.post("/requests/bulk-status", async (req: Request, res: Response, next: N
     const statusLabels: Record<RequestStatus, string> = {
       new: "Новый",
       warehouse: "Склад",
-      billed: "Счёт выставлен",
       shipped: "Отгружен",
       done: "Выполнена",
       archived: "Архив",

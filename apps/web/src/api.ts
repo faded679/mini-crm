@@ -100,7 +100,7 @@ export interface CounterpartyPayload {
   contactClientIds?: number[];
 }
 
-export type RequestStatus = "new" | "warehouse" | "billed" | "shipped" | "done" | "archived";
+export type RequestStatus = "new" | "warehouse" | "shipped" | "done" | "archived";
 
 export type PackagingType = "pallets" | "boxes";
 
