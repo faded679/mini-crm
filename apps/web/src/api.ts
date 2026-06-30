@@ -32,6 +32,7 @@ export interface Manager {
   id: number;
   email: string;
   name: string;
+  role?: string;
 }
 
 export interface LoginResponse {

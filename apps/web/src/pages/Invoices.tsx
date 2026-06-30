@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, checkInvoicePayment, type Invoice } from "../api";
+import { useAuth } from "../auth";
 import { cn } from "../lib/utils";
 
 function formatDateRu(iso: string) {
@@ -32,6 +33,9 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Invoices() {
+  const { manager } = useAuth();
+  const isDirector = manager?.role === "director";
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -509,13 +513,13 @@ export default function Invoices() {
                             {checkingPayment === inv.id ? "..." : "Проверить оплату"}
                           </button>
                         )}
-                        {(() => {
+                        {isDirector && (() => {
                           const hasDone = inv.requests?.some(ir => ir.request?.status === "done");
                           return (
                             <button
                               onClick={() => handleDelete(inv.id)}
                               disabled={deletingId === inv.id || inv.isPaid || !!hasDone}
-                              title={hasDone ? "Нельзя удалить: заявка выполнена" : undefined}
+                              title={hasDone ? "Нельзя удалить: заявка выполнена" : inv.isPaid ? "Нельзя удалить: счёт оплачен" : undefined}
                               className="px-2 py-1 text-xs rounded-lg font-medium bg-red-600/[0.46] text-white hover:bg-red-700/[0.46] disabled:opacity-50 transition"
                             >
                               {deletingId === inv.id ? "..." : "Удалить"}

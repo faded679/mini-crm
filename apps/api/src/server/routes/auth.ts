@@ -23,8 +23,8 @@ router.post("/login", async (req, res, next) => {
       throw new ApiError(401, "Invalid credentials");
     }
 
-    const token = signToken({ managerId: manager.id, email: manager.email });
-    res.json({ token, manager: { id: manager.id, email: manager.email, name: manager.name } });
+    const token = signToken({ managerId: manager.id, email: manager.email, role: manager.role });
+    res.json({ token, manager: { id: manager.id, email: manager.email, name: manager.name, role: manager.role } });
   } catch (err) {
     next(err);
   }

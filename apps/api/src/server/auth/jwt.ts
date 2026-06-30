@@ -4,6 +4,7 @@ import { env } from "../env.js";
 export interface JwtPayload {
   managerId: number;
   email: string;
+  role?: string;
 }
 
 export function signToken(payload: JwtPayload): string {

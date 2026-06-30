@@ -671,11 +671,20 @@ router.delete("/invoices/:id", async (req: Request, res: Response, next: NextFun
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
+    const manager = (req as any).manager;
+    if (manager?.role !== "director") {
+      throw new ApiError(403, "Только руководитель может удалять счета");
+    }
+
     const invoiceWithRequests = await (prisma as any).invoice.findUnique({
       where: { id },
       include: { requests: { include: { request: true } } },
     });
     if (!invoiceWithRequests) throw new ApiError(404, "Invoice not found");
+
+    if (invoiceWithRequests.isPaid) {
+      throw new ApiError(400, "Нельзя удалить оплаченный счёт");
+    }
 
     const hasDoneRequest = invoiceWithRequests.requests?.some(
       (ir: any) => ir.request?.status === "done"
