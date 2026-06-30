@@ -686,13 +686,6 @@ router.delete("/invoices/:id", async (req: Request, res: Response, next: NextFun
       throw new ApiError(400, "Нельзя удалить оплаченный счёт");
     }
 
-    const hasDoneRequest = invoiceWithRequests.requests?.some(
-      (ir: any) => ir.request?.status === "done"
-    );
-    if (hasDoneRequest) {
-      throw new ApiError(400, "Нельзя удалить счёт: одна из заявок уже выполнена");
-    }
-
     await (prisma as any).invoice.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {
