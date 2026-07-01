@@ -7,6 +7,7 @@ import {
   getFinanceImportHistory,
   matchBankTransaction,
   ignoreBankTransaction,
+  deleteManualPayment,
   getCounterparties,
   recalculateAllBalances,
   type BankTransaction,
@@ -15,6 +16,7 @@ import {
   type BankImportResult,
   type Counterparty,
 } from "../api";
+import { useAuth } from "../auth";
 
 type Tab = "transactions" | "balances" | "import";
 
@@ -42,12 +44,15 @@ function fmtMoney(n: number) {
 
 export default function Finance() {
   const navigate = useNavigate();
+  const { manager } = useAuth();
+  const isDirector = manager?.role === "director";
   const [tab, setTab] = useState<Tab>("transactions");
 
   // Transactions tab
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
   const [txFilter, setTxFilter] = useState<string>("all");
+  const [deletingTxId, setDeletingTxId] = useState<number | null>(null);
 
   // Balances tab
   const [balances, setBalances] = useState<CounterpartyBalance[]>([]);
@@ -185,6 +190,21 @@ export default function Finance() {
     } catch { /* ignore */ }
   }, [loadTransactions]);
 
+  const handleDeleteTx = useCallback(async (txId: number) => {
+    if (!isDirector) return;
+    if (!confirm("Удалить запись оплаты? Баланс контрагента будет пересчитан.")) return;
+    setDeletingTxId(txId);
+    try {
+      await deleteManualPayment(txId);
+      loadTransactions();
+      loadBalances();
+    } catch (err: any) {
+      alert("Ошибка: " + (err.message || "Не удалось удалить запись оплаты"));
+    } finally {
+      setDeletingTxId(null);
+    }
+  }, [isDirector, loadTransactions, loadBalances]);
+
   const tabClass = (t: Tab) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg transition ${
       tab === t
@@ -293,22 +313,33 @@ export default function Finance() {
                           </span>
                         </td>
                         <td className="py-2">
-                          {tx.status === "unmatched" && (
-                            <div className="flex gap-1">
+                          <div className="flex gap-1">
+                            {tx.status === "unmatched" && (
+                              <>
+                                <button
+                                  onClick={() => openMatchModal(tx)}
+                                  className="px-2 py-1 text-xs rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                                >
+                                  Привязать
+                                </button>
+                                <button
+                                  onClick={() => handleIgnore(tx.id)}
+                                  className="px-2 py-1 text-xs rounded bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
+                                >
+                                  Игнор
+                                </button>
+                              </>
+                            )}
+                            {isDirector && (
                               <button
-                                onClick={() => openMatchModal(tx)}
-                                className="px-2 py-1 text-xs rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                                onClick={() => handleDeleteTx(tx.id)}
+                                disabled={deletingTxId === tx.id}
+                                className="px-2 py-1 text-xs rounded bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 disabled:opacity-50"
                               >
-                                Привязать
+                                {deletingTxId === tx.id ? "..." : "Удалить"}
                               </button>
-                              <button
-                                onClick={() => handleIgnore(tx.id)}
-                                className="px-2 py-1 text-xs rounded bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
-                              >
-                                Игнор
-                              </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

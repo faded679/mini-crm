@@ -348,35 +348,30 @@ router.get("/counterparty/:id/reconciliation-pdf", async (req: Request, res: Res
   }
 });
 
-// TODO: TEMPORARY - Remove after manual payment cleanup
-// DELETE /admin/finance/transactions/:id — удалить ручную оплату и сбросить статус счёта
+// DELETE /admin/finance/transactions/:id — удалить запись оплаты (только для директора)
 router.delete("/transactions/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid transaction id");
 
-    // Находим транзакцию
+    const manager = (req as any).manager;
+    if (manager?.role !== "director") {
+      throw new ApiError(403, "Только руководитель может удалять записи оплаты");
+    }
+
     const tx = await (prisma as any).bankTransaction.findUnique({
       where: { id },
       include: { counterparty: true },
     });
     if (!tx) throw new ApiError(404, "Transaction not found");
 
-    // Проверяем что это ручная отметка (поддерживаем все форматы)
-    const isManualPayment = tx.purpose?.includes("(ручная отметка)") || tx.purpose?.includes("(р.о.)");
-    if (!isManualPayment) {
-      throw new ApiError(400, "Can only delete manual payments");
-    }
-
-    // Удаляем транзакцию
     await (prisma as any).bankTransaction.delete({ where: { id } });
 
-    // Пересчитываем баланс
     if (tx.counterpartyId) {
       await recalculateBalance(tx.counterpartyId);
     }
 
-    res.json({ success: true, message: "Manual payment deleted" });
+    res.json({ success: true, message: "Payment record deleted" });
   } catch (err) {
     next(err);
   }
