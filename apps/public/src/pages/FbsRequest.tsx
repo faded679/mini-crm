@@ -68,7 +68,7 @@ export default function FbsRequest() {
   const selectedPrice = prices.find((p) => p.id === selectedPriceId);
 
   const handleAddItem = () => {
-    if (!selectedPrice || !qty || Number(qty) <= 0) return;
+    if (!selectedPrice || !qty || Number(qty) < 0.1) return;
     const priceNum = parseFloat(selectedPrice.price.replace(/[^\d.,]/g, "").replace(",", ".")) || 0;
     const volNum = parseFloat(selectedPrice.volume.replace(/[^\d.,]/g, "").replace(",", ".")) || 1;
     const units = Number(qty) / volNum;
@@ -238,10 +238,10 @@ export default function FbsRequest() {
               onChange={(e) => setQty(e.target.value)}
               min="0.1"
               step="0.1"
-              placeholder="Укажите свой объем (м³)"
+              placeholder="Укажите свой объем (мин. 0.1 м³)"
               className="w-full h-11 px-3 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm mb-2 transition-all focus:border-accent"
             />
-            {qty && Number(qty) > 0 && (
+            {qty && Number(qty) >= 0.1 && (
               <button onClick={handleAddItem} className="w-full h-11 rounded-2xl bg-green-600 text-white text-sm font-bold transition active:opacity-80">
                 Добавить
               </button>
