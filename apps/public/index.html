@@ -25,6 +25,13 @@
   </head>
   <body>
     <noscript><img src="https://mc.yandex.ru/watch/110339734" style="position:absolute; left:-9999px;" alt="" /></noscript>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
