@@ -52,6 +52,7 @@ export default function Finance() {
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
   const [txFilter, setTxFilter] = useState<string>("all");
+  const [txOrgSearch, setTxOrgSearch] = useState<string>("");
   const [deletingTxId, setDeletingTxId] = useState<number | null>(null);
 
   // Balances tab
@@ -190,6 +191,16 @@ export default function Finance() {
     } catch { /* ignore */ }
   }, [loadTransactions]);
 
+  const filteredTransactions = useMemo(() => {
+    const q = txOrgSearch.trim().toLowerCase();
+    if (!q) return transactions;
+    return transactions.filter((tx) => {
+      const name = (tx.counterparty?.shortName || tx.counterparty?.name || tx.payerName || "").toLowerCase();
+      const inn = (tx.counterparty?.inn || (tx as any).payerInn || "").toLowerCase();
+      return name.includes(q) || inn.includes(q);
+    });
+  }, [transactions, txOrgSearch]);
+
   const handleDeleteTx = useCallback(async (txId: number) => {
     if (!isDirector) return;
     if (!confirm("Удалить запись оплаты? Баланс контрагента будет пересчитан.")) return;
@@ -233,7 +244,7 @@ export default function Finance() {
         {/* ─── TRANSACTIONS TAB ─── */}
         {tab === "transactions" && (
           <div>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <label className="text-sm text-gray-500 dark:text-gray-400">Статус:</label>
               <select
                 value={txFilter}
@@ -245,8 +256,14 @@ export default function Finance() {
                 <option value="unmatched">Не привязанные</option>
                 <option value="ignored">Игнорированные</option>
               </select>
+              <input
+                value={txOrgSearch}
+                onChange={(e) => setTxOrgSearch(e.target.value)}
+                placeholder="Поиск по организации..."
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 w-56"
+              />
               <span className="text-sm text-gray-400 dark:text-gray-500 ml-auto">
-                {transactions.length} операций
+                {filteredTransactions.length} операций
               </span>
             </div>
 
@@ -272,7 +289,9 @@ export default function Finance() {
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map((tx) => (
+                    {filteredTransactions.length === 0 ? (
+                      <tr><td colSpan={8} className="py-6 text-center text-gray-400 dark:text-gray-500">Организации не найдены</td></tr>
+                    ) : filteredTransactions.map((tx) => (
                       <tr
                         key={tx.id}
                         className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
