@@ -239,8 +239,9 @@ export default function FbsRequest() {
               min="0.1"
               step="0.1"
               placeholder="Укажите свой объем (мин. 0.1 м³)"
-              className="w-full h-11 px-3 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm mb-2 transition-all focus:border-accent"
+              className="w-full h-11 px-3 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm mb-1 transition-all focus:border-accent"
             />
+            <p className="text-xs text-muted mb-2 px-1">Минимальный объём — 0.1 м³</p>
             {qty && Number(qty) >= 0.1 && (
               <button onClick={handleAddItem} className="w-full h-11 rounded-2xl bg-green-600 text-white text-sm font-bold transition active:opacity-80">
                 Добавить
