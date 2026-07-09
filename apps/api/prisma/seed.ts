@@ -118,9 +118,13 @@ async function main() {
     { destination: "ВБ Воронеж", deliveryDate: "2025-02-25", acceptDays: "Понедельник: 9:00–18:00, Вторник: 9:00–15:00" },
   ];
 
+  const firstCity = await prisma.city.findFirst({ orderBy: { id: "asc" } });
+  const cityId = firstCity?.id || 1;
+
   for (const item of scheduleData) {
     await prisma.deliverySchedule.create({
       data: {
+        cityId,
         destination: item.destination,
         deliveryDate: new Date(item.deliveryDate),
         acceptDays: item.acceptDays,

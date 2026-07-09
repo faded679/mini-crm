@@ -1,7 +1,7 @@
 import { getPhone, getToken, clearAuth } from "../auth";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { getBalance, type BalanceResponse } from "../api";
+import { getBalance, createDeposit, getDepositStatus, type BalanceResponse } from "../api";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -10,6 +10,11 @@ export default function Profile() {
   const [balance, setBalance] = useState<BalanceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [depositAmount, setDepositAmount] = useState<string>("");
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
+  const [pendingDepositId, setPendingDepositId] = useState<number | null>(null);
+  const [pendingDepositAmount, setPendingDepositAmount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -26,9 +31,51 @@ export default function Profile() {
       .finally(() => setLoading(false));
   }, [token]);
 
+  useEffect(() => {
+    if (!token || !pendingDepositId) return;
+
+    const interval = setInterval(() => {
+      getDepositStatus(pendingDepositId, token)
+        .then((status) => {
+          if (status.status === "paid") {
+            setPendingDepositId(null);
+            setPendingDepositAmount(null);
+            setDepositAmount("");
+            getBalance(token).then(setBalance).catch(console.error);
+            alert("✅ Баланс успешно пополнен!");
+          }
+        })
+        .catch((err) => console.error("Deposit status check failed:", err));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [pendingDepositId, token]);
+
   const handleLogout = () => {
     clearAuth();
     window.location.reload();
+  };
+
+  const handleDeposit = async () => {
+    if (!token) return;
+    const amount = Number(depositAmount.replace(/\s/g, "").replace(",", "."));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setDepositError("Введите корректную сумму");
+      return;
+    }
+    setDepositLoading(true);
+    setDepositError(null);
+    try {
+      const result = await createDeposit(amount, token);
+      setPendingDepositId(result.depositId);
+      setPendingDepositAmount(result.amount);
+      window.open(result.paymentUrl, "_blank");
+    } catch (err: any) {
+      console.error("Failed to create deposit:", err);
+      setDepositError(err?.message || "Не удалось создать платёж. Попробуйте позже.");
+    } finally {
+      setDepositLoading(false);
+    }
   };
 
   const formatMoney = (n: number) => {
@@ -88,6 +135,40 @@ export default function Profile() {
             </p>
           </>
         )}
+      </section>
+
+      <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
+        <p className="text-muted text-xs">Пополнение баланса по СБП</p>
+        <p className="text-sm text-heading mt-2 mb-3">
+          Введите сумму, которую хотите зачислить на баланс. После подтверждения откроется окно оплаты T-Bank.
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="decimal"
+            placeholder="Например, 5000"
+            value={depositAmount}
+            onChange={(e) => setDepositAmount(e.target.value)}
+            min="1"
+            step="1"
+            disabled={depositLoading || pendingDepositId !== null}
+            className="flex-1 min-w-0 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+          />
+          <span className="text-sm text-muted">₽</span>
+        </div>
+        {depositError && <p className="text-sm text-red-500 mt-2">{depositError}</p>}
+        {pendingDepositId && pendingDepositAmount && (
+          <p className="text-sm text-blue-600 mt-2">
+            Ожидаем оплату {pendingDepositAmount.toLocaleString("ru-RU")} ₽... После оплаты баланс обновится автоматически.
+          </p>
+        )}
+        <button
+          onClick={handleDeposit}
+          disabled={depositLoading || pendingDepositId !== null || !depositAmount}
+          className="w-full mt-3 py-3 rounded-2xl bg-accent text-white text-sm font-semibold transition active:opacity-80 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {depositLoading ? "Создаём платёж..." : "Пополнить баланс"}
+        </button>
       </section>
 
       <button

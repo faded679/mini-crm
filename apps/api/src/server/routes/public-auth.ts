@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
 import { ApiError } from "../errors.js";
 import { initiateVerificationCall, checkVerificationStatus } from "../services/zvonok-service.js";
+import { tbankPayment } from "../../services/tbank-payment.js";
+import { recalculateBalance } from "../services/bank-import-service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "public-client-secret-change-me";
 
@@ -355,6 +357,138 @@ router.get("/balance", async (req, res, next) => {
       totalPaid,
       balance, // положительный = долг, отрицательный = переплата
       organizationCount: client.counterparties?.length || 0,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+function getClientIdFromToken(req: any): number {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new ApiError(401, "Authorization required");
+  }
+  const token = authHeader.slice(7);
+  let decoded: any;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    throw new ApiError(401, "Invalid token");
+  }
+  const clientId = decoded.clientId;
+  if (!clientId) {
+    throw new ApiError(401, "Invalid token payload");
+  }
+  return Number(clientId);
+}
+
+// POST /public-auth/deposit - создать платёж пополнения баланса
+router.post("/deposit", async (req, res, next) => {
+  try {
+    const clientId = getClientIdFromToken(req);
+    const { amount } = req.body;
+
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      throw new ApiError(400, "Сумма пополнения должна быть больше 0");
+    }
+
+    const client = await (prisma as any).client.findUnique({
+      where: { id: clientId },
+      include: { counterparties: { include: { counterparty: true } } },
+    });
+    if (!client) {
+      throw new ApiError(404, "Client not found");
+    }
+
+    // Создаём запись пополнения
+    const balancePayment = await (prisma as any).balancePayment.create({
+      data: { clientId, amount: numericAmount, status: "new" },
+    });
+
+    const amountInKopecks = Math.round(numericAmount * 100);
+    const orderId = `DEP-${balancePayment.id}-${Date.now()}`.slice(0, 36);
+    const description = `Popolnenie balansa`;
+    const notificationURL = `${process.env.API_BASE_URL || "https://test.ved31.ru/api"}/webhooks/tbank`;
+
+    const receipt: any = {
+      Taxation: "usn_income",
+      Items: [
+        {
+          Name: "Пополнение баланса",
+          Price: amountInKopecks,
+          Quantity: 1,
+          Amount: amountInKopecks,
+          Tax: "none",
+        },
+      ],
+    };
+    if (client.email) receipt.Email = client.email;
+    else if (client.phone) receipt.Phone = client.phone;
+
+    const paymentResult = await tbankPayment.initPayment({
+      amount: amountInKopecks,
+      orderId,
+      description,
+      customerKey: client.telegramId || String(clientId),
+      notificationURL,
+      receipt,
+    });
+
+    await (prisma as any).balancePayment.update({
+      where: { id: balancePayment.id },
+      data: {
+        status: "awaiting_payment",
+        tbankPaymentId: String(paymentResult.PaymentId),
+        tbankPaymentUrl: paymentResult.PaymentURL,
+        tbankOrderId: paymentResult.OrderId,
+      },
+    });
+
+    res.json({
+      success: true,
+      depositId: balancePayment.id,
+      amount: numericAmount,
+      paymentUrl: paymentResult.PaymentURL,
+      paymentId: paymentResult.PaymentId,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /public-auth/deposit/:id/status - проверить статус платежа пополнения
+router.get("/deposit/:id/status", async (req, res, next) => {
+  try {
+    const clientId = getClientIdFromToken(req);
+    const depositId = Number(req.params.id);
+    if (!Number.isFinite(depositId)) {
+      throw new ApiError(400, "Invalid deposit id");
+    }
+
+    const deposit = await (prisma as any).balancePayment.findFirst({
+      where: { id: depositId, clientId },
+    });
+    if (!deposit) {
+      throw new ApiError(404, "Deposit not found");
+    }
+
+    let tbankStatus: string | null = null;
+    if (deposit.tbankPaymentId) {
+      try {
+        const state = await tbankPayment.getPaymentState(deposit.tbankPaymentId);
+        tbankStatus = state.Status;
+      } catch (e) {
+        console.error("Failed to get TBank state for deposit", depositId, e);
+      }
+    }
+
+    res.json({
+      depositId: deposit.id,
+      status: deposit.status,
+      amount: deposit.amount,
+      tbankStatus,
+      paidAt: deposit.paidAt,
     });
   } catch (err) {
     next(err);

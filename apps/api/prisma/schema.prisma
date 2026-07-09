@@ -28,6 +28,13 @@ enum InvoiceStatus {
   cancelled
 }
 
+enum BalancePaymentStatus {
+  new
+  awaiting_payment
+  paid
+  cancelled
+}
+
 enum RateUnit {
   pallet
   boxes
@@ -46,6 +53,7 @@ model Client {
   createdAt    DateTime         @default(now()) @map("created_at")
   requests     ShipmentRequest[]
   counterparties CounterpartyContact[]
+  balancePayments BalancePayment[]
 
   @@map("clients")
 }
@@ -227,13 +235,13 @@ model Invoice {
   status          InvoiceStatus @default(new)
   isPaid          Boolean       @default(false) @map("is_paid")
   paidAt          DateTime?     @map("paid_at")
-  
+
   // T-Bank payment fields
   tbankPaymentId  String?       @unique @map("tbank_payment_id")
   tbankPaymentUrl String?       @map("tbank_payment_url")
   tbankOrderId    String?       @unique @map("tbank_order_id")
   amount          Float         @default(0)
-  
+
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
@@ -242,6 +250,26 @@ model Invoice {
   requests        InvoiceRequest[]
 
   @@map("invoices")
+}
+
+model BalancePayment {
+  id              Int                  @id @default(autoincrement())
+  clientId        Int                  @map("client_id")
+  amount          Float
+  status          BalancePaymentStatus @default(new)
+  paidAt          DateTime?            @map("paid_at")
+
+  // T-Bank payment fields
+  tbankPaymentId  String?              @unique @map("tbank_payment_id")
+  tbankPaymentUrl String?              @map("tbank_payment_url")
+  tbankOrderId    String?              @unique @map("tbank_order_id")
+
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  client          Client               @relation(fields: [clientId], references: [id])
+
+  @@map("balance_payments")
 }
 
 model InvoiceRequest {

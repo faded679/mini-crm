@@ -37,6 +37,20 @@ async function seedLogist() {
   }
 }
 
+async function seedAssistant() {
+  try {
+    const email = "assistent@mail.ru";
+    const existing = await prisma.manager.findUnique({ where: { email } });
+    if (!existing) {
+      const passwordHash = await bcrypt.hash("78907890", 10);
+      await prisma.manager.create({ data: { email, passwordHash, name: "ИИ-ассистент", role: "rukovoditel" } });
+      console.log("[seed] Assistant account created:", email);
+    }
+  } catch (e) {
+    console.error("[seed] seedAssistant error:", e);
+  }
+}
+
 async function seedBoxTypes() {
   await (prisma as any).boxType.upsert({
     where: { name: "Маленькая" },
@@ -60,6 +74,7 @@ export function createApp() {
 
   void seedBoxTypes();
   void seedLogist();
+  void seedAssistant();
 
   app.use(cors({ origin: env.CORS_ORIGINS.split(",") }));
   app.use(express.json({ limit: "10mb" }));

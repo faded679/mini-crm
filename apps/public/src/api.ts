@@ -251,3 +251,37 @@ export function getBalance(token: string) {
     cache: "no-store",
   });
 }
+
+export interface CreateDepositResponse {
+  success: boolean;
+  depositId: number;
+  amount: number;
+  paymentUrl: string;
+  paymentId: string;
+}
+
+export function createDeposit(amount: number, token: string) {
+  return api<CreateDepositResponse>("/public-auth/deposit", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ amount }),
+  });
+}
+
+export interface DepositStatusResponse {
+  depositId: number;
+  status: string;
+  amount: number;
+  tbankStatus: string | null;
+  paidAt: string | null;
+}
+
+export function getDepositStatus(depositId: number, token: string) {
+  return api<DepositStatusResponse>(`/public-auth/deposit/${depositId}/status`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+}
