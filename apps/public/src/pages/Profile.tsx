@@ -59,7 +59,16 @@ export default function Profile() {
   useEffect(() => {
     if (!token || !pendingDepositId) return;
 
+    const startedAt = Number(localStorage.getItem("pending_deposit_started_at") || "0");
+
     const interval = setInterval(() => {
+      const ageMinutes = (Date.now() - startedAt) / 60000;
+      if (ageMinutes >= 30) {
+        clearPendingDeposit();
+        setDepositError("Время ожидания оплаты истекло. Попробуйте снова.");
+        return;
+      }
+
       getDepositStatus(pendingDepositId, token)
         .then((status) => {
           if (status.status === "paid") {
@@ -67,6 +76,13 @@ export default function Profile() {
             setDepositAmount("");
             getBalance(token).then(setBalance).catch(console.error);
             alert("✅ Баланс успешно пополнен!");
+          } else if (
+            status.status === "cancelled" ||
+            status.tbankStatus === "REJECTED" ||
+            status.tbankStatus === "CANCELED"
+          ) {
+            clearPendingDeposit();
+            setDepositError("Оплата отменена или не завершена. Попробуйте снова.");
           }
         })
         .catch((err) => console.error("Deposit status check failed:", err));
@@ -185,16 +201,24 @@ export default function Profile() {
         </div>
         {depositError && <p className="text-sm text-red-500 mt-2">{depositError}</p>}
         {pendingDepositId && pendingDepositAmount && (
-          <p className="text-sm text-blue-600 mt-2">
-            Ожидаем оплату {pendingDepositAmount.toLocaleString("ru-RU")} ₽... После оплаты баланс обновится автоматически.
-          </p>
+          <div className="mt-2 rounded-2xl bg-blue-50 p-3">
+            <p className="text-sm text-blue-700">
+              Ожидаем оплату {pendingDepositAmount.toLocaleString("ru-RU")} ₽. После оплаты баланс обновится автоматически.
+            </p>
+            <button
+              onClick={clearPendingDeposit}
+              className="mt-2 text-sm font-medium text-blue-700 underline underline-offset-2 transition active:opacity-70"
+            >
+              Отменить / ввести другую сумму
+            </button>
+          </div>
         )}
         <button
           onClick={handleDeposit}
           disabled={depositLoading || pendingDepositId !== null || !depositAmount}
           className="w-full mt-3 py-3 rounded-2xl bg-accent text-white text-sm font-semibold transition active:opacity-80 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {depositLoading ? "Создаём платёж..." : "Пополнить баланс"}
+          {depositLoading ? "Создаём платёж..." : pendingDepositId ? "Ожидание оплаты..." : "Пополнить баланс"}
         </button>
       </section>
 
