@@ -16,6 +16,14 @@ export default function Profile() {
   const [pendingDepositId, setPendingDepositId] = useState<number | null>(null);
   const [pendingDepositAmount, setPendingDepositAmount] = useState<number | null>(null);
 
+  const clearPendingDeposit = () => {
+    setPendingDepositId(null);
+    setPendingDepositAmount(null);
+    localStorage.removeItem("pending_deposit_id");
+    localStorage.removeItem("pending_deposit_amount");
+    localStorage.removeItem("pending_deposit_started_at");
+  };
+
   useEffect(() => {
     if (!token) return;
     setLoading(true);
@@ -32,14 +40,30 @@ export default function Profile() {
   }, [token]);
 
   useEffect(() => {
+    if (!token) return;
+    // Восстанавливаем незавершённый депозит (например, после возврата из TBank/PWA)
+    const storedId = localStorage.getItem("pending_deposit_id");
+    const storedAmount = localStorage.getItem("pending_deposit_amount");
+    const startedAt = localStorage.getItem("pending_deposit_started_at");
+    if (storedId && storedAmount && startedAt) {
+      const ageMinutes = (Date.now() - Number(startedAt)) / 60000;
+      if (ageMinutes < 30) {
+        setPendingDepositId(Number(storedId));
+        setPendingDepositAmount(Number(storedAmount));
+      } else {
+        clearPendingDeposit();
+      }
+    }
+  }, [token]);
+
+  useEffect(() => {
     if (!token || !pendingDepositId) return;
 
     const interval = setInterval(() => {
       getDepositStatus(pendingDepositId, token)
         .then((status) => {
           if (status.status === "paid") {
-            setPendingDepositId(null);
-            setPendingDepositAmount(null);
+            clearPendingDeposit();
             setDepositAmount("");
             getBalance(token).then(setBalance).catch(console.error);
             alert("✅ Баланс успешно пополнен!");
@@ -69,7 +93,10 @@ export default function Profile() {
       const result = await createDeposit(amount, token);
       setPendingDepositId(result.depositId);
       setPendingDepositAmount(result.amount);
-      window.open(result.paymentUrl, "_blank");
+      localStorage.setItem("pending_deposit_id", String(result.depositId));
+      localStorage.setItem("pending_deposit_amount", String(result.amount));
+      localStorage.setItem("pending_deposit_started_at", String(Date.now()));
+      window.location.href = result.paymentUrl;
     } catch (err: any) {
       console.error("Failed to create deposit:", err);
       setDepositError(err?.message || "Не удалось создать платёж. Попробуйте позже.");
@@ -152,7 +179,7 @@ export default function Profile() {
             min="1"
             step="1"
             disabled={depositLoading || pendingDepositId !== null}
-            className="flex-1 min-w-0 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+            className="flex-1 min-w-0 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
           />
           <span className="text-sm text-muted">₽</span>
         </div>

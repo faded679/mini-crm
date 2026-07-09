@@ -410,6 +410,7 @@ router.post("/deposit", async (req, res, next) => {
     const orderId = `DEP-${balancePayment.id}-${Date.now()}`.slice(0, 36);
     const description = `Popolnenie balansa`;
     const notificationURL = `${process.env.API_BASE_URL || "https://test.ved31.ru/api"}/webhooks/tbank`;
+    const returnURL = `${process.env.PUBLIC_APP_URL || "https://sologo.ru"}/profile`;
 
     const receipt: any = {
       Taxation: "usn_income",
@@ -432,6 +433,8 @@ router.post("/deposit", async (req, res, next) => {
       description,
       customerKey: client.telegramId || String(clientId),
       notificationURL,
+      successURL: returnURL,
+      failURL: returnURL,
       receipt,
     });
 

@@ -41,6 +41,7 @@ services:
       TBANK_SECRET_KEY: ${TBANK_SECRET_KEY:-}
       TBANK_API_URL: ${TBANK_API_URL:-https://securepay.tinkoff.ru/v2}
       API_BASE_URL: ${API_BASE_URL:-https://test.ved31.ru/api}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://sologo.ru}
       ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}
       ZVONOK_CAMPAIGN_ID: ${ZVONOK_CAMPAIGN_ID:-}
       ZVONOK_VERIFICATION_NUMBER: ${ZVONOK_VERIFICATION_NUMBER:-+78005558607}
