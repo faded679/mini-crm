@@ -47,7 +47,7 @@ export default function Home() {
           <img src="/logotip.jpg" alt="Логотип" className="w-[42px] h-[42px] rounded-xl object-contain flex-shrink-0" />
           <div>
             <p className="text-muted text-xs m-0">Логистический сервис</p>
-            <h1 className="text-heading text-[21px] font-bold m-0">Доставка на маркетплейсы</h1>
+            <h1 className="text-heading text-[19px] font-bold m-0">Доставка на маркетплейсы</h1>
           </div>
         </div>
       </section>
