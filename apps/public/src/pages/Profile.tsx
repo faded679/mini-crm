@@ -136,7 +136,7 @@ export default function Profile() {
           <img src="/logotip.jpg" alt="Логотип" className="w-[42px] h-[42px] rounded-xl object-contain flex-shrink-0" />
           <div>
             <p className="text-muted text-xs m-0">Логистический сервис</p>
-            <h1 className="text-heading text-[21px] font-bold m-0">Доставка на маркетплейсы</h1>
+            <h1 className="text-heading text-[19px] font-bold m-0">Доставка на маркетплейсы</h1>
           </div>
         </div>
       </section>
@@ -174,7 +174,7 @@ export default function Profile() {
               <p className="text-sm text-muted mt-2">Нет привязанных организаций</p>
             )}
             <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mt-3">
-              ⚠️ Функция находится в стадии доработки. Отображаемая сумма может отличаться от реального баланса.
+              ⚠️ Функция находится в стадии разработки. Сумма может отличаться от баланса.
             </p>
           </>
         )}
@@ -183,7 +183,7 @@ export default function Profile() {
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <p className="text-muted text-xs">Пополнение баланса по СБП</p>
         <p className="text-sm text-heading mt-2 mb-3">
-          Введите сумму, которую хотите зачислить на баланс. После подтверждения откроется окно оплаты T-Bank.
+          Введите сумму, требуемую к зачислению на баланс. После подтверждения откроется окно оплаты СПБ
         </p>
         <div className="flex items-center gap-2">
           <input
