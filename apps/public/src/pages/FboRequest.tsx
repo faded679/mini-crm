@@ -8,6 +8,7 @@ import {
   getRates,
   getScheduleForCity,
   getClientServicePrices,
+  getMe,
   type City,
   type BoxType,
   type PalletType,
@@ -15,7 +16,7 @@ import {
   type ScheduleEntry,
   type ClientServicePrice,
 } from "../api";
-import { getPhone } from "../auth";
+import { getPhone, getToken } from "../auth";
 
 interface LineItem {
   packaging: "pallets" | "boxes";
@@ -50,6 +51,21 @@ export default function FboRequest() {
   const [error, setError] = useState("");
   const [comment, setComment] = useState("");
   const [deliveryTypeId] = useState<number | null>(2); // FBO
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [checkingBlock, setCheckingBlock] = useState(true);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      setCheckingBlock(true);
+      getMe(token)
+        .then((data) => setIsBlocked(data.isBlocked))
+        .catch(() => setIsBlocked(false))
+        .finally(() => setCheckingBlock(false));
+    } else {
+      setCheckingBlock(false);
+    }
+  }, []);
 
   useEffect(() => {
     getCities().then(setCities).catch(() => {});
@@ -128,6 +144,10 @@ export default function FboRequest() {
 
   const handleSubmit = async () => {
     if (!selectedCity || items.length === 0) return;
+    if (isBlocked) {
+      setError("Ваш аккаунт заблокирован для создания новых заявок");
+      return;
+    }
     const phone = getPhone();
     if (!phone) {
       setError("Не удалось получить данные авторизации");
@@ -357,12 +377,17 @@ export default function FboRequest() {
             placeholder="Комментарий к заявке (необязательно)..."
             className="w-full px-3 py-2.5 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm resize-none transition-all focus:border-accent"
           />
+          {isBlocked && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-2xl p-3">
+              Создание заявок заблокировано. Согласно правилам нашего сервиса, ваш аккаунт ограничен для создания новых заявок.
+            </p>
+          )}
           <button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || isBlocked || checkingBlock}
             className="w-full py-3 rounded-2xl bg-accent text-white text-sm font-semibold disabled:opacity-50 transition active:bg-accent-dark"
           >
-            {submitting ? "Отправка..." : "Отправить заявку"}
+            {submitting ? "Отправка..." : isBlocked ? "Создание заявок заблокировано" : "Отправить заявку"}
           </button>
         </>
       )}

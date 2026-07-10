@@ -171,6 +171,7 @@ router.get("/check-verification/:sessionId", async (req, res, next) => {
             phone: clientPhone,
             email: client.email,
             inn: hasCounterparty ? client.counterparties[0]?.counterparty?.inn : null,
+            isBlocked: client.isBlocked,
           },
           requiresProfileCompletion,
         });
@@ -358,6 +359,35 @@ router.get("/balance", async (req, res, next) => {
       balance, // положительный = долг, отрицательный = переплата
       organizationCount: client.counterparties?.length || 0,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /public-auth/me - текущий клиент (блокировка, профиль)
+router.get("/me", async (req, res, next) => {
+  try {
+    const clientId = getClientIdFromToken(req);
+    const client = await (prisma as any).client.findUnique({
+      where: { id: clientId },
+      select: { id: true, phone: true, email: true, firstName: true, lastName: true, isBlocked: true },
+    });
+    if (!client) throw new ApiError(404, "Client not found");
+    res.json(client);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /public-auth/company-info - активные новости и информация для клиентов
+router.get("/company-info", async (_req, res, next) => {
+  try {
+    const items = await (prisma as any).companyInfo.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, type: true, title: true, content: true, createdAt: true },
+    });
+    res.json(items);
   } catch (err) {
     next(err);
   }

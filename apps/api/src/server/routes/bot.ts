@@ -890,6 +890,10 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
       });
     }
 
+    if (client.isBlocked) {
+      throw new ApiError(403, "Ваш аккаунт заблокирован для создания новых заявок");
+    }
+
     const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
     let cityRecord;
     if (isFbs) {

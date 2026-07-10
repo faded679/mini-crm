@@ -9,6 +9,7 @@ import {
   getCounterparties,
   updateCounterparty,
   getCounterpartyFinanceSummary,
+  updateClientBlockStatus,
   type Client,
   type Counterparty,
   type CounterpartyPayload,
@@ -69,6 +70,7 @@ export default function Counterparties() {
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
   const [creatingContact, setCreatingContact] = useState(false);
+  const [blockLoadingId, setBlockLoadingId] = useState<number | null>(null);
 
   // Finance modal
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -207,6 +209,20 @@ export default function Counterparties() {
         contactClientIds: exists ? current.filter((x) => x !== id) : [...current, id],
       };
     });
+  }
+
+  async function toggleClientBlock(client: Client) {
+    if (blockLoadingId) return;
+    setBlockLoadingId(client.id);
+    try {
+      await updateClientBlockStatus(client.id, !client.isBlocked);
+      const updatedClients = await getClients();
+      setClients(updatedClients);
+    } catch (e: any) {
+      setError(e?.message || "Ошибка изменения статуса блокировки");
+    } finally {
+      setBlockLoadingId(null);
+    }
   }
 
   async function createNewContact() {
@@ -665,17 +681,30 @@ export default function Counterparties() {
                     const checked = (form.contactClientIds ?? []).includes(c.id);
                     const name = `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim();
                     const label = name || (c.username ? `@${c.username}` : c.telegramId);
+                    const blocking = blockLoadingId === c.id;
                     return (
                       <label
                         key={c.id}
-                        className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0 text-sm text-gray-900 dark:text-gray-100"
+                        className={`flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-gray-700 last:border-b-0 text-sm ${c.isBlocked ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" : "text-gray-900 dark:text-gray-100"}`}
                       >
                         <input type="checkbox" checked={checked} onChange={() => toggleContact(c.id)} />
                         <div className="flex-1 flex items-center justify-between">
                           <span>{label}</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {c.phone && <span className="mr-3">📱 {c.phone}</span>}
-                            <span>TG: {c.telegramId}</span>
+                          <span className="flex items-center gap-2 text-xs">
+                            {c.phone && <span className="text-gray-500 dark:text-gray-400">📱 {c.phone}</span>}
+                            <span className="text-gray-500 dark:text-gray-400">TG: {c.telegramId}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleClientBlock(c)}
+                              disabled={blocking}
+                              className={`px-2 py-1 rounded text-xs font-medium transition disabled:opacity-50 ${
+                                c.isBlocked
+                                  ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300"
+                                  : "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300"
+                              }`}
+                            >
+                              {blocking ? "..." : c.isBlocked ? "Разблокировать" : "Заблокировать"}
+                            </button>
                           </span>
                         </div>
                       </label>

@@ -260,6 +260,34 @@ export interface CreateDepositResponse {
   paymentId: string;
 }
 
+export interface MeResponse {
+  id: number;
+  phone: string | null;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  isBlocked: boolean;
+}
+
+export interface CompanyInfoItem {
+  id: number;
+  type: "news" | "info";
+  title: string;
+  content: string;
+  createdAt: string;
+}
+
+export function getMe(token: string) {
+  return api<MeResponse>("/public-auth/me", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+}
+
+export function getCompanyInfo() {
+  return api<CompanyInfoItem[]>("/public-auth/company-info", { cache: "no-store" });
+}
+
 export function createDeposit(amount: number, token: string) {
   return api<CreateDepositResponse>("/public-auth/deposit", {
     method: "POST",

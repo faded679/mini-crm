@@ -48,6 +48,7 @@ export interface Client {
   username: string | null;
   phone?: string | null;
   email?: string | null;
+  isBlocked?: boolean;
   createdAt: string;
   _count?: { requests: number };
   counterparties?: Array<{ id: number; counterparty: Counterparty }>;
@@ -625,6 +626,54 @@ export function updateCounterparty(id: number, payload: CounterpartyPayload) {
 
 export function deleteCounterparty(id: number) {
   return request<void>(`/admin/counterparties/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function updateClientBlockStatus(id: number, isBlocked: boolean) {
+  return request<Client>(`/admin/clients/${id}/block`, {
+    method: "PATCH",
+    body: JSON.stringify({ isBlocked }),
+  });
+}
+
+export interface CompanyInfoItem {
+  id: number;
+  type: "news" | "info";
+  title: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompanyInfoPayload {
+  type: "news" | "info";
+  title: string;
+  content: string;
+  isActive?: boolean;
+}
+
+export function getCompanyInfo() {
+  return request<CompanyInfoItem[]>("/admin/company-info");
+}
+
+export function createCompanyInfo(payload: CompanyInfoPayload) {
+  return request<CompanyInfoItem>("/admin/company-info", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCompanyInfo(id: number, payload: Partial<CompanyInfoPayload>) {
+  return request<CompanyInfoItem>(`/admin/company-info/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCompanyInfo(id: number) {
+  return request<void>(`/admin/company-info/${id}`, {
     method: "DELETE",
   });
 }

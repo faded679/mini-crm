@@ -1491,6 +1491,117 @@ router.delete("/clients/:id", async (req: Request, res: Response, next: NextFunc
   }
 });
 
+// PATCH /admin/clients/:id/block - заблокировать/разблокировать клиента
+router.patch("/clients/:id/block", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { isBlocked } = req.body as { isBlocked?: boolean };
+    if (typeof isBlocked !== "boolean") throw new ApiError(400, "isBlocked boolean is required");
+
+    const client = await prisma.client.findUnique({ where: { id } });
+    if (!client) throw new ApiError(404, "Client not found");
+
+    const updated = await prisma.client.update({
+      where: { id },
+      data: { isBlocked },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --------------- CompanyInfo (новости и важная информация) ---------------
+
+// GET /admin/company-info
+router.get("/company-info", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const items = await prisma.companyInfo.findMany({ orderBy: { createdAt: "desc" } });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/company-info
+router.post("/company-info", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { type, title, content, isActive } = req.body as {
+      type?: string;
+      title?: string;
+      content?: string;
+      isActive?: boolean;
+    };
+    if (!title?.trim()) throw new ApiError(400, "Title is required");
+    if (!content?.trim()) throw new ApiError(400, "Content is required");
+    if (!type || (type !== "news" && type !== "info")) throw new ApiError(400, "Type must be news or info");
+
+    const item = await prisma.companyInfo.create({
+      data: {
+        type,
+        title: title.trim(),
+        content: content.trim(),
+        isActive: typeof isActive === "boolean" ? isActive : true,
+      },
+    });
+
+    res.status(201).json(item);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /admin/company-info/:id
+router.patch("/company-info/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { type, title, content, isActive } = req.body as {
+      type?: string;
+      title?: string;
+      content?: string;
+      isActive?: boolean;
+    };
+
+    const existing = await prisma.companyInfo.findUnique({ where: { id } });
+    if (!existing) throw new ApiError(404, "Not found");
+
+    const data: Record<string, any> = {};
+    if (type !== undefined) {
+      if (type !== "news" && type !== "info") throw new ApiError(400, "Type must be news or info");
+      data.type = type;
+    }
+    if (title !== undefined) data.title = title.trim();
+    if (content !== undefined) data.content = content.trim();
+    if (isActive !== undefined) data.isActive = isActive;
+
+    const updated = await prisma.companyInfo.update({ where: { id }, data });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/company-info/:id
+router.delete("/company-info/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const existing = await prisma.companyInfo.findUnique({ where: { id } });
+    if (!existing) throw new ApiError(404, "Not found");
+
+    await prisma.companyInfo.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/counterparties
 router.get("/counterparties", async (_req: Request, res: Response, next: NextFunction) => {
   try {

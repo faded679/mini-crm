@@ -12,6 +12,7 @@ import Counterparties from "./pages/Counterparties";
 import Invoices from "./pages/Invoices";
 import Prices from "./pages/Prices";
 import Broadcast from "./pages/Broadcast";
+import CompanyInfo from "./pages/CompanyInfo";
 import Finance from "./pages/Finance";
 import Reconciliation from "./pages/Reconciliation";
 import WarehouseLogin from "./pages/WarehouseLogin";
@@ -58,6 +59,7 @@ export default function App() {
               <Route path="invoices" element={<Invoices />} />
               <Route path="prices" element={<Prices />} />
               <Route path="broadcast" element={<Broadcast />} />
+              <Route path="company-info" element={<CompanyInfo />} />
               <Route path="finance" element={<Finance />} />
               <Route path="finance/reconciliation/:id" element={<Reconciliation />} />
             </Route>

@@ -50,6 +50,7 @@ model Client {
   email        String?
   consentGiven Boolean          @default(false) @map("consent_given")
   consentAt    DateTime?        @map("consent_at")
+  isBlocked    Boolean          @default(false) @map("is_blocked")
   createdAt    DateTime         @default(now()) @map("created_at")
   requests     ShipmentRequest[]
   counterparties CounterpartyContact[]
@@ -554,4 +555,16 @@ model RequestPhoto {
 
   @@index([requestId])
   @@map("request_photos")
+}
+
+model CompanyInfo {
+  id         Int      @id @default(autoincrement())
+  type       String   @default("info")
+  title      String
+  content    String
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("company_info")
 }
