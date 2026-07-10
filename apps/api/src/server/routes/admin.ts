@@ -1720,6 +1720,36 @@ router.patch("/counterparties/:id", async (req: Request, res: Response, next: Ne
   }
 });
 
+// PATCH /admin/counterparties/:id/block - заблокировать/разблокировать всех клиентов организации
+router.patch("/counterparties/:id/block", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { isBlocked } = req.body as { isBlocked?: boolean };
+    if (typeof isBlocked !== "boolean") throw new ApiError(400, "isBlocked boolean is required");
+
+    const counterparty = await prisma.counterparty.findUnique({
+      where: { id },
+      include: { contacts: { select: { clientId: true } } },
+    });
+    if (!counterparty) throw new ApiError(404, "Counterparty not found");
+
+    const clientIds = counterparty.contacts.map((c) => c.clientId);
+
+    if (clientIds.length > 0) {
+      await prisma.client.updateMany({
+        where: { id: { in: clientIds } },
+        data: { isBlocked },
+      });
+    }
+
+    res.json({ success: true, affectedClients: clientIds.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /admin/counterparties/:id
 router.delete("/counterparties/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {

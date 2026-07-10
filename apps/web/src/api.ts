@@ -637,6 +637,13 @@ export function updateClientBlockStatus(id: number, isBlocked: boolean) {
   });
 }
 
+export function blockCounterparty(id: number, isBlocked: boolean) {
+  return request<{ success: boolean; affectedClients: number }>(`/admin/counterparties/${id}/block`, {
+    method: "PATCH",
+    body: JSON.stringify({ isBlocked }),
+  });
+}
+
 export interface CompanyInfoItem {
   id: number;
   type: "news" | "info";

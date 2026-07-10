@@ -10,6 +10,7 @@ import {
   updateCounterparty,
   getCounterpartyFinanceSummary,
   updateClientBlockStatus,
+  blockCounterparty,
   type Client,
   type Counterparty,
   type CounterpartyPayload,
@@ -71,6 +72,7 @@ export default function Counterparties() {
   const [newContactEmail, setNewContactEmail] = useState("");
   const [creatingContact, setCreatingContact] = useState(false);
   const [blockLoadingId, setBlockLoadingId] = useState<number | null>(null);
+  const [cpBlockLoadingId, setCpBlockLoadingId] = useState<number | null>(null);
 
   // Finance modal
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -225,6 +227,24 @@ export default function Counterparties() {
     }
   }
 
+  async function toggleCounterpartyBlock(cp: Counterparty, block: boolean) {
+    if (cpBlockLoadingId) return;
+    setCpBlockLoadingId(cp.id);
+    try {
+      await blockCounterparty(cp.id, block);
+      const [updatedCounterparties, updatedClients] = await Promise.all([
+        getCounterparties(),
+        getClients(),
+      ]);
+      setCounterparties(updatedCounterparties);
+      setClients(updatedClients);
+    } catch (e: any) {
+      setError(e?.message || "Ошибка изменения статуса блокировки");
+    } finally {
+      setCpBlockLoadingId(null);
+    }
+  }
+
   async function createNewContact() {
     if (creatingContact) return;
     if (!newContactFirstName.trim() && !newContactPhone.trim() && !newContactEmail.trim()) {
@@ -362,9 +382,28 @@ export default function Counterparties() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredCounterparties.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">{c.shortName || c.name}</td>
+              {filteredCounterparties.map((c) => {
+                const hasContacts = c.contacts.length > 0;
+                const allBlocked = hasContacts && c.contacts.every((x) => x.client.isBlocked);
+                const someBlocked = hasContacts && c.contacts.some((x) => x.client.isBlocked);
+                const cpBlocking = cpBlockLoadingId === c.id;
+                return (
+                <tr key={c.id} className={`transition ${allBlocked ? "bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+                  <td className="px-4 py-3 text-sm font-medium">
+                    <span className={allBlocked ? "text-red-700 dark:text-red-300" : "text-gray-900 dark:text-gray-100"}>
+                      {c.shortName || c.name}
+                    </span>
+                    {allBlocked && (
+                      <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                        заблокирована
+                      </span>
+                    )}
+                    {someBlocked && !allBlocked && (
+                      <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                        частично
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.inn || "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                     {c.contacts.length === 0
@@ -379,9 +418,27 @@ export default function Counterparties() {
                           .join(", ")}
                   </td>
                   <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                    {hasContacts && (
+                      <>
+                        <button
+                          onClick={() => toggleCounterpartyBlock(c, true)}
+                          disabled={cpBlocking || allBlocked}
+                          className="px-3 py-1.5 rounded-lg text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 mr-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {cpBlocking ? "..." : "Заблокировать"}
+                        </button>
+                        <button
+                          onClick={() => toggleCounterpartyBlock(c, false)}
+                          disabled={cpBlocking || !someBlocked}
+                          className="px-3 py-1.5 rounded-lg text-sm bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:text-green-300 mr-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {cpBlocking ? "..." : "Разблокировать"}
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => openFinance(c)}
-                      className="px-3 py-1.5 rounded-lg text-sm bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:text-green-400 mr-2"
+                      className="px-3 py-1.5 rounded-lg text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-400 mr-1"
                     >
                       Финансы
                     </button>
@@ -391,16 +448,10 @@ export default function Counterparties() {
                     >
                       Изменить
                     </button>
-                    {/* <button
-                      onClick={() => onDelete(c.id)}
-                      className="ml-2 px-3 py-1.5 rounded-lg text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/40 dark:text-red-200"
-                      disabled={saving}
-                    >
-                      Удалить
-                    </button> */}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
