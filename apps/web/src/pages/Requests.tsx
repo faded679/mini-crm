@@ -157,7 +157,17 @@ export default function Requests() {
     }, { replace: true });
   }, [setSearchParams]);
 
-  const setFilterStatus = (v: RequestStatus | "all") => setParam("status", v);
+  const setFilterStatus = (v: RequestStatus | "all") => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (v === "new") {
+        next.delete("status");
+      } else {
+        next.set("status", v);
+      }
+      return next;
+    }, { replace: true });
+  };
   const setFilterCity = (v: string) => setParam("city", v);
   const setFilterDate = (v: string) => setParam("date", v);
   const setFilterType = (v: string) => setParam("type", v);
