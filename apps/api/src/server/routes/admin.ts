@@ -288,7 +288,7 @@ router.get("/requests", async (req: Request, res: Response, next: NextFunction) 
   try {
     const filterStatus = req.query.status as string | undefined;
     const where: any = { status: { not: "archived" } };
-    if (filterStatus) {
+    if (filterStatus && filterStatus !== "all") {
       where.status = filterStatus;
     }
 
