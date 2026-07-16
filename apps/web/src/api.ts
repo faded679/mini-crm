@@ -244,9 +244,12 @@ export function createAdminRequest(payload: CreateAdminRequestPayload) {
   });
 }
 
-export function getRequests(all?: boolean) {
-  const qs = all ? "?all=1" : "";
-  return request<ShipmentRequest[]>(`/admin/requests${qs}`);
+export function getRequests(params?: { status?: string; all?: boolean }) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.all) query.set("all", "1");
+  const qs = query.toString();
+  return request<ShipmentRequest[]>(`/admin/requests${qs ? "?" + qs : ""}`);
 }
 
 export function getRequestById(id: number) {

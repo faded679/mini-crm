@@ -286,15 +286,14 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 // GET /admin/requests
 router.get("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const showAll = req.query.all === "true" || req.query.all === "1";
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const filterStatus = req.query.status as string | undefined;
+    const where: any = { status: { not: "archived" } };
+    if (filterStatus) {
+      where.status = filterStatus;
+    }
 
     const requests = await (prisma as any).shipmentRequest.findMany({
-      where: {
-        status: { not: "archived" },
-        ...(showAll ? {} : { createdAt: { gte: thirtyDaysAgo } }),
-      },
+      where,
       include: { 
         client: {
           include: {

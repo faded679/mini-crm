@@ -111,11 +111,12 @@ export default function Requests() {
 
   const [searchOrg, setSearchOrg] = useState("");
 
-  const filterStatus = (searchParams.get("status") as RequestStatus | "all") || "all";
+  const urlStatus = searchParams.get("status") as RequestStatus | "all" | null;
+  const filterStatus = urlStatus || "new";
   const filterCity = searchParams.get("city") || "all";
   const filterDate = searchParams.get("date") || "";
   const filterType = searchParams.get("type") || "all";
-  const showAll = searchParams.get("all") === "1";
+  const showAll = filterStatus === "all";
   const sortParam = searchParams.get("sort");
   const sortKey = isSortKey(sortParam) ? sortParam : "id";
   const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
@@ -166,7 +167,7 @@ export default function Requests() {
 
     const load = async () => {
       try {
-        const data = await getRequests(showAll);
+        const data = await getRequests(showAll ? { all: true } : { status: "new" });
         if (!alive) return;
         setRequests(data);
       } finally {
@@ -187,7 +188,7 @@ export default function Requests() {
     if (selectedRequestId === null) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setSelectedRequestId(null); getRequests(showAll).then(setRequests); }
+      if (e.key === "Escape") { setSelectedRequestId(null); getRequests(showAll ? { all: true } : { status: "new" }).then(setRequests); }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -251,7 +252,7 @@ export default function Requests() {
     setBulkUpdating(true);
     try {
       await bulkUpdateRequestStatus([...selectedIds], bulkStatus);
-      const data = await getRequests(showAll);
+      const data = await getRequests(showAll ? { all: true } : { status: "new" });
       setRequests(data);
       setSelectedIds(new Set());
     } catch {
@@ -497,9 +498,9 @@ export default function Requests() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (showAll) {
-        next.delete("all");
+        next.set("status", "new");
       } else {
-        next.set("all", "1");
+        next.set("status", "all");
       }
       return next;
     }, { replace: true });
