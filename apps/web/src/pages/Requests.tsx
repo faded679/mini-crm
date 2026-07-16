@@ -491,40 +491,20 @@ export default function Requests() {
     return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Загрузка...</div>;
   }
 
-  const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || !!filterDate || filterType !== "all";
-
-  const toggleShowAll = () => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (showAll) {
-        next.set("status", "new");
-      } else {
-        next.set("status", "all");
-      }
-      return next;
-    }, { replace: true });
-  };
+  const hasActiveFilters = filterStatus !== "new" || filterCity !== "all" || !!filterDate || filterType !== "all";
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Заявки</h1>
-        <div className="flex items-center gap-3">
+        {hasActiveFilters && (
           <button
-            onClick={toggleShowAll}
-            className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 transition"
+            onClick={() => setSearchParams({}, { replace: true })}
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
-            {showAll ? "Показать заявки за 30 дней" : "Показать все заявки"}
+            Сбросить фильтры
           </button>
-          {hasActiveFilters && (
-            <button
-              onClick={() => setSearchParams({}, { replace: true })}
-              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Сбросить фильтры
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-6 mb-6">
