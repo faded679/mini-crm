@@ -167,7 +167,7 @@ export default function Requests() {
 
     const load = async () => {
       try {
-        const data = await getRequests(showAll ? { all: true } : { status: "new" });
+        const data = await getRequests(showAll ? { all: true } : { status: filterStatus });
         if (!alive) return;
         setRequests(data);
       } finally {
@@ -182,18 +182,18 @@ export default function Requests() {
       alive = false;
       window.clearInterval(id);
     };
-  }, [showAll]);
+  }, [showAll, filterStatus]);
 
   useEffect(() => {
     if (selectedRequestId === null) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setSelectedRequestId(null); getRequests(showAll ? { all: true } : { status: "new" }).then(setRequests); }
+      if (e.key === "Escape") { setSelectedRequestId(null); getRequests(showAll ? { all: true } : { status: filterStatus }).then(setRequests); }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedRequestId, showAll]);
+  }, [selectedRequestId, showAll, filterStatus]);
 
   const uniqueCities = useMemo(() => {
     const set = new Set(requests.map((r) => r.city));
@@ -206,7 +206,6 @@ export default function Requests() {
   }, [requests]);
 
   const filtered = requests.filter((r) => {
-    if (filterStatus !== "all" && r.status !== filterStatus) return false;
     if (filterCity !== "all" && r.city !== filterCity) return false;
     if (filterDate && !r.deliveryDate.startsWith(filterDate)) return false;
     if (filterType !== "all") {
@@ -252,7 +251,7 @@ export default function Requests() {
     setBulkUpdating(true);
     try {
       await bulkUpdateRequestStatus([...selectedIds], bulkStatus);
-      const data = await getRequests(showAll ? { all: true } : { status: "new" });
+      const data = await getRequests(showAll ? { all: true } : { status: filterStatus });
       setRequests(data);
       setSelectedIds(new Set());
     } catch {
