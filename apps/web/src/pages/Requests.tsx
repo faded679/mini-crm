@@ -115,6 +115,7 @@ export default function Requests() {
   const filterCity = searchParams.get("city") || "all";
   const filterDate = searchParams.get("date") || "";
   const filterType = searchParams.get("type") || "all";
+  const showAll = searchParams.get("all") === "1";
   const sortParam = searchParams.get("sort");
   const sortKey = isSortKey(sortParam) ? sortParam : "id";
   const sortDir = isSortDir(searchParams.get("dir")) ? searchParams.get("dir") : "desc";
@@ -165,7 +166,7 @@ export default function Requests() {
 
     const load = async () => {
       try {
-        const data = await getRequests();
+        const data = await getRequests(showAll);
         if (!alive) return;
         setRequests(data);
       } finally {
@@ -180,18 +181,18 @@ export default function Requests() {
       alive = false;
       window.clearInterval(id);
     };
-  }, []);
+  }, [showAll]);
 
   useEffect(() => {
     if (selectedRequestId === null) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setSelectedRequestId(null); getRequests().then(setRequests); }
+      if (e.key === "Escape") { setSelectedRequestId(null); getRequests(showAll).then(setRequests); }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedRequestId]);
+  }, [selectedRequestId, showAll]);
 
   const uniqueCities = useMemo(() => {
     const set = new Set(requests.map((r) => r.city));
@@ -250,7 +251,7 @@ export default function Requests() {
     setBulkUpdating(true);
     try {
       await bulkUpdateRequestStatus([...selectedIds], bulkStatus);
-      const data = await getRequests();
+      const data = await getRequests(showAll);
       setRequests(data);
       setSelectedIds(new Set());
     } catch {
@@ -492,18 +493,38 @@ export default function Requests() {
 
   const hasActiveFilters = filterStatus !== "all" || filterCity !== "all" || !!filterDate || filterType !== "all";
 
+  const toggleShowAll = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (showAll) {
+        next.delete("all");
+      } else {
+        next.set("all", "1");
+      }
+      return next;
+    }, { replace: true });
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Заявки</h1>
-        {hasActiveFilters && (
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setSearchParams({}, { replace: true })}
-            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            onClick={toggleShowAll}
+            className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 transition"
           >
-            Сбросить фильтры
+            {showAll ? "Показать заявки за 30 дней" : "Показать все заявки"}
           </button>
-        )}
+          {hasActiveFilters && (
+            <button
+              onClick={() => setSearchParams({}, { replace: true })}
+              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Сбросить фильтры
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-6 mb-6">

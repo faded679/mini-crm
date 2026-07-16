@@ -244,8 +244,9 @@ export function createAdminRequest(payload: CreateAdminRequestPayload) {
   });
 }
 
-export function getRequests() {
-  return request<ShipmentRequest[]>("/admin/requests");
+export function getRequests(all?: boolean) {
+  const qs = all ? "?all=1" : "";
+  return request<ShipmentRequest[]>(`/admin/requests${qs}`);
 }
 
 export function getRequestById(id: number) {

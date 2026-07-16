@@ -46,7 +46,7 @@ export default function Finance() {
   const navigate = useNavigate();
   const { manager } = useAuth();
   const isDirector = manager?.role === "director";
-  const [tab, setTab] = useState<Tab>("transactions");
+  const [tab, setTab] = useState<Tab>("balances");
 
   // Transactions tab
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
