@@ -7,6 +7,19 @@ function formatDateRu(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU");
 }
 
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLastMonthDate() {
+  const date = new Date();
+  date.setMonth(date.getMonth() - 1);
+  return formatDateInput(date);
+}
+
 function getInvoiceTotal(inv: Invoice) {
   if (!inv.items || inv.items.length === 0) return 0;
   return inv.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
@@ -46,7 +59,7 @@ export default function Invoices() {
 
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
-  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>(getLastMonthDate);
   const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -253,7 +266,7 @@ export default function Invoices() {
               onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); }}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
-              ✕
+              Сбросить даты
             </button>
           )}
         </div>
