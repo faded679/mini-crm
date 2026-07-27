@@ -45,7 +45,23 @@ services:
       ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}
       ZVONOK_CAMPAIGN_ID: ${ZVONOK_CAMPAIGN_ID:-}
       ZVONOK_VERIFICATION_NUMBER: ${ZVONOK_VERIFICATION_NUMBER:-+78005558607}
-      EMAIL_SERVICE_URL: http://host.docker.internal:5001
+      EMAIL_SERVICE_URL: http://mini-crm-email-service:5001
+
+  email-service:
+    build:
+      context: ../infra/email-service
+    container_name: mini-crm-email-service
+    restart: unless-stopped
+    environment:
+      SMTP_HOST: ${SMTP_HOST:-smtp.mail.ru}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Соловьев-Экспресс}
+      IMAP_SERVER: ${IMAP_SERVER:-imap.mail.ru}
+      IMAP_PORT: ${IMAP_PORT:-993}
+      IMAP_USER: ${IMAP_USER:-}
+      IMAP_PASS: ${IMAP_PASS:-}
 
   bot:
     build:
