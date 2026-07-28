@@ -370,10 +370,23 @@ router.get("/me", async (req, res, next) => {
     const clientId = getClientIdFromToken(req);
     const client = await (prisma as any).client.findUnique({
       where: { id: clientId },
-      select: { id: true, phone: true, email: true, firstName: true, lastName: true, isBlocked: true },
+      include: {
+        counterparties: {
+          include: { counterparty: { select: { name: true, shortName: true } } },
+        },
+      },
     });
     if (!client) throw new ApiError(404, "Client not found");
-    res.json(client);
+    const org = client.counterparties[0]?.counterparty;
+    res.json({
+      id: client.id,
+      phone: client.phone,
+      email: client.email,
+      firstName: client.firstName,
+      lastName: client.lastName,
+      isBlocked: client.isBlocked,
+      organization: org?.shortName || org?.name || null,
+    });
   } catch (err) {
     next(err);
   }
@@ -396,16 +409,33 @@ router.get("/company-info", async (_req, res, next) => {
 // POST /public-auth/feedback - обратная связь от клиентов
 router.post("/feedback", async (req, res, next) => {
   try {
-    const { name, email, message } = req.body as { name?: string; email?: string; message?: string };
+    const clientId = getClientIdFromToken(req);
+    const { message } = req.body as { message?: string };
 
     if (!message?.trim()) {
       throw new ApiError(400, "Сообщение обязательно");
     }
 
+    const client = await (prisma as any).client.findUnique({
+      where: { id: clientId },
+      include: {
+        counterparties: {
+          include: { counterparty: { select: { name: true, shortName: true } } },
+        },
+      },
+    });
+    if (!client) throw new ApiError(404, "Client not found");
+
+    const org = client.counterparties[0]?.counterparty;
+    const fullName = [client.lastName, client.firstName].filter(Boolean).join(" ").trim();
+
     const item = await (prisma as any).feedback.create({
       data: {
-        name: (name || "").trim(),
-        email: (email || "").trim(),
+        clientId,
+        clientName: fullName || client.username || "Клиент",
+        clientEmail: client.email || "",
+        clientPhone: client.phone || "",
+        organization: org?.shortName || org?.name || "",
         message: message.trim(),
       },
     });

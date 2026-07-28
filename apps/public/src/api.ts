@@ -267,6 +267,7 @@ export interface MeResponse {
   firstName: string | null;
   lastName: string | null;
   isBlocked: boolean;
+  organization: string | null;
 }
 
 export interface CompanyInfoItem {
@@ -289,8 +290,6 @@ export function getCompanyInfo() {
 }
 
 export interface FeedbackPayload {
-  name?: string;
-  email?: string;
   message: string;
 }
 
@@ -299,10 +298,13 @@ export interface FeedbackResponse {
   success: boolean;
 }
 
-export function createFeedback(payload: FeedbackPayload) {
+export function createFeedback(payload: FeedbackPayload, token: string) {
   return api<FeedbackResponse>("/public-auth/feedback", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(payload),
   });
 }

@@ -570,11 +570,14 @@ model CompanyInfo {
 }
 
 model Feedback {
-  id        Int      @id @default(autoincrement())
-  name      String   @default("")
-  email     String   @default("")
-  message   String
-  createdAt DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  clientId     Int?     @map("client_id")
+  clientName   String   @default("") @map("client_name")
+  clientEmail  String   @default("") @map("client_email")
+  clientPhone  String   @default("") @map("client_phone")
+  organization String   @default("") @map("organization")
+  message      String
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("feedback")
 }

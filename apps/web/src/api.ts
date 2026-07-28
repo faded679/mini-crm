@@ -667,8 +667,11 @@ export interface CompanyInfoPayload {
 
 export interface FeedbackItem {
   id: number;
-  name: string;
-  email: string;
+  clientId: number | null;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  organization: string;
   message: string;
   createdAt: string;
 }

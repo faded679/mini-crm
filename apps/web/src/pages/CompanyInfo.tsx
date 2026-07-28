@@ -314,16 +314,24 @@ export default function CompanyInfo() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {item.name || "Аноним"}
+                        {item.clientName || "Клиент"}
                       </span>
-                      {item.email && (
-                        <a href={`mailto:${item.email}`} className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                          {item.email}
-                        </a>
+                      {item.organization && (
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded">
+                          {item.organization}
+                        </span>
                       )}
                       <span className="text-xs text-gray-400 dark:text-gray-500">{fmtDate(item.createdAt)}</span>
                     </div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{item.message}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line mb-2">{item.message}</p>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      {item.clientPhone && <span>Телефон: {item.clientPhone}</span>}
+                      {item.clientEmail && (
+                        <a href={`mailto:${item.clientEmail}`} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                          {item.clientEmail}
+                        </a>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => onDeleteFeedback(item.id)}

@@ -13,8 +13,6 @@ export default function Home() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedbackName, setFeedbackName] = useState("");
-  const [feedbackEmail, setFeedbackEmail] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
 
@@ -46,22 +44,21 @@ export default function Home() {
 
   async function handleFeedbackSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!feedbackMessage.trim()) return;
+    if (!token || !feedbackMessage.trim()) return;
     setFeedbackStatus("sending");
     try {
-      await createFeedback({
-        name: feedbackName,
-        email: feedbackEmail,
-        message: feedbackMessage,
-      });
+      await createFeedback({ message: feedbackMessage }, token);
       setFeedbackStatus("success");
-      setFeedbackName("");
-      setFeedbackEmail("");
       setFeedbackMessage("");
     } catch {
       setFeedbackStatus("error");
     }
   }
+
+  const clientDisplayName = me
+    ? [me.lastName, me.firstName].filter(Boolean).join(" ").trim() || "Клиент"
+    : null;
+  const clientOrg = me?.organization;
 
   return (
     <div className="fade-in">
@@ -139,25 +136,20 @@ export default function Home() {
 
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <p className="text-muted text-xs mb-2">Ваши пожелания и проблемы</p>
-        {feedbackStatus === "success" ? (
+        {!token ? (
+          <div className="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">
+            Войдите, чтобы отправить сообщение.
+          </div>
+        ) : feedbackStatus === "success" ? (
           <div className="bg-green-50 rounded-xl p-3 text-sm text-green-800">
             Спасибо! Мы получили ваше сообщение и скоро разберёмся.
           </div>
         ) : (
           <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3">
-            <input
-              value={feedbackName}
-              onChange={(e) => setFeedbackName(e.target.value)}
-              placeholder="Ваше имя (необязательно)"
-              className="w-full rounded-xl px-3 py-2.5 text-sm bg-input border border-border text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-            <input
-              type="email"
-              value={feedbackEmail}
-              onChange={(e) => setFeedbackEmail(e.target.value)}
-              placeholder="Email для связи (необязательно)"
-              className="w-full rounded-xl px-3 py-2.5 text-sm bg-input border border-border text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-            />
+            <div className="text-sm text-text">
+              <span className="font-medium">{clientDisplayName}</span>
+              {clientOrg && <span className="text-muted"> · {clientOrg}</span>}
+            </div>
             <textarea
               value={feedbackMessage}
               onChange={(e) => setFeedbackMessage(e.target.value)}
