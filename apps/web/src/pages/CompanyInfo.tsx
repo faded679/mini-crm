@@ -4,8 +4,11 @@ import {
   createCompanyInfo,
   updateCompanyInfo,
   deleteCompanyInfo,
+  getFeedback,
+  deleteFeedback,
   type CompanyInfoItem,
   type CompanyInfoPayload,
+  type FeedbackItem,
 } from "../api";
 
 function fmtDate(iso: string) {
@@ -29,6 +32,8 @@ export default function CompanyInfo() {
     isActive: true,
   });
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
 
   async function load() {
     setLoading(true);
@@ -43,8 +48,20 @@ export default function CompanyInfo() {
     }
   }
 
+  async function loadFeedback() {
+    try {
+      const data = await getFeedback();
+      setFeedback(data);
+    } catch (e: any) {
+      console.error("Feedback load error:", e);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }
+
   useEffect(() => {
     load();
+    loadFeedback();
   }, []);
 
   function openCreate() {
@@ -102,6 +119,16 @@ export default function CompanyInfo() {
       await load();
     } catch (e: any) {
       setError(e?.message || "Ошибка обновления");
+    }
+  }
+
+  async function onDeleteFeedback(id: number) {
+    if (!confirm("Удалить сообщение обратной связи?")) return;
+    try {
+      await deleteFeedback(id);
+      await loadFeedback();
+    } catch (e: any) {
+      setError(e?.message || "Ошибка удаления");
     }
   }
 
@@ -271,6 +298,45 @@ export default function CompanyInfo() {
           </div>
         </div>
       )}
+
+      <div className="mt-10">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Обратная связь от клиентов</h2>
+
+        {feedbackLoading ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">Загрузка...</div>
+        ) : feedback.length === 0 ? (
+          <div className="text-center py-8 text-gray-400 dark:text-gray-500">Сообщений пока нет</div>
+        ) : (
+          <div className="space-y-4">
+            {feedback.map((item) => (
+              <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {item.name || "Аноним"}
+                      </span>
+                      {item.email && (
+                        <a href={`mailto:${item.email}`} className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                          {item.email}
+                        </a>
+                      )}
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{fmtDate(item.createdAt)}</span>
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{item.message}</p>
+                  </div>
+                  <button
+                    onClick={() => onDeleteFeedback(item.id)}
+                    className="px-3 py-1.5 rounded-lg text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/40 dark:text-red-200 flex-shrink-0"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

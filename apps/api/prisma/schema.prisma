@@ -568,3 +568,13 @@ model CompanyInfo {
 
   @@map("company_info")
 }
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  name      String   @default("")
+  email     String   @default("")
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feedback")
+}

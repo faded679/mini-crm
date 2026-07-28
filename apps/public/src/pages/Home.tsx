@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getToken } from "../auth";
-import { getMe, getCompanyInfo, type MeResponse, type CompanyInfoItem } from "../api";
+import { getMe, getCompanyInfo, createFeedback, type MeResponse, type CompanyInfoItem } from "../api";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -13,6 +13,10 @@ export default function Home() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feedbackName, setFeedbackName] = useState("");
+  const [feedbackEmail, setFeedbackEmail] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +43,25 @@ export default function Home() {
   const isBlocked = me?.isBlocked === true;
   const news = companyInfo.filter((i) => i.type === "news");
   const info = companyInfo.filter((i) => i.type === "info");
+
+  async function handleFeedbackSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!feedbackMessage.trim()) return;
+    setFeedbackStatus("sending");
+    try {
+      await createFeedback({
+        name: feedbackName,
+        email: feedbackEmail,
+        message: feedbackMessage,
+      });
+      setFeedbackStatus("success");
+      setFeedbackName("");
+      setFeedbackEmail("");
+      setFeedbackMessage("");
+    } catch {
+      setFeedbackStatus("error");
+    }
+  }
 
   return (
     <div className="fade-in">
@@ -113,6 +136,50 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
+        <p className="text-muted text-xs mb-2">Ваши пожелания и проблемы</p>
+        {feedbackStatus === "success" ? (
+          <div className="bg-green-50 rounded-xl p-3 text-sm text-green-800">
+            Спасибо! Мы получили ваше сообщение и скоро разберёмся.
+          </div>
+        ) : (
+          <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3">
+            <input
+              value={feedbackName}
+              onChange={(e) => setFeedbackName(e.target.value)}
+              placeholder="Ваше имя (необязательно)"
+              className="w-full rounded-xl px-3 py-2.5 text-sm bg-input border border-border text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+            <input
+              type="email"
+              value={feedbackEmail}
+              onChange={(e) => setFeedbackEmail(e.target.value)}
+              placeholder="Email для связи (необязательно)"
+              className="w-full rounded-xl px-3 py-2.5 text-sm bg-input border border-border text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+            <textarea
+              value={feedbackMessage}
+              onChange={(e) => setFeedbackMessage(e.target.value)}
+              placeholder="Опишите пожелание или проблему..."
+              rows={4}
+              required
+              className="w-full rounded-xl px-3 py-2.5 text-sm bg-input border border-border text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+            />
+            {feedbackStatus === "error" && (
+              <p className="text-xs text-red-600">Не удалось отправить. Попробуйте ещё раз.</p>
+            )}
+            <button
+              type="submit"
+              disabled={!feedbackMessage.trim() || feedbackStatus === "sending"}
+              className="w-full rounded-[14px] h-11 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
+            >
+              {feedbackStatus === "sending" ? "Отправка..." : "Отправить сообщение"}
+            </button>
+          </form>
+        )}
+      </section>
     </div>
   );
 }

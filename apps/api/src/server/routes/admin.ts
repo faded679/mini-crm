@@ -1532,6 +1532,31 @@ router.get("/company-info", async (_req: Request, res: Response, next: NextFunct
   }
 });
 
+// --------------- Feedback (обратная связь от клиентов) ---------------
+
+// GET /admin/feedback
+router.get("/feedback", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const items = await (prisma as any).feedback.findMany({ orderBy: { createdAt: "desc" } });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /admin/feedback/:id
+router.delete("/feedback/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    await (prisma as any).feedback.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /admin/company-info
 router.post("/company-info", async (req: Request, res: Response, next: NextFunction) => {
   try {

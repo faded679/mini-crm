@@ -393,6 +393,29 @@ router.get("/company-info", async (_req, res, next) => {
   }
 });
 
+// POST /public-auth/feedback - обратная связь от клиентов
+router.post("/feedback", async (req, res, next) => {
+  try {
+    const { name, email, message } = req.body as { name?: string; email?: string; message?: string };
+
+    if (!message?.trim()) {
+      throw new ApiError(400, "Сообщение обязательно");
+    }
+
+    const item = await (prisma as any).feedback.create({
+      data: {
+        name: (name || "").trim(),
+        email: (email || "").trim(),
+        message: message.trim(),
+      },
+    });
+
+    res.status(201).json({ id: item.id, success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 function getClientIdFromToken(req: any): number {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

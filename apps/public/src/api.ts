@@ -288,6 +288,25 @@ export function getCompanyInfo() {
   return api<CompanyInfoItem[]>("/public-auth/company-info", { cache: "no-store" });
 }
 
+export interface FeedbackPayload {
+  name?: string;
+  email?: string;
+  message: string;
+}
+
+export interface FeedbackResponse {
+  id: number;
+  success: boolean;
+}
+
+export function createFeedback(payload: FeedbackPayload) {
+  return api<FeedbackResponse>("/public-auth/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function createDeposit(amount: number, token: string) {
   return api<CreateDepositResponse>("/public-auth/deposit", {
     method: "POST",

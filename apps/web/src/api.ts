@@ -665,6 +665,14 @@ export interface CompanyInfoPayload {
   isActive?: boolean;
 }
 
+export interface FeedbackItem {
+  id: number;
+  name: string;
+  email: string;
+  message: string;
+  createdAt: string;
+}
+
 export function getCompanyInfo() {
   return request<CompanyInfoItem[]>("/admin/company-info");
 }
@@ -685,6 +693,16 @@ export function updateCompanyInfo(id: number, payload: Partial<CompanyInfoPayloa
 
 export function deleteCompanyInfo(id: number) {
   return request<void>(`/admin/company-info/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function getFeedback() {
+  return request<FeedbackItem[]>("/admin/feedback");
+}
+
+export function deleteFeedback(id: number) {
+  return request<void>(`/admin/feedback/${id}`, {
     method: "DELETE",
   });
 }
