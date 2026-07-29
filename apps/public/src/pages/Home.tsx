@@ -97,7 +97,7 @@ export default function Home() {
           </button>
           <button
             onClick={scrollToFeedback}
-            className="w-full rounded-[14px] h-12 bg-white dark:bg-gray-800 text-accent font-bold text-xs border-2 border-accent shadow-sm active:opacity-80 transition flex items-center justify-center"
+            className="w-full rounded-[14px] h-12 bg-red-50 dark:bg-gray-700 text-accent font-bold text-xs border border-accent/30 shadow-sm active:opacity-80 transition flex items-center justify-center hover:bg-red-100 dark:hover:bg-gray-600"
           >
             Предложить улучшение ✨
           </button>
