@@ -825,7 +825,7 @@ export default function Counterparties() {
                     </div>
                     <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 text-center">
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        {financeSummary.balance.balance > 0 ? "Долг" : financeSummary.balance.balance < 0 ? "Переплата" : "Баланс"}
+                        {financeSummary.balance.balance > 0 ? "Долг" : financeSummary.balance.balance < 0 ? "Предоплата" : "Баланс"}
                       </div>
                       <div className={`text-lg font-bold ${
                         financeSummary.balance.balance > 0

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getToken } from "../auth";
 import { getMe, getCompanyInfo, createFeedback, type MeResponse, type CompanyInfoItem } from "../api";
 
@@ -15,6 +15,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const feedbackRef = useRef<HTMLElement>(null);
+
+  const scrollToFeedback = () => {
+    feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +95,12 @@ export default function Home() {
           >
             {isBlocked ? "Создание заявок заблокировано" : "Оставить заявку на FBO"}
           </button>
+          <button
+            onClick={scrollToFeedback}
+            className="w-full rounded-[14px] h-12 bg-white dark:bg-gray-800 text-accent font-bold text-xs border-2 border-accent shadow-sm active:opacity-80 transition flex items-center justify-center"
+          >
+            Предложить улучшение ✨
+          </button>
         </div>
       </section>
 
@@ -134,7 +145,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
+      <section ref={feedbackRef} className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <p className="text-muted text-xs mb-2">Ваши пожелания и проблемы</p>
         {!token ? (
           <div className="bg-amber-50 rounded-xl p-3 text-sm text-amber-800">

@@ -157,7 +157,14 @@ export default function Profile() {
               {formatMoney(Math.abs(balance?.balance || 0))}
             </p>
             {hasDebt && <p className="text-sm text-red-500">Долг (к оплате)</p>}
-            {hasOverpayment && <p className="text-sm text-green-500">Переплата</p>}
+            {hasOverpayment && (
+              <div className="text-sm text-green-600 font-medium">
+                Предоплата
+                <p className="text-xs text-green-600/80 font-normal mt-0.5">
+                  Можно оформлять заявки без повторной оплаты
+                </p>
+              </div>
+            )}
             {balance && balance.organizationCount > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1">
                 <div className="flex justify-between text-sm">

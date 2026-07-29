@@ -405,6 +405,7 @@ export default function Finance() {
                   <thead>
                     <tr className="text-left text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
                       <th className="pb-2 pr-3">Организация</th>
+                      <th className="pb-2 pr-3">Статус</th>
                       <th className="pb-2 pr-3">ИНН</th>
                       <th className="pb-2 pr-3 text-right">Выставлено</th>
                       <th className="pb-2 pr-3 text-right">Оплачено</th>
@@ -413,38 +414,59 @@ export default function Finance() {
                     </tr>
                   </thead>
                   <tbody>
-                    {balances.map((b) => (
-                      <tr
-                        key={b.id}
-                        onClick={() => navigate(`/admin/finance/reconciliation/${b.counterpartyId}`)}
-                        className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
-                      >
-                        <td className="py-2.5 pr-3 font-medium text-blue-700 dark:text-blue-400 hover:underline">
-                          {b.counterparty.shortName || b.counterparty.name}
-                        </td>
-                        <td className="py-2.5 pr-3 text-gray-400 font-mono text-xs">
-                          {b.counterparty.inn || "—"}
-                        </td>
-                        <td className="py-2.5 pr-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-200">
-                          {fmtMoney(b.totalBilled)}
-                        </td>
-                        <td className="py-2.5 pr-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-200">
-                          {fmtMoney(b.totalPaid)}
-                        </td>
-                        <td className={`py-2.5 pr-3 text-right whitespace-nowrap font-semibold ${
-                          b.balance > 0
-                            ? "text-red-600 dark:text-red-400"
-                            : b.balance < 0
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-gray-500"
-                        }`}>
-                          {b.balance > 0 ? "+" : ""}{fmtMoney(b.balance)}
-                        </td>
-                        <td className="py-2.5 text-gray-400 text-xs whitespace-nowrap">
-                          {fmtDate(b.lastUpdated)}
-                        </td>
-                      </tr>
-                    ))}
+                    {balances.map((b) => {
+                      const isPrepayment = b.balance < 0;
+                      const isDebt = b.balance > 0;
+                      return (
+                        <tr
+                          key={b.id}
+                          onClick={() => navigate(`/admin/finance/reconciliation/${b.counterpartyId}`)}
+                          className={`border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer ${
+                            isPrepayment ? "bg-green-50/60 dark:bg-green-900/10" : ""
+                          }`}
+                        >
+                          <td className="py-2.5 pr-3 font-medium text-blue-700 dark:text-blue-400 hover:underline">
+                            {b.counterparty.shortName || b.counterparty.name}
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            {isPrepayment ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                Предоплата
+                              </span>
+                            ) : isDebt ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                Долг
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                Ноль
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-3 text-gray-400 font-mono text-xs">
+                            {b.counterparty.inn || "—"}
+                          </td>
+                          <td className="py-2.5 pr-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-200">
+                            {fmtMoney(b.totalBilled)}
+                          </td>
+                          <td className="py-2.5 pr-3 text-right whitespace-nowrap text-gray-900 dark:text-gray-200">
+                            {fmtMoney(b.totalPaid)}
+                          </td>
+                          <td className={`py-2.5 pr-3 text-right whitespace-nowrap font-semibold ${
+                            isDebt
+                              ? "text-red-600 dark:text-red-400"
+                              : isPrepayment
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-gray-500"
+                          }`}>
+                            {isDebt || isPrepayment ? "+" : ""}{fmtMoney(Math.abs(b.balance))}
+                          </td>
+                          <td className="py-2.5 text-gray-400 text-xs whitespace-nowrap">
+                            {fmtDate(b.lastUpdated)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
