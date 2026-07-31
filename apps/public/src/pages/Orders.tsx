@@ -7,6 +7,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   warehouse: { label: "Склад",     color: "bg-amber-50 text-amber-700" },
   shipped:   { label: "В пути",    color: "bg-purple-50 text-purple-700" },
   done:      { label: "Выполнена", color: "bg-green-50 text-green-700" },
+  archived:  { label: "Архив",     color: "bg-gray-100 text-gray-600" },
 };
 
 function formatDate(iso: string) {
@@ -37,13 +38,14 @@ export default function Orders() {
   const [editState, setEditState] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [tab, setTab] = useState<"active" | "archive">("active");
 
   const loadRequests = () => {
     const phone = getPhone();
     const token = getToken();
     if (!phone) { setLoading(false); return; }
     getRequestsByPhone(phone, token || undefined)
-      .then((all) => setRequests(all.filter((r) => r.status !== "archived")))
+      .then((all) => setRequests(all))
       .catch((err) => console.error("loadRequests error:", err))
       .finally(() => setLoading(false));
   };
@@ -113,18 +115,41 @@ export default function Orders() {
     return <div className="p-4 text-center text-muted text-sm">Загрузка...</div>;
   }
 
+  const visibleRequests = requests.filter((r) =>
+    tab === "archive" ? r.status === "archived" : r.status !== "archived"
+  );
+
   return (
     <div className="fade-in">
       <h1 className="text-heading text-[22px] font-bold mb-3">Заявки</h1>
 
-      {requests.length === 0 ? (
+      <div className="flex gap-2 mb-3">
+        <button
+          onClick={() => setTab("active")}
+          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition ${
+            tab === "active" ? "bg-accent text-white" : "bg-card text-muted"
+          }`}
+        >
+          Активные
+        </button>
+        <button
+          onClick={() => setTab("archive")}
+          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition ${
+            tab === "archive" ? "bg-accent text-white" : "bg-card text-muted"
+          }`}
+        >
+          Архив
+        </button>
+      </div>
+
+      {visibleRequests.length === 0 ? (
         <section className="bg-card rounded-[22px] p-6 shadow-[0_10px_22px_rgba(39,56,74,0.1)] text-center">
           <p className="text-3xl mb-2">📭</p>
-          <p className="text-muted text-sm">Заявок пока нет</p>
+          <p className="text-muted text-sm">{tab === "archive" ? "Архив пуст" : "Заявок пока нет"}</p>
         </section>
       ) : (
         <div className="space-y-3">
-          {requests.map((r) => {
+          {visibleRequests.map((r) => {
             const st = statusConfig[r.status] || statusConfig.new;
             const isEditing = editingId === r.id;
             const isFbs = r.deliveryTypeId === 1;
