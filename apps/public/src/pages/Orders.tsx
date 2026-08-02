@@ -38,14 +38,13 @@ export default function Orders() {
   const [editState, setEditState] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [tab, setTab] = useState<"active" | "archive">("active");
 
   const loadRequests = () => {
     const phone = getPhone();
     const token = getToken();
     if (!phone) { setLoading(false); return; }
     getRequestsByPhone(phone, token || undefined)
-      .then((all) => setRequests(all))
+      .then((all) => setRequests(all.filter((r) => r.status !== "archived"))))
       .catch((err) => console.error("loadRequests error:", err))
       .finally(() => setLoading(false));
   };
@@ -115,41 +114,18 @@ export default function Orders() {
     return <div className="p-4 text-center text-muted text-sm">Загрузка...</div>;
   }
 
-  const visibleRequests = requests.filter((r) =>
-    tab === "archive" ? r.status === "archived" : r.status !== "archived"
-  );
-
   return (
     <div className="fade-in">
       <h1 className="text-heading text-[22px] font-bold mb-3">Заявки</h1>
 
-      <div className="flex gap-2 mb-3">
-        <button
-          onClick={() => setTab("active")}
-          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition ${
-            tab === "active" ? "bg-accent text-white" : "bg-card text-muted"
-          }`}
-        >
-          Активные
-        </button>
-        <button
-          onClick={() => setTab("archive")}
-          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition ${
-            tab === "archive" ? "bg-accent text-white" : "bg-card text-muted"
-          }`}
-        >
-          Архив
-        </button>
-      </div>
-
-      {visibleRequests.length === 0 ? (
+      {requests.length === 0 ? (
         <section className="bg-card rounded-[22px] p-6 shadow-[0_10px_22px_rgba(39,56,74,0.1)] text-center">
           <p className="text-3xl mb-2">📭</p>
-          <p className="text-muted text-sm">{tab === "archive" ? "Архив пуст" : "Заявок пока нет"}</p>
+          <p className="text-muted text-sm">Заявок пока нет</p>
         </section>
       ) : (
         <div className="space-y-3">
-          {visibleRequests.map((r) => {
+          {requests.map((r) => {
             const st = statusConfig[r.status] || statusConfig.new;
             const isEditing = editingId === r.id;
             const isFbs = r.deliveryTypeId === 1;
@@ -339,7 +315,7 @@ export default function Orders() {
                       )}
                     </div>
 
-                    {r.status === "new" && !isEditing && (
+                    {r.status === "new" && (!r.invoices || r.invoices.length === 0) && !isEditing && (
                       <button
                         onClick={() => startEdit(r)}
                         className="w-full mt-3 py-2 rounded-xl bg-accent text-white text-xs font-semibold active:opacity-70 transition"

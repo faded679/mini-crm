@@ -288,6 +288,7 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
     // Check if request exists and is editable
     const existing = await (prisma as any).shipmentRequest.findUnique({
       where: { id },
+      include: { invoices: true },
     });
 
     if (!existing) {
@@ -296,6 +297,10 @@ router.patch("/requests/:id", async (req: Request, res: Response, next: NextFunc
 
     if (existing.status !== "new") {
       throw new ApiError(403, "Can only edit requests with 'new' status");
+    }
+
+    if (existing.invoices && existing.invoices.length > 0) {
+      throw new ApiError(403, "Cannot edit request after invoice has been issued");
     }
 
     // Build update data
