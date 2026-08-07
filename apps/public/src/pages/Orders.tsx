@@ -44,7 +44,7 @@ export default function Orders() {
     const token = getToken();
     if (!phone) { setLoading(false); return; }
     getRequestsByPhone(phone, token || undefined)
-      .then((all) => setRequests(all.filter((r) => r.status !== "archived"))))
+      .then((all) => setRequests(all.filter((r) => r.status !== "archived")))
       .catch((err) => console.error("loadRequests error:", err))
       .finally(() => setLoading(false));
   };
