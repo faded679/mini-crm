@@ -215,12 +215,17 @@ export function createWebRequest(data: CreateWebRequestPayload) {
   });
 }
 
-export function getRequestsByPhone(phone: string, token?: string) {
+export function getRequestsByPhone(phone: string, token?: string, counterpartyId?: number | null) {
   const headers: Record<string, string> = {};
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}?_ts=${Date.now()}`, { headers, cache: "no-store" });
+  const params = new URLSearchParams({ _ts: String(Date.now()) });
+  if (counterpartyId != null) params.set("counterpartyId", String(counterpartyId));
+  return api<ShipmentRequest[]>(`/bot/requests-by-phone/${encodeURIComponent(phone)}?${params}`, {
+    headers,
+    cache: "no-store",
+  });
 }
 
 export function patchRequest(id: number, data: {
@@ -244,10 +249,15 @@ export interface BalanceResponse {
   totalPaid: number;
   balance: number; // положительный = долг, отрицательный = переплата
   organizationCount: number;
+  counterpartyId?: number | null;
+  organization?: string | null;
 }
 
-export function getBalance(token: string) {
-  return api<BalanceResponse>("/public-auth/balance", {
+export function getBalance(token: string, counterpartyId?: number | null) {
+  const params = new URLSearchParams();
+  if (counterpartyId != null) params.set("counterpartyId", String(counterpartyId));
+  const qs = params.toString();
+  return api<BalanceResponse>(`/public-auth/balance${qs ? `?${qs}` : ""}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -300,6 +310,7 @@ export function getCompanyInfo() {
 
 export interface FeedbackPayload {
   message: string;
+  counterpartyId?: number;
 }
 
 export interface FeedbackResponse {
@@ -318,14 +329,17 @@ export function createFeedback(payload: FeedbackPayload, token: string) {
   });
 }
 
-export function createDeposit(amount: number, token: string) {
+export function createDeposit(amount: number, token: string, counterpartyId?: number | null) {
   return api<CreateDepositResponse>("/public-auth/deposit", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({
+      amount,
+      ...(counterpartyId != null ? { counterpartyId } : {}),
+    }),
   });
 }
 

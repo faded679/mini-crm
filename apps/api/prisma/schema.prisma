@@ -85,6 +85,7 @@ model Counterparty {
   bankTransactions      BankTransaction[]
   balance               CounterpartyBalance?
   shipmentRequests      ShipmentRequest[]
+  balancePayments       BalancePayment[]
 
   @@map("counterparties")
 }
@@ -261,6 +262,7 @@ model Invoice {
 model BalancePayment {
   id              Int                  @id @default(autoincrement())
   clientId        Int                  @map("client_id")
+  counterpartyId  Int?                 @map("counterparty_id")
   amount          Float
   status          BalancePaymentStatus @default(new)
   paidAt          DateTime?            @map("paid_at")
@@ -274,7 +276,9 @@ model BalancePayment {
   updatedAt       DateTime             @updatedAt @map("updated_at")
 
   client          Client               @relation(fields: [clientId], references: [id])
+  counterparty    Counterparty?        @relation(fields: [counterpartyId], references: [id])
 
+  @@index([counterpartyId])
   @@map("balance_payments")
 }
 

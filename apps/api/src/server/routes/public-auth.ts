@@ -298,7 +298,7 @@ router.post("/complete-profile", async (req, res, next) => {
   }
 });
 
-// GET /public-auth/balance - получить баланс клиента (итоговый долг/переплата)
+// GET /public-auth/balance - баланс выбранной организации клиента
 router.get("/balance", async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -319,7 +319,6 @@ router.get("/balance", async (req, res, next) => {
       throw new ApiError(401, "Invalid token payload");
     }
 
-    // Находим клиента со связанными контрагентами
     const client = await (prisma as any).client.findUnique({
       where: { id: clientId },
       include: {
@@ -339,25 +338,31 @@ router.get("/balance", async (req, res, next) => {
       throw new ApiError(404, "Client not found");
     }
 
-    // Суммируем балансы всех связанных контрагентов
-    let totalBilled = 0;
-    let totalPaid = 0;
-    let balance = 0;
+    const links = client.counterparties || [];
+    const orgCount = links.length;
 
-    for (const link of client.counterparties || []) {
-      const cp = link.counterparty;
-      if (cp?.balance) {
-        totalBilled += Number(cp.balance.totalBilled) || 0;
-        totalPaid += Number(cp.balance.totalPaid) || 0;
-        balance += Number(cp.balance.balance) || 0;
+    let targetLink = null as any;
+    const qCpId = req.query.counterpartyId != null ? Number(req.query.counterpartyId) : NaN;
+
+    if (Number.isFinite(qCpId)) {
+      targetLink = links.find((l: any) => l.counterpartyId === qCpId || l.counterparty?.id === qCpId);
+      if (!targetLink) {
+        throw new ApiError(403, "Организация не привязана к этому клиенту");
       }
+    } else if (orgCount === 1) {
+      targetLink = links[0];
+    } else if (orgCount > 1) {
+      throw new ApiError(400, "Укажите counterpartyId");
     }
 
+    const cpBalance = targetLink?.counterparty?.balance;
     res.json({
-      totalBilled,
-      totalPaid,
-      balance, // положительный = долг, отрицательный = переплата
-      organizationCount: client.counterparties?.length || 0,
+      totalBilled: Number(cpBalance?.totalBilled) || 0,
+      totalPaid: Number(cpBalance?.totalPaid) || 0,
+      balance: Number(cpBalance?.balance) || 0,
+      organizationCount: orgCount,
+      counterpartyId: targetLink?.counterparty?.id ?? null,
+      organization: targetLink?.counterparty?.shortName || targetLink?.counterparty?.name || null,
     });
   } catch (err) {
     next(err);
@@ -426,7 +431,10 @@ router.get("/company-info", async (_req, res, next) => {
 router.post("/feedback", async (req, res, next) => {
   try {
     const clientId = getClientIdFromToken(req);
-    const { message } = req.body as { message?: string };
+    const { message, counterpartyId: bodyCpId } = req.body as {
+      message?: string;
+      counterpartyId?: number;
+    };
 
     if (!message?.trim()) {
       throw new ApiError(400, "Сообщение обязательно");
@@ -436,13 +444,21 @@ router.post("/feedback", async (req, res, next) => {
       where: { id: clientId },
       include: {
         counterparties: {
-          include: { counterparty: { select: { name: true, shortName: true } } },
+          include: { counterparty: { select: { id: true, name: true, shortName: true } } },
         },
       },
     });
     if (!client) throw new ApiError(404, "Client not found");
 
-    const org = client.counterparties[0]?.counterparty;
+    const links = client.counterparties || [];
+    let org = links[0]?.counterparty;
+    if (bodyCpId != null && Number.isFinite(Number(bodyCpId))) {
+      const cpId = Number(bodyCpId);
+      const link = links.find((l: any) => l.counterparty?.id === cpId);
+      if (!link) throw new ApiError(403, "Организация не привязана к этому клиенту");
+      org = link.counterparty;
+    }
+
     const fullName = [client.lastName, client.firstName].filter(Boolean).join(" ").trim();
 
     const item = await (prisma as any).feedback.create({
@@ -485,7 +501,7 @@ function getClientIdFromToken(req: any): number {
 router.post("/deposit", async (req, res, next) => {
   try {
     const clientId = getClientIdFromToken(req);
-    const { amount } = req.body;
+    const { amount, counterpartyId: bodyCpId } = req.body;
 
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
@@ -500,9 +516,27 @@ router.post("/deposit", async (req, res, next) => {
       throw new ApiError(404, "Client not found");
     }
 
+    const links = client.counterparties || [];
+    let resolvedCpId: number | null = null;
+    if (bodyCpId != null && bodyCpId !== "" && Number.isFinite(Number(bodyCpId))) {
+      const cpId = Number(bodyCpId);
+      const link = links.find((l: any) => l.counterpartyId === cpId || l.counterparty?.id === cpId);
+      if (!link) throw new ApiError(403, "Организация не привязана к этому клиенту");
+      resolvedCpId = cpId;
+    } else if (links.length === 1) {
+      resolvedCpId = links[0].counterpartyId || links[0].counterparty?.id;
+    } else if (links.length > 1) {
+      throw new ApiError(400, "Укажите организацию для пополнения");
+    }
+
     // Создаём запись пополнения
     const balancePayment = await (prisma as any).balancePayment.create({
-      data: { clientId, amount: numericAmount, status: "new" },
+      data: {
+        clientId,
+        amount: numericAmount,
+        status: "new",
+        ...(resolvedCpId ? { counterpartyId: resolvedCpId } : {}),
+      },
     });
 
     const amountInKopecks = Math.round(numericAmount * 100);
@@ -553,6 +587,7 @@ router.post("/deposit", async (req, res, next) => {
       amount: numericAmount,
       paymentUrl: paymentResult.PaymentURL,
       paymentId: paymentResult.PaymentId,
+      counterpartyId: resolvedCpId,
     });
   } catch (err) {
     next(err);

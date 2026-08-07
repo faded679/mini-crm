@@ -1,21 +1,28 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { getToken } from "../auth";
-import { getMe, getCompanyInfo, createFeedback, type MeResponse, type CompanyInfoItem } from "../api";
+import { getToken, getSelectedOrgId } from "../auth";
+import { getCompanyInfo, createFeedback, type MeResponse, type CompanyInfoItem } from "../api";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export default function Home() {
+interface Props {
+  me?: MeResponse | null;
+}
+
+export default function Home({ me: meProp = null }: Props) {
   const navigate = useNavigate();
   const token = getToken();
-  const [me, setMe] = useState<MeResponse | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const feedbackRef = useRef<HTMLElement>(null);
+
+  const me = meProp;
+  const selectedOrgId = getSelectedOrgId();
+  const selectedOrg = me?.organizations?.find((o) => o.id === selectedOrgId) || null;
 
   const scrollToFeedback = () => {
     feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -23,25 +30,18 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      try {
-        const [meData, infoData] = await Promise.all([
-          token ? getMe(token) : Promise.resolve(null),
-          getCompanyInfo(),
-        ]);
-        if (!cancelled) {
-          setMe(meData);
-          setCompanyInfo(infoData);
-        }
-      } catch (err) {
-        console.error("Home load error:", err);
-      } finally {
+    getCompanyInfo()
+      .then((infoData) => {
+        if (!cancelled) setCompanyInfo(infoData);
+      })
+      .catch((err) => console.error("Home load error:", err))
+      .finally(() => {
         if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [token]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const isBlocked = me?.isBlocked === true;
   const news = companyInfo.filter((i) => i.type === "news");
@@ -52,7 +52,13 @@ export default function Home() {
     if (!token || !feedbackMessage.trim()) return;
     setFeedbackStatus("sending");
     try {
-      await createFeedback({ message: feedbackMessage }, token);
+      await createFeedback(
+        {
+          message: feedbackMessage,
+          ...(selectedOrgId != null ? { counterpartyId: selectedOrgId } : {}),
+        },
+        token
+      );
       setFeedbackStatus("success");
       setFeedbackMessage("");
     } catch {
@@ -63,7 +69,7 @@ export default function Home() {
   const clientDisplayName = me
     ? [me.lastName, me.firstName].filter(Boolean).join(" ").trim() || "Клиент"
     : null;
-  const clientOrg = me?.organization;
+  const clientOrg = selectedOrg?.name || me?.organization;
 
   return (
     <div className="fade-in">
@@ -75,6 +81,16 @@ export default function Home() {
             <h1 className="text-heading text-[19px] font-bold m-0">Доставка на маркетплейсы</h1>
           </div>
         </div>
+        {(clientDisplayName || clientOrg) && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            {clientDisplayName && (
+              <p className="text-sm text-heading m-0 font-medium">{clientDisplayName}</p>
+            )}
+            {clientOrg && (
+              <p className="text-xs text-muted m-0 mt-0.5">Кабинет: {clientOrg}</p>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="bg-card rounded-[22px] shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3 overflow-hidden">
@@ -83,7 +99,7 @@ export default function Home() {
             onClick={() => navigate("/fbs")}
             disabled={isBlocked}
             className="w-full rounded-[14px] h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
+            style={{ boxShadow: "0 4px 12px rgba(216, 75, 85, 0.4)" }}
           >
             {isBlocked ? "Создание заявок заблокировано" : "Оставить заявку на FBS"}
           </button>
@@ -91,7 +107,7 @@ export default function Home() {
             onClick={() => navigate("/fbo")}
             disabled={isBlocked}
             className="w-full rounded-[14px] h-12 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
+            style={{ boxShadow: "0 4px 12px rgba(216, 75, 85, 0.4)" }}
           >
             {isBlocked ? "Создание заявок заблокировано" : "Оставить заявку на FBO"}
           </button>
@@ -108,8 +124,8 @@ export default function Home() {
         <section className="bg-red-50 border border-red-200 rounded-[22px] p-4 mb-3">
           <p className="text-sm text-red-700 font-medium">
             💬 У вас есть неоплаченный счёт старше 10 дней. Чтобы мы могли принять новую заявку, сначала нужно закрыть предыдущий рейс — так мы можем возить без предоплаты и дальше.
-                Как только оплата пройдёт — всё сразу откроется.
-                Если нужна копия счёта, просто напишите 🤝
+            Как только оплата пройдёт — всё сразу откроется.
+            Если нужна копия счёта, просто напишите 🤝
           </p>
         </section>
       )}
@@ -157,28 +173,22 @@ export default function Home() {
           </div>
         ) : (
           <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3">
-            <div className="text-sm text-text">
-              <span className="font-medium">{clientDisplayName}</span>
-              {clientOrg && <span className="text-muted"> · {clientOrg}</span>}
-            </div>
             <textarea
               value={feedbackMessage}
               onChange={(e) => setFeedbackMessage(e.target.value)}
+              rows={3}
               placeholder="Опишите пожелание или проблему..."
-              rows={4}
-              required
-              className="w-full rounded-xl px-3 py-2.5 text-sm bg-input border border-border text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+              className="w-full px-3 py-2.5 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm resize-none focus:border-accent"
             />
             {feedbackStatus === "error" && (
-              <p className="text-xs text-red-600">Не удалось отправить. Попробуйте ещё раз.</p>
+              <p className="text-xs text-red-500">Не удалось отправить. Попробуйте позже.</p>
             )}
             <button
               type="submit"
               disabled={!feedbackMessage.trim() || feedbackStatus === "sending"}
-              className="w-full rounded-[14px] h-11 bg-accent text-white font-bold text-xs shadow-lg active:bg-accent-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ boxShadow: '0 4px 12px rgba(216, 75, 85, 0.4)' }}
+              className="w-full h-11 rounded-2xl bg-accent text-white text-sm font-bold disabled:opacity-50"
             >
-              {feedbackStatus === "sending" ? "Отправка..." : "Отправить сообщение"}
+              {feedbackStatus === "sending" ? "Отправка..." : "Отправить"}
             </button>
           </form>
         )}

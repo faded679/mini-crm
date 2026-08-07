@@ -109,16 +109,20 @@ async function handleBalancePaymentWebhook(
 
     console.log(`BalancePayment ${balancePayment.id} marked as paid (wasAlreadyPaid: ${wasAlreadyPaid})`);
 
-    // Создаём BankTransaction для каждого связанного контрагента клиента
+    // Создаём BankTransaction на организацию депозита (или первую, если не указана)
     if (!wasAlreadyPaid && balancePayment.client?.counterparties?.length > 0) {
       try {
         const existingTx = await (prisma as any).bankTransaction.findFirst({
           where: { tbankPaymentId: PaymentId },
         });
         if (!existingTx) {
-          // Если у клиента один контрагент — зачисляем на него
-          // Если несколько — зачисляем на первого (или можно распределить)
-          const primaryCounterparty = balancePayment.client.counterparties[0].counterparty;
+          const links = balancePayment.client.counterparties;
+          let target =
+            balancePayment.counterpartyId != null
+              ? links.find((l: any) => l.counterparty?.id === balancePayment.counterpartyId || l.counterpartyId === balancePayment.counterpartyId)
+              : null;
+          if (!target) target = links[0];
+          const primaryCounterparty = target.counterparty;
           await (prisma as any).bankTransaction.create({
             data: {
               counterpartyId: primaryCounterparty.id,

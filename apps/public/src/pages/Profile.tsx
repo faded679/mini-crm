@@ -1,12 +1,24 @@
-import { getPhone, getToken, clearAuth } from "../auth";
-import { useNavigate } from "react-router-dom";
+import { getPhone, getToken, clearAuth, getSelectedOrgId } from "../auth";
 import { useState, useEffect } from "react";
-import { getBalance, createDeposit, getDepositStatus, type BalanceResponse } from "../api";
+import {
+  getBalance,
+  createDeposit,
+  getDepositStatus,
+  type BalanceResponse,
+  type ClientOrganization,
+} from "../api";
 
-export default function Profile() {
-  const navigate = useNavigate();
+interface Props {
+  organizations?: ClientOrganization[];
+  onSwitchOrganization?: () => void;
+}
+
+export default function Profile({ organizations = [], onSwitchOrganization }: Props) {
   const phone = getPhone();
   const token = getToken();
+  const orgId = getSelectedOrgId();
+  const currentOrg = organizations.find((o) => o.id === orgId) || null;
+
   const [balance, setBalance] = useState<BalanceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +39,7 @@ export default function Profile() {
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    getBalance(token)
+    getBalance(token, orgId)
       .then((data) => {
         setBalance(data);
         setError(null);
@@ -37,11 +49,10 @@ export default function Profile() {
         setError("Не удалось загрузить баланс");
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, orgId]);
 
   useEffect(() => {
     if (!token) return;
-    // Восстанавливаем незавершённый депозит (например, после возврата из TBank/PWA)
     const storedId = localStorage.getItem("pending_deposit_id");
     const storedAmount = localStorage.getItem("pending_deposit_amount");
     const startedAt = localStorage.getItem("pending_deposit_started_at");
@@ -74,7 +85,7 @@ export default function Profile() {
           if (status.status === "paid") {
             clearPendingDeposit();
             setDepositAmount("");
-            getBalance(token).then(setBalance).catch(console.error);
+            getBalance(token, orgId).then(setBalance).catch(console.error);
             alert("✅ Баланс успешно пополнен!");
           } else if (
             status.status === "cancelled" ||
@@ -89,7 +100,7 @@ export default function Profile() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [pendingDepositId, token]);
+  }, [pendingDepositId, token, orgId]);
 
   const handleLogout = () => {
     clearAuth();
@@ -106,7 +117,7 @@ export default function Profile() {
     setDepositLoading(true);
     setDepositError(null);
     try {
-      const result = await createDeposit(amount, token);
+      const result = await createDeposit(amount, token, orgId);
       setPendingDepositId(result.depositId);
       setPendingDepositAmount(result.amount);
       localStorage.setItem("pending_deposit_id", String(result.depositId));
@@ -128,6 +139,7 @@ export default function Profile() {
   const hasDebt = (balance?.balance || 0) > 0;
   const hasOverpayment = (balance?.balance || 0) < 0;
   const balanceColor = hasDebt ? "text-red-500" : hasOverpayment ? "text-green-500" : "text-accent";
+  const canSwitchOrg = organizations.length > 1 && !!onSwitchOrganization;
 
   return (
     <div className="fade-in">
@@ -142,11 +154,30 @@ export default function Profile() {
       </section>
 
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
-        <p className="text-sm text-heading"><strong>Телефон:</strong> {phone}</p>
+        <p className="text-sm text-heading m-0">
+          <strong>Телефон:</strong> {phone}
+        </p>
+        {(currentOrg || balance?.organization) && (
+          <p className="text-sm text-heading mt-2 mb-0">
+            <strong>Организация:</strong> {currentOrg?.name || balance?.organization}
+          </p>
+        )}
+        {currentOrg?.inn && (
+          <p className="text-xs text-muted mt-1 mb-0">ИНН {currentOrg.inn}</p>
+        )}
+        {canSwitchOrg && (
+          <button
+            type="button"
+            onClick={onSwitchOrganization}
+            className="mt-3 w-full py-2.5 rounded-2xl border border-accent/40 text-accent text-sm font-semibold transition active:opacity-80"
+          >
+            Сменить организацию
+          </button>
+        )}
       </section>
 
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
-        <p className="text-muted text-xs">Баланс клиента</p>
+        <p className="text-muted text-xs">Баланс организации</p>
         {loading ? (
           <p className="text-sm text-muted mt-2">Загрузка...</p>
         ) : error ? (
@@ -165,7 +196,7 @@ export default function Profile() {
                 </p>
               </div>
             )}
-            {balance && balance.organizationCount > 0 && (
+            {balance && (balance.organizationCount > 0 || orgId) && (
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">Выставлено:</span>
@@ -177,7 +208,7 @@ export default function Profile() {
                 </div>
               </div>
             )}
-            {balance?.organizationCount === 0 && (
+            {balance?.organizationCount === 0 && !orgId && (
               <p className="text-sm text-muted mt-2">Нет привязанных организаций</p>
             )}
             <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mt-3">
@@ -190,7 +221,7 @@ export default function Profile() {
       <section className="bg-card rounded-[22px] p-4 shadow-[0_10px_22px_rgba(39,56,74,0.1)] mb-3">
         <p className="text-muted text-xs">Пополнение баланса по СБП</p>
         <p className="text-sm text-heading mt-2 mb-3">
-          Введите сумму, требуемую к зачислению на баланс. После подтверждения откроется окно оплаты СПБ
+          Введите сумму для зачисления на баланс этой организации. После подтверждения откроется оплата СБП.
         </p>
         <div className="flex items-center gap-2">
           <input

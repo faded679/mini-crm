@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getRequestsByPhone, getBoxTypes, getPalletTypes, patchRequest, type ShipmentRequest, type BoxType, type PalletType } from "../api";
-import { getPhone, getToken } from "../auth";
+import { getPhone, getToken, getSelectedOrgId } from "../auth";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   new:       { label: "Новая",     color: "bg-blue-50 text-blue-700" },
@@ -42,8 +42,9 @@ export default function Orders() {
   const loadRequests = () => {
     const phone = getPhone();
     const token = getToken();
+    const orgId = getSelectedOrgId();
     if (!phone) { setLoading(false); return; }
-    getRequestsByPhone(phone, token || undefined)
+    getRequestsByPhone(phone, token || undefined, orgId)
       .then((all) => setRequests(all.filter((r) => r.status !== "archived")))
       .catch((err) => console.error("loadRequests error:", err))
       .finally(() => setLoading(false));

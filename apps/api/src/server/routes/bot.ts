@@ -1072,8 +1072,23 @@ router.get("/requests-by-phone/:phone", async (req: Request, res: Response, next
       res.json([]);
       return;
     }
+
+    const qCpId = req.query.counterpartyId != null ? Number(req.query.counterpartyId) : NaN;
+    const where: any = { clientId: client.id };
+    if (Number.isFinite(qCpId)) {
+      // Org cabinet: only requests for this organization (exclude unassigned)
+      const link = await (prisma as any).counterpartyContact.findUnique({
+        where: { counterpartyId_clientId: { counterpartyId: qCpId, clientId: client.id } },
+      });
+      if (!link) {
+        res.status(403).json({ error: "Организация не привязана к этому клиенту" });
+        return;
+      }
+      where.counterpartyId = qCpId;
+    }
+
     const requests = await (prisma as any).shipmentRequest.findMany({
-      where: { clientId: client.id },
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         boxType: { select: { id: true, name: true } },
