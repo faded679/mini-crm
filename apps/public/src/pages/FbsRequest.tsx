@@ -12,7 +12,8 @@ import {
   type PriceFbsEntry,
   type ClientServicePrice,
 } from "../api";
-import { getPhone, getToken, getSelectedOrgId } from "../auth";
+import { getPhone, getToken } from "../auth";
+import { resolveRequestOrg } from "../orgContext";
 
 interface LineItem {
   volume: string;
@@ -23,7 +24,6 @@ interface LineItem {
 
 export default function FbsRequest() {
   const navigate = useNavigate();
-  const counterpartyId = getSelectedOrgId();
 
   const [cities, setCities] = useState<CityFbs[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntryFbs[]>([]);
@@ -132,14 +132,17 @@ export default function FbsRequest() {
       setError("Не удалось получить данные авторизации");
       return;
     }
-    if (!counterpartyId) {
-      setError("Организация не выбрана. Вернитесь на главную и выберите организацию.");
-      return;
-    }
 
     setSubmitting(true);
     setError("");
     try {
+      const org = await resolveRequestOrg();
+      if (org.status === "need_pick") {
+        window.location.href = "/";
+        return;
+      }
+      const counterpartyId = org.counterpartyId;
+
       const totalQty = items.reduce((s, it) => s + it.qty, 0);
 
       const selectedClientServicesList = Array.from(selectedClientServices)

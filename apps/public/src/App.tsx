@@ -6,6 +6,7 @@ import {
   getSelectedOrgId,
   setSelectedOrgId,
   clearSelectedOrgId,
+  migrateOrgStorage,
 } from "./auth";
 import { getMe, type ClientOrganization, type MeResponse } from "./api";
 import BottomNav from "./components/BottomNav";
@@ -71,11 +72,16 @@ export default function App() {
       setOrgReady(true);
     } catch (err) {
       console.error("Failed to load /me for org context:", err);
+      // Don't open cabinet without org context — FBO/FBS would fail with "org not selected"
       setNeedsOrgPick(false);
-      setOrgReady(true);
+      setOrgReady(false);
     } finally {
       setLoadingMe(false);
     }
+  }, []);
+
+  useEffect(() => {
+    migrateOrgStorage();
   }, []);
 
   useEffect(() => {
@@ -103,10 +109,19 @@ export default function App() {
     return <Login onSuccess={() => setAuthed(true)} />;
   }
 
-  if (loadingMe && !orgReady && !needsOrgPick) {
+  if (!orgReady && !needsOrgPick) {
     return (
-      <div className="min-h-[100dvh] bg-bg flex items-center justify-center">
-        <p className="text-muted text-sm">Загрузка...</p>
+      <div className="min-h-[100dvh] bg-bg flex flex-col items-center justify-center gap-3 px-4">
+        <p className="text-muted text-sm">{loadingMe ? "Загрузка..." : "Не удалось загрузить профиль"}</p>
+        {!loadingMe && (
+          <button
+            type="button"
+            className="text-sm text-accent underline"
+            onClick={() => resolveOrgContext()}
+          >
+            Повторить
+          </button>
+        )}
       </div>
     );
   }
