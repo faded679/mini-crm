@@ -158,6 +158,14 @@ export interface ShipmentRequest {
   deliveryType?: DeliveryType | null;
   mpAccountDate?: string | null;
   createdAt: string;
+  counterpartyId?: number | null;
+  counterparty?: {
+    id: number;
+    name: string;
+    shortName?: string | null;
+    inn?: string | null;
+    preferredPayment?: string | null;
+  } | null;
   client: Client;
   services?: RequestService[];
   photos?: RequestPhoto[];
@@ -234,6 +242,7 @@ export interface CreateAdminRequestPayload {
   weight?: number;
   comment?: string;
   deliveryTypeId?: number;
+  counterpartyId?: number;
   items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];
 }
 

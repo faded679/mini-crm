@@ -7,7 +7,11 @@ import { requireAuth } from "../auth/middleware.js";
 import { ApiError } from "../errors.js";
 import { notifyClient } from "../services/telegram-notifier.js";
 import { sendClientDocument } from "../services/telegram-notifier.js";
-import { recalculateBalance } from "../services/bank-import-service.js";
+import {
+  recalculateBalance,
+  findMatchedPaymentForInvoice,
+  ignoreManualPaymentsForInvoice,
+} from "../services/bank-import-service.js";
 import { RequestStatus } from "@prisma/client";
 import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
 import { generateActPdfBuffer } from "../services/act-pdf.js";
@@ -181,7 +185,7 @@ router.post("/tools/dadata/party", async (req: Request, res: Response, next: Nex
 // POST /admin/requests — create request from admin panel
 router.post("/requests", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, volume, weight, comment, deliveryTypeId, items } = req.body as {
+    const { clientId, cityId, deliveryDate, packagingType, boxTypeId, boxCount, volume, weight, comment, deliveryTypeId, items, counterpartyId: bodyCounterpartyId } = req.body as {
       clientId: number;
       cityId: number;
       deliveryDate: string;
@@ -192,6 +196,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
       weight?: number;
       comment?: string;
       deliveryTypeId?: number;
+      counterpartyId?: number;
       items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];
     };
 
@@ -203,6 +208,23 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
 
     const client = await (prisma as any).client.findUnique({ where: { id: clientId } });
     if (!client) throw new ApiError(404, "Client not found");
+
+    // Resolve organization (explicit or single linked org)
+    let resolvedCounterpartyId: number | null = null;
+    if (bodyCounterpartyId != null && Number.isFinite(Number(bodyCounterpartyId))) {
+      const cpId = Number(bodyCounterpartyId);
+      const link = await (prisma as any).counterpartyContact.findUnique({
+        where: { counterpartyId_clientId: { counterpartyId: cpId, clientId } },
+      });
+      if (!link) throw new ApiError(400, "Организация не привязана к этому клиенту");
+      resolvedCounterpartyId = cpId;
+    } else {
+      const links = await (prisma as any).counterpartyContact.findMany({
+        where: { clientId },
+        select: { counterpartyId: true },
+      });
+      if (links.length === 1) resolvedCounterpartyId = links[0].counterpartyId;
+    }
 
     const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
 
@@ -230,6 +252,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
     const created = await (prisma as any).shipmentRequest.create({
       data: {
         clientId,
+        ...(resolvedCounterpartyId ? { counterpartyId: resolvedCounterpartyId } : {}),
         cityId,
         city: cityName,
         deliveryDate: parsedDate,
@@ -244,7 +267,7 @@ router.post("/requests", async (req: Request, res: Response, next: NextFunction)
         status: "new",
         isRead: true,
       },
-      include: { client: true, boxType: true, services: true },
+      include: { client: true, boxType: true, services: true, counterparty: true },
     });
 
     // Create service lines from items
@@ -303,7 +326,10 @@ router.get("/requests", async (req: Request, res: Response, next: NextFunction) 
               }
             }
           }
-        }, 
+        },
+        counterparty: {
+          select: { id: true, name: true, shortName: true, inn: true, preferredPayment: true },
+        },
         boxType: true, 
         palletType: true,
         services: true, 
@@ -341,6 +367,9 @@ router.get("/requests/:id", async (req: Request, res: Response, next: NextFuncti
               },
             },
           },
+        },
+        counterparty: {
+          select: { id: true, name: true, shortName: true, inn: true, preferredPayment: true },
         },
         boxType: true,
         palletType: true,
@@ -608,6 +637,12 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
     });
     if (!currentInvoice) throw new ApiError(404, "Invoice not found");
 
+    // Idempotent: already in desired paid state
+    if (isPaid && currentInvoice.isPaid) {
+      res.json(currentInvoice);
+      return;
+    }
+
     const newStatus = isPaid
       ? "paid"
       : currentInvoice.status === "paid" ? "sent" : currentInvoice.status;
@@ -622,46 +657,54 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
       include: { items: true, counterparty: true },
     });
 
-    // Если отметили оплаченным — создаём запись об оплате и пересчитываем баланс
-    if (isPaid && currentInvoice.counterpartyId) {
-      const totalAmount = currentInvoice.items?.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0) || 0;
+    if (currentInvoice.counterpartyId) {
+      if (isPaid) {
+        // Не создаём вторую оплату, если уже есть matched-проводка по этому счёту
+        // (выписка / T-Bank / предыдущая ручная отметка)
+        const existingTx = await findMatchedPaymentForInvoice(
+          currentInvoice.counterpartyId,
+          currentInvoice.number
+        );
 
-      // Создаём BankTransaction если её ещё нет
-      const existingTx = await (prisma as any).bankTransaction.findFirst({
-        where: {
-          counterpartyId: currentInvoice.counterpartyId,
-          purpose: { contains: `Счёт №${currentInvoice.number}` },
-        },
-      });
+        if (!existingTx) {
+          const totalAmount =
+            currentInvoice.items?.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0) || 0;
 
-      if (!existingTx) {
-        // Форматируем дату счёта: "15 апреля 2026 г."
-        const invoiceDate = currentInvoice.date
-          ? new Date(currentInvoice.date).toLocaleDateString("ru-RU", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })
-          : "";
+          const invoiceDate = currentInvoice.date
+            ? new Date(currentInvoice.date).toLocaleDateString("ru-RU", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : "";
 
-        await (prisma as any).bankTransaction.create({
-          data: {
-            counterpartyId: currentInvoice.counterpartyId,
-            direction: "incoming",
-            status: "matched",
-            amount: totalAmount,
-            purpose: `Оплата по счету №${currentInvoice.number} от ${invoiceDate} (данные из банковской выписки)`,
-            documentDate: new Date(),
-            documentNumber: `MANUAL-${Date.now()}`,
-            payerName: currentInvoice.counterparty?.shortName || currentInvoice.counterparty?.name || "Клиент",
-            recipientName: "Sologo",
-            invoiceNumbers: [currentInvoice.number],
-            matchedAt: new Date(),
-          },
-        });
+          await (prisma as any).bankTransaction.create({
+            data: {
+              counterpartyId: currentInvoice.counterpartyId,
+              direction: "incoming",
+              status: "matched",
+              amount: totalAmount,
+              purpose: `Оплата по счету №${currentInvoice.number} от ${invoiceDate} (ручная отметка)`,
+              documentDate: new Date(),
+              documentNumber: `MANUAL-${Date.now()}`,
+              payerName:
+                currentInvoice.counterparty?.shortName ||
+                currentInvoice.counterparty?.name ||
+                "Клиент",
+              recipientName: "Sologo",
+              invoiceNumbers: [currentInvoice.number],
+              matchedAt: new Date(),
+            },
+          });
+        }
+      } else {
+        // Снятие оплаты: убираем только MANUAL-проводки, реальные платежи не трогаем
+        await ignoreManualPaymentsForInvoice(
+          currentInvoice.counterpartyId,
+          currentInvoice.number
+        );
       }
 
-      // Пересчитываем баланс контрагента
       await recalculateBalance(currentInvoice.counterpartyId);
     }
 

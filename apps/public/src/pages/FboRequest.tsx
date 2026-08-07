@@ -15,6 +15,7 @@ import {
   type PriceRate,
   type ScheduleEntry,
   type ClientServicePrice,
+  type ClientOrganization,
 } from "../api";
 import { getPhone, getToken } from "../auth";
 
@@ -36,6 +37,8 @@ export default function FboRequest() {
   const [rates, setRates] = useState<PriceRate[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [clientServicePrices, setClientServicePrices] = useState<ClientServicePrice[]>([]);
+  const [organizations, setOrganizations] = useState<ClientOrganization[]>([]);
+  const [counterpartyId, setCounterpartyId] = useState<number | null>(null);
 
   const [cityId, setCityId] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -59,7 +62,13 @@ export default function FboRequest() {
     if (token) {
       setCheckingBlock(true);
       getMe(token)
-        .then((data) => setIsBlocked(data.isBlocked))
+        .then((data) => {
+          setIsBlocked(data.isBlocked);
+          const orgs = data.organizations || [];
+          setOrganizations(orgs);
+          if (orgs.length === 1) setCounterpartyId(orgs[0].id);
+          else if (orgs.length > 1) setCounterpartyId(null);
+        })
         .catch(() => setIsBlocked(false))
         .finally(() => setCheckingBlock(false));
     } else {
@@ -153,6 +162,10 @@ export default function FboRequest() {
       setError("Не удалось получить данные авторизации");
       return;
     }
+    if (organizations.length > 1 && !counterpartyId) {
+      setError("Выберите организацию для заявки");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -193,18 +206,9 @@ export default function FboRequest() {
         ...(mainBoxTypeId ? { boxTypeId: mainBoxTypeId } : {}),
         ...(deliveryTypeId ? { deliveryTypeId } : {}),
         ...(mpDate ? { mpAccountDate: mpDate } : {}),
+        ...(counterpartyId ? { counterpartyId } : {}),
         boxCount: totalQty,
         ...(comment.trim() ? { comment: comment.trim() } : {}),
-        /* comment: items
-          .map((it, i) => `${i + 1}. ${it.typeName} x${it.qty} = ${it.amount}₽`)
-          .join("; ") +
-          (selectedClientServicesList.length > 0
-            ? " | Услуги клиента: " + selectedClientServicesList.map((s) => {
-              const isPickupService = s.name.includes("Забор груза");
-              return isPickupService ? s.name : `${s.name} x${totalQty}`;
-            }).join(", ")
-            : "") +
-          ` | Итого: ${grandTotal}₽`, */
         items: allItems,
       });
       navigate(`/success/${result.id}`);
@@ -229,6 +233,24 @@ export default function FboRequest() {
         </p>
 
         {error && <div className="bg-red-50 text-red-600 px-3 py-2 rounded-xl mb-3 text-xs">{error}</div>}
+
+        {organizations.length > 1 && (
+          <div className="mb-3">
+            <label className="text-muted text-xs mb-1 block">Организация</label>
+            <select
+              value={counterpartyId ?? ""}
+              onChange={(e) => setCounterpartyId(e.target.value ? Number(e.target.value) : null)}
+              className="w-full h-11 px-3 rounded-2xl bg-bg border border-gray-200 outline-none text-heading text-sm appearance-none transition-all focus:border-accent"
+            >
+              <option value="">Выберите организацию</option>
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name}{org.inn ? ` · ИНН ${org.inn}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex gap-2.5 mb-3">
           <select

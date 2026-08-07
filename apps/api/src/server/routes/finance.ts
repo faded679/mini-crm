@@ -210,6 +210,72 @@ router.post("/recalculate-all", async (_req: Request, res: Response, next: NextF
   }
 });
 
+/**
+ * POST /admin/finance/dedupe-manual-payments
+ * Safe cleanup: ignore MANUAL-* transactions when another matched payment
+ * already exists for the same invoice number (bank import / T-Bank).
+ * Does NOT delete rows.
+ */
+router.post("/dedupe-manual-payments", async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const manuals = await (prisma as any).bankTransaction.findMany({
+      where: {
+        status: "matched",
+        direction: "incoming",
+        documentNumber: { startsWith: "MANUAL-" },
+      },
+      select: {
+        id: true,
+        counterpartyId: true,
+        invoiceNumbers: true,
+        amount: true,
+        documentNumber: true,
+      },
+    });
+
+    let ignored = 0;
+    const affectedCpIds = new Set<number>();
+
+    for (const manual of manuals) {
+      const invoiceNumbers: string[] = Array.isArray(manual.invoiceNumbers) ? manual.invoiceNumbers : [];
+      if (!manual.counterpartyId || invoiceNumbers.length === 0) continue;
+
+      const otherPayment = await (prisma as any).bankTransaction.findFirst({
+        where: {
+          id: { not: manual.id },
+          counterpartyId: manual.counterpartyId,
+          status: "matched",
+          direction: "incoming",
+          OR: invoiceNumbers.map((num: string) => ({ invoiceNumbers: { has: num } })),
+        },
+        select: { id: true, documentNumber: true },
+      });
+
+      if (!otherPayment) continue;
+
+      await (prisma as any).bankTransaction.update({
+        where: { id: manual.id },
+        data: { status: "ignored" },
+      });
+      ignored++;
+      affectedCpIds.add(manual.counterpartyId);
+    }
+
+    for (const cpId of affectedCpIds) {
+      await recalculateBalance(cpId);
+    }
+
+    res.json({
+      success: true,
+      scannedManual: manuals.length,
+      ignored,
+      recalculatedCounterparties: affectedCpIds.size,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /admin/finance/import-history — list all import batches
 router.get("/import-history", async (_req: Request, res: Response, next: NextFunction) => {
   try {

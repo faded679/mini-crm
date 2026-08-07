@@ -862,6 +862,7 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
       deliveryTypeId,
       mpAccountDate,
       volume: bodyVolume,
+      counterpartyId: bodyCounterpartyId,
     } = req.body;
 
     if (!phone || !city || !deliveryDate || !boxCount || !packagingType) {
@@ -897,6 +898,29 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
 
     if (client.isBlocked) {
       throw new ApiError(403, "Ваш аккаунт заблокирован для создания новых заявок");
+    }
+
+    // Resolve organization for multi-org clients
+    const clientLinks = await (prisma as any).counterpartyContact.findMany({
+      where: { clientId: client.id },
+      select: { counterpartyId: true },
+    });
+    const linkedOrgIds = clientLinks.map((l: { counterpartyId: number }) => l.counterpartyId);
+
+    let resolvedCounterpartyId: number | null = null;
+    if (bodyCounterpartyId !== undefined && bodyCounterpartyId !== null && bodyCounterpartyId !== "") {
+      const requestedCpId = Number(bodyCounterpartyId);
+      if (!Number.isFinite(requestedCpId)) {
+        throw new ApiError(400, "Invalid counterpartyId");
+      }
+      if (!linkedOrgIds.includes(requestedCpId)) {
+        throw new ApiError(400, "Организация не привязана к этому клиенту");
+      }
+      resolvedCounterpartyId = requestedCpId;
+    } else if (linkedOrgIds.length === 1) {
+      resolvedCounterpartyId = linkedOrgIds[0];
+    } else if (linkedOrgIds.length > 1) {
+      throw new ApiError(400, "Выберите организацию для заявки");
     }
 
     const isFbs = deliveryTypeId !== undefined && Number(deliveryTypeId) === 1;
@@ -964,6 +988,7 @@ router.post("/requests-web", async (req: Request, res: Response, next: NextFunct
     const request = await prisma.shipmentRequest.create({
       data: {
         clientId: client.id,
+        ...(resolvedCounterpartyId ? { counterpartyId: resolvedCounterpartyId } : {}),
         cityId: cityRecord.id,
         city,
         deliveryDate: new Date(deliveryDate),

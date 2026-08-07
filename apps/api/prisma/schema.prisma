@@ -84,6 +84,7 @@ model Counterparty {
   invoices              Invoice[]
   bankTransactions      BankTransaction[]
   balance               CounterpartyBalance?
+  shipmentRequests      ShipmentRequest[]
 
   @@map("counterparties")
 }
@@ -117,6 +118,8 @@ model Manager {
 model ShipmentRequest {
   id          Int                    @id @default(autoincrement())
   clientId    Int                    @map("client_id")
+  /// Организация, от которой оформлена заявка (важно при нескольких орг у клиента)
+  counterpartyId Int?                @map("counterparty_id")
   cityId      Int                    @map("city_id")
   city        String                 @default("")
   deliveryDate DateTime             @map("delivery_date")
@@ -137,6 +140,7 @@ model ShipmentRequest {
   updatedAt   DateTime               @updatedAt @map("updated_at")
 
   client       Client                 @relation(fields: [clientId], references: [id])
+  counterparty Counterparty?          @relation(fields: [counterpartyId], references: [id])
   cityRef      City                   @relation(fields: [cityId], references: [id])
   boxType      BoxType?               @relation(fields: [boxTypeId], references: [id])
   palletType   PalletType?            @relation(fields: [palletTypeId], references: [id])
@@ -148,6 +152,7 @@ model ShipmentRequest {
   photos       RequestPhoto[]
   invoices     InvoiceRequest[]
 
+  @@index([counterpartyId])
   @@map("shipment_requests")
 }
 

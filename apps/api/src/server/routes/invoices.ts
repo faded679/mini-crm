@@ -4,7 +4,7 @@ import { ApiError } from "../errors.js";
 import { tbankPayment } from "../../services/tbank-payment.js";
 import { notifyClient } from "../services/telegram-notifier.js";
 import { sendPaymentLinkEmail } from "../services/email-service.js";
-import { recalculateBalance } from "../services/bank-import-service.js";
+import { recalculateBalance, findMatchedPaymentForInvoice } from "../services/bank-import-service.js";
 
 const router = Router();
 
@@ -377,13 +377,19 @@ router.post("/:id/check-payment", async (req: Request, res: Response, next: Next
         data: { status: "paid", isPaid: true, paidAt: new Date() },
       });
 
-      // Создаём BankTransaction если её ещё нет
+      // Создаём BankTransaction если её ещё нет (по номеру счёта / T-Bank id)
       if (invoice.counterpartyId) {
         const totalAmount = invoice.items.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0);
-        const existingTx = await (prisma as any).bankTransaction.findFirst({
-          where: { tbankPaymentId: invoice.tbankPaymentId },
-        });
-        if (!existingTx) {
+        const existingByTbank = invoice.tbankPaymentId
+          ? await (prisma as any).bankTransaction.findFirst({
+              where: { tbankPaymentId: invoice.tbankPaymentId },
+            })
+          : null;
+        const existingByInvoice = existingByTbank
+          ? null
+          : await findMatchedPaymentForInvoice(invoice.counterpartyId, invoice.number);
+
+        if (!existingByTbank && !existingByInvoice) {
           await (prisma as any).bankTransaction.create({
             data: {
               counterpartyId: invoice.counterpartyId,

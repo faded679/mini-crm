@@ -58,6 +58,17 @@ function getRequestTotal(r: ShipmentRequest) {
   return total > 0 ? total : null;
 }
 
+/** Организация заявки: явная привязка, иначе fallback на первую связь клиента */
+function getRequestOrg(r: ShipmentRequest): { id?: number; shortName?: string | null; name?: string; preferredPayment?: string | null } | null {
+  if (r.counterparty) return r.counterparty;
+  const links = (r.client as any)?.counterparties as { counterparty: any }[] | undefined;
+  if (r.counterpartyId && links?.length) {
+    const found = links.find((l) => l.counterparty?.id === r.counterpartyId)?.counterparty;
+    if (found) return found;
+  }
+  return links?.[0]?.counterparty ?? null;
+}
+
 function getEffectiveVolume(r: ShipmentRequest): number | null {
   if (r.volume != null) return r.volume;
   const services = (r as any).services as { unit?: string; quantity?: number }[] | undefined;
@@ -85,7 +96,7 @@ export default function Requests() {
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [orgSearch, setOrgSearch] = useState("");
   const [citiesList, setCitiesList] = useState<City[]>([]);
-  const [newReq, setNewReq] = useState({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "", boxTypeId: "", palletTypeId: "" });
+  const [newReq, setNewReq] = useState({ clientId: "", counterpartyId: "", cityId: "", deliveryDate: "", packagingType: "pallets" as PackagingType, boxCount: "1", weight: "", comment: "", boxTypeId: "", palletTypeId: "" });
   const [creating, setCreating] = useState(false);
   
   // Box types, pallet types and rates for FBO
@@ -224,7 +235,7 @@ export default function Requests() {
     }
     if (searchOrg.trim()) {
       const q = searchOrg.trim().toLowerCase();
-      const cp = (r.client as any)?.counterparties?.[0]?.counterparty;
+      const cp = getRequestOrg(r);
       const orgName = (cp?.shortName ?? cp?.name ?? "").toLowerCase();
       const inn = (cp?.inn ?? "").toLowerCase();
       const clientName = `${r.client.firstName ?? ""} ${r.client.lastName ?? ""}`.trim().toLowerCase();
@@ -278,9 +289,9 @@ export default function Requests() {
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
     
     // Проверяем, что все заявки от одной организации (counterparty).
-    // Берём все counterparty ids клиента и ищем пересечение — если у всех заявок
-    // есть хотя бы один общий контрагент, ошибки нет.
+    // Приоритет: явный counterpartyId на заявке, иначе все связи клиента.
     const cpIdSets = selectedRequests.map(r => {
+      if (r.counterpartyId) return new Set([r.counterpartyId]);
       const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
       return new Set((cps ?? []).map(c => c.counterparty.id));
     });
@@ -344,6 +355,7 @@ export default function Requests() {
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
     // Ищем общий counterparty через пересечение всех наборов
     const cpIdSetsCreate = selectedRequests.map(r => {
+      if (r.counterpartyId) return new Set([r.counterpartyId]);
       const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
       return new Set((cps ?? []).map(c => c.counterparty.id));
     });
@@ -600,7 +612,7 @@ export default function Requests() {
               getBoxTypes().then(setBoxTypes).catch(() => {});
               getPalletTypes().then(setPalletTypes).catch(() => {});
               getRates().then(setRates).catch(() => {});
-              setNewReq({ clientId: "", cityId: "", deliveryDate: "", packagingType: "pallets", boxCount: "1", weight: "", comment: "", boxTypeId: "", palletTypeId: "" });
+              setNewReq({ clientId: "", counterpartyId: "", cityId: "", deliveryDate: "", packagingType: "pallets", boxCount: "1", weight: "", comment: "", boxTypeId: "", palletTypeId: "" });
               setNewReqType("fbo");
               setFbsCityId(null);
               setFbsDate("");
@@ -826,7 +838,10 @@ export default function Requests() {
                       }}
                       className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
                     >
-                      {r.client.counterparties?.[0]?.counterparty?.shortName || r.client.counterparties?.[0]?.counterparty?.name || `${r.client.firstName ?? ""} ${r.client.lastName ?? ""}`.trim() || `#${r.client.id}`}
+                      {(() => {
+                        const org = getRequestOrg(r);
+                        return org?.shortName || org?.name || `${r.client.firstName ?? ""} ${r.client.lastName ?? ""}`.trim() || `#${r.client.id}`;
+                      })()}
                     </a>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -955,10 +970,17 @@ export default function Requests() {
                       onChange={(e) => setOrgSearch(e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 mb-2"
                     />
-                    <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                    <select
+                      value={newReq.counterpartyId && newReq.clientId ? `${newReq.counterpartyId}:${newReq.clientId}` : ""}
+                      onChange={(e) => {
+                        const [cpId, clId] = e.target.value.split(":");
+                        setNewReq({ ...newReq, counterpartyId: cpId || "", clientId: clId || "" });
+                      }}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                    >
                       <option value="">Выберите организацию</option>
                       {filteredOrganizations.map((item) => (
-                        <option key={item.clientId} value={item.clientId}>
+                        <option key={`${item.counterparty.id}:${item.clientId}`} value={`${item.counterparty.id}:${item.clientId}`}>
                           {item.shortName || item.displayName} — {item.contactName}
                         </option>
                       ))}
@@ -1053,6 +1075,7 @@ export default function Requests() {
                         
                         await createAdminRequest({
                           clientId: Number(newReq.clientId),
+                          ...(newReq.counterpartyId ? { counterpartyId: Number(newReq.counterpartyId) } : {}),
                           cityId: Number(newReq.cityId),
                           deliveryDate: new Date(newReq.deliveryDate).toISOString(),
                           packagingType: newReq.packagingType,
@@ -1110,10 +1133,17 @@ export default function Requests() {
                       onChange={(e) => setOrgSearch(e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 mb-2"
                     />
-                    <select value={newReq.clientId} onChange={(e) => setNewReq({ ...newReq, clientId: e.target.value })} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                    <select
+                      value={newReq.counterpartyId && newReq.clientId ? `${newReq.counterpartyId}:${newReq.clientId}` : ""}
+                      onChange={(e) => {
+                        const [cpId, clId] = e.target.value.split(":");
+                        setNewReq({ ...newReq, counterpartyId: cpId || "", clientId: clId || "" });
+                      }}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+                    >
                       <option value="">Выберите организацию</option>
                       {filteredOrganizations.map((item) => (
-                        <option key={item.clientId} value={item.clientId}>
+                        <option key={`${item.counterparty.id}:${item.clientId}`} value={`${item.counterparty.id}:${item.clientId}`}>
                           {item.shortName || item.displayName} — {item.contactName}
                         </option>
                       ))}
@@ -1218,6 +1248,7 @@ export default function Requests() {
                         const pricePerM3 = priceNum / volNum;
                         await createAdminRequest({
                           clientId: Number(newReq.clientId),
+                          ...(newReq.counterpartyId ? { counterpartyId: Number(newReq.counterpartyId) } : {}),
                           cityId: fbsCityId!,
                           deliveryDate: new Date(fbsDate).toISOString(),
                           packagingType: "boxes",
