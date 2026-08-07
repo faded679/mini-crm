@@ -372,12 +372,27 @@ router.get("/me", async (req, res, next) => {
       where: { id: clientId },
       include: {
         counterparties: {
-          include: { counterparty: { select: { name: true, shortName: true } } },
+          include: {
+            counterparty: {
+              select: { id: true, name: true, shortName: true, inn: true },
+            },
+          },
         },
       },
     });
     if (!client) throw new ApiError(404, "Client not found");
-    const org = client.counterparties[0]?.counterparty;
+
+    const organizations = (client.counterparties || [])
+      .map((link: any) => link.counterparty)
+      .filter(Boolean)
+      .map((cp: any) => ({
+        id: cp.id,
+        name: cp.shortName || cp.name || `Организация #${cp.id}`,
+        fullName: cp.name || null,
+        inn: cp.inn || null,
+      }));
+
+    const org = organizations[0] || null;
     res.json({
       id: client.id,
       phone: client.phone,
@@ -385,7 +400,8 @@ router.get("/me", async (req, res, next) => {
       firstName: client.firstName,
       lastName: client.lastName,
       isBlocked: client.isBlocked,
-      organization: org?.shortName || org?.name || null,
+      organization: org?.name || null,
+      organizations,
     });
   } catch (err) {
     next(err);

@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { prisma } from "../db/prisma.js";
 import { tbankPayment } from "../../services/tbank-payment.js";
 import { notifyClient } from "../services/telegram-notifier.js";
-import { recalculateBalance } from "../services/bank-import-service.js";
+import { recalculateBalance, findMatchedPaymentForInvoice } from "../services/bank-import-service.js";
 
 const router = Router();
 
@@ -196,10 +196,14 @@ async function handleInvoiceWebhook(invoice: any, notification: any, res: Respon
 
     if (!wasAlreadyPaid && invoice.counterpartyId) {
       try {
-        const existingTx = await (prisma as any).bankTransaction.findFirst({
+        const existingByTbank = await (prisma as any).bankTransaction.findFirst({
           where: { tbankPaymentId: PaymentId },
         });
-        if (!existingTx) {
+        const existingByInvoice = existingByTbank
+          ? null
+          : await findMatchedPaymentForInvoice(invoice.counterpartyId, invoice.number);
+
+        if (!existingByTbank && !existingByInvoice) {
           await (prisma as any).bankTransaction.create({
             data: {
               counterpartyId: invoice.counterpartyId,

@@ -1,0 +1,35 @@
+-- Optional one-time cleanup (SAFE): mark duplicate MANUAL payments as ignored
+-- when another matched payment already exists for the same invoice number.
+-- Does NOT delete any rows. Run after deploy if balances look inflated.
+--
+-- Preview first:
+-- SELECT m.id, m.document_number, m.amount, m.invoice_numbers, m.counterparty_id
+-- FROM bank_transactions m
+-- WHERE m.status = 'matched'
+--   AND m.direction = 'incoming'
+--   AND m.document_number LIKE 'MANUAL-%'
+--   AND EXISTS (
+--     SELECT 1 FROM bank_transactions o
+--     WHERE o.id <> m.id
+--       AND o.counterparty_id = m.counterparty_id
+--       AND o.status = 'matched'
+--       AND o.direction = 'incoming'
+--       AND o.invoice_numbers && m.invoice_numbers
+--   );
+--
+-- Then prefer calling API: POST /admin/finance/dedupe-manual-payments
+-- Or uncomment below after reviewing the preview.
+
+-- UPDATE bank_transactions m
+-- SET status = 'ignored'
+-- WHERE m.status = 'matched'
+--   AND m.direction = 'incoming'
+--   AND m.document_number LIKE 'MANUAL-%'
+--   AND EXISTS (
+--     SELECT 1 FROM bank_transactions o
+--     WHERE o.id <> m.id
+--       AND o.counterparty_id = m.counterparty_id
+--       AND o.status = 'matched'
+--       AND o.direction = 'incoming'
+--       AND o.invoice_numbers && m.invoice_numbers
+--   );

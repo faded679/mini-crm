@@ -151,15 +151,105 @@ export async function importBankStatement(
 }
 
 /**
+ * Find an already-matched payment linked to an invoice number.
+ * Checks invoiceNumbers[] first, then common purpose text patterns
+ * (bank imports / T-Bank / manual marks use different wording).
+ */
+export async function findMatchedPaymentForInvoice(
+  counterpartyId: number,
+  invoiceNumber: string
+): Promise<{ id: number; documentNumber: string; amount: number } | null> {
+  if (!invoiceNumber) return null;
+
+  const byArray = await (prisma as any).bankTransaction.findFirst({
+    where: {
+      counterpartyId,
+      direction: "incoming",
+      status: "matched",
+      invoiceNumbers: { has: invoiceNumber },
+    },
+    select: { id: true, documentNumber: true, amount: true },
+    orderBy: { id: "asc" },
+  });
+  if (byArray) return byArray;
+
+  // Fallback: purpose text variants used across import / T-Bank / manual mark
+  const purposePatterns = [
+    `Счёт №${invoiceNumber}`,
+    `Счет №${invoiceNumber}`,
+    `счёта №${invoiceNumber}`,
+    `счета №${invoiceNumber}`,
+    `счету №${invoiceNumber}`,
+  ];
+
+  for (const pattern of purposePatterns) {
+    const byPurpose = await (prisma as any).bankTransaction.findFirst({
+      where: {
+        counterpartyId,
+        direction: "incoming",
+        status: "matched",
+        purpose: { contains: pattern, mode: "insensitive" },
+      },
+      select: { id: true, documentNumber: true, amount: true },
+      orderBy: { id: "asc" },
+    });
+    if (byPurpose) return byPurpose;
+  }
+
+  return null;
+}
+
+/**
+ * Ignore MANUAL-* payment rows created by "Отметить оплаченным" for this invoice.
+ * Does NOT touch real bank imports or T-Bank payments.
+ */
+export async function ignoreManualPaymentsForInvoice(
+  counterpartyId: number,
+  invoiceNumber: string
+): Promise<number> {
+  if (!invoiceNumber) return 0;
+
+  const manuals = await (prisma as any).bankTransaction.findMany({
+    where: {
+      counterpartyId,
+      direction: "incoming",
+      status: "matched",
+      documentNumber: { startsWith: "MANUAL-" },
+      OR: [
+        { invoiceNumbers: { has: invoiceNumber } },
+        { purpose: { contains: `счету №${invoiceNumber}`, mode: "insensitive" } },
+        { purpose: { contains: `счёта №${invoiceNumber}`, mode: "insensitive" } },
+        { purpose: { contains: `счета №${invoiceNumber}`, mode: "insensitive" } },
+        { purpose: { contains: `Счёт №${invoiceNumber}`, mode: "insensitive" } },
+        { purpose: { contains: `Счет №${invoiceNumber}`, mode: "insensitive" } },
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (manuals.length === 0) return 0;
+
+  await (prisma as any).bankTransaction.updateMany({
+    where: { id: { in: manuals.map((t: { id: number }) => t.id) } },
+    data: { status: "ignored" },
+  });
+
+  return manuals.length;
+}
+
+/**
  * Recalculate balance for a counterparty
- * - totalBilled: sum of all invoice item amounts (not invoice.amount field)
+ * - totalBilled: sum of invoice item amounts excluding cancelled invoices
  * - totalPaid: sum of all matched incoming bank transactions
  * - balance: totalBilled - totalPaid (positive = debt, negative = prepaid)
  */
 export async function recalculateBalance(counterpartyId: number): Promise<void> {
-  // Get all invoices for this counterparty with their items
+  // Get non-cancelled invoices for this counterparty with their items
   const invoices = await (prisma as any).invoice.findMany({
-    where: { counterpartyId },
+    where: {
+      counterpartyId,
+      status: { not: "cancelled" },
+    },
     include: { items: true },
   });
 

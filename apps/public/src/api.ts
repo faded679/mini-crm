@@ -203,6 +203,7 @@ interface CreateWebRequestPayload {
   volume?: number;
   comment?: string;
   mpAccountDate?: string;
+  counterpartyId?: number;
   items?: { description: string; unit: string; quantity: number; price: number; amount: number }[];
 }
 
@@ -260,6 +261,13 @@ export interface CreateDepositResponse {
   paymentId: string;
 }
 
+export interface ClientOrganization {
+  id: number;
+  name: string;
+  fullName: string | null;
+  inn: string | null;
+}
+
 export interface MeResponse {
   id: number;
   phone: string | null;
@@ -268,6 +276,7 @@ export interface MeResponse {
   lastName: string | null;
   isBlocked: boolean;
   organization: string | null;
+  organizations?: ClientOrganization[];
 }
 
 export interface CompanyInfoItem {

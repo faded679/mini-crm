@@ -351,11 +351,18 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
 
             <p className="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap">
-              {(request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
+              {request.counterparty?.shortName ||
+                request.counterparty?.name ||
+                (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.shortName ||
+                (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.name ||
+                (request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
                 (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
                 "—"}
               {(() => {
-                const pp = (request.client as any)?.counterparties?.[0]?.counterparty?.preferredPayment;
+                const pp =
+                  request.counterparty?.preferredPayment ||
+                  (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.preferredPayment ||
+                  (request.client as any)?.counterparties?.[0]?.counterparty?.preferredPayment;
                 if (!pp) return null;
                 const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
                 const colors: Record<string, string> = {
@@ -1153,7 +1160,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           setConfirmInvoice(true);
                         } else {
                           // No existing invoice, prepare to create new one
-                          const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
+                          const cp =
+                            request?.counterparty ||
+                            (request?.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request?.counterpartyId)?.counterparty ||
+                            (request?.client as any)?.counterparties?.[0]?.counterparty;
                           setInvoiceCounterpartyId(cp?.id ?? "");
                           if (services.length > 0) {
                             setInvoiceItems(services.map((s) => ({
@@ -1172,7 +1182,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                       } catch (err) {
                         console.error("Failed to check existing invoices:", err);
                         // Fallback to creating new invoice
-                        const cp = (request?.client as any)?.counterparties?.[0]?.counterparty;
+                        const cp =
+                          request?.counterparty ||
+                          (request?.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request?.counterpartyId)?.counterparty ||
+                          (request?.client as any)?.counterparties?.[0]?.counterparty;
                         setInvoiceCounterpartyId(cp?.id ?? "");
                         if (services.length > 0) {
                           setInvoiceItems(services.map((s) => ({
@@ -1459,7 +1472,11 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент (заказчик)</label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                      {(request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
+                      {request.counterparty?.shortName ||
+                        request.counterparty?.name ||
+                        (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.shortName ||
+                        (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.name ||
+                        (request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
                         (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
                         "Не привязан"}
                     </p>
