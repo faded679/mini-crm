@@ -529,15 +529,20 @@ router.post("/deposit", async (req, res, next) => {
       throw new ApiError(400, "Укажите организацию для пополнения");
     }
 
-    // Создаём запись пополнения
-    const balancePayment = await (prisma as any).balancePayment.create({
-      data: {
-        clientId,
-        amount: numericAmount,
-        status: "new",
-        ...(resolvedCpId ? { counterpartyId: resolvedCpId } : {}),
-      },
-    });
+    let balancePayment: any;
+    try {
+      balancePayment = await (prisma as any).balancePayment.create({
+        data: {
+          clientId,
+          amount: numericAmount,
+          status: "new",
+          ...(resolvedCpId ? { counterpartyId: resolvedCpId } : {}),
+        },
+      });
+    } catch (dbErr: any) {
+      console.error("Deposit balancePayment.create failed:", dbErr);
+      throw new ApiError(500, `Не удалось создать платёж в БД: ${dbErr?.message || "db error"}`);
+    }
 
     const amountInKopecks = Math.round(numericAmount * 100);
     const orderId = `DEP-${balancePayment.id}-${Date.now()}`.slice(0, 36);
@@ -558,18 +563,36 @@ router.post("/deposit", async (req, res, next) => {
       ],
     };
     if (client.email) receipt.Email = client.email;
-    else if (client.phone) receipt.Phone = client.phone;
+    else if (client.phone) {
+      // T-Bank ожидает телефон цифрами, часто без "+"
+      receipt.Phone = String(client.phone).replace(/\D/g, "");
+    }
 
-    const paymentResult = await tbankPayment.initPayment({
-      amount: amountInKopecks,
-      orderId,
-      description,
-      customerKey: client.telegramId || String(clientId),
-      notificationURL,
-      successURL: returnURL,
-      failURL: returnURL,
-      receipt,
-    });
+    let paymentResult: any;
+    try {
+      paymentResult = await tbankPayment.initPayment({
+        amount: amountInKopecks,
+        orderId,
+        description,
+        customerKey: client.telegramId || String(clientId),
+        notificationURL,
+        successURL: returnURL,
+        failURL: returnURL,
+        receipt,
+      });
+    } catch (tbankErr: any) {
+      console.error("Deposit T-Bank init failed:", tbankErr);
+      // Помечаем запись, чтобы не висели "new" без ссылки
+      try {
+        await (prisma as any).balancePayment.update({
+          where: { id: balancePayment.id },
+          data: { status: "cancelled" },
+        });
+      } catch (_) {
+        /* ignore */
+      }
+      throw new ApiError(502, tbankErr?.message || "Ошибка инициализации оплаты T-Bank");
+    }
 
     await (prisma as any).balancePayment.update({
       where: { id: balancePayment.id },
