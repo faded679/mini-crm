@@ -59,7 +59,7 @@ function getRequestTotal(r: ShipmentRequest) {
 }
 
 /** Организация заявки: явная привязка, иначе fallback на первую связь клиента */
-function getRequestOrg(r: ShipmentRequest): { id?: number; shortName?: string | null; name?: string; preferredPayment?: string | null } | null {
+function getRequestOrg(r: ShipmentRequest): { id?: number; shortName?: string | null; name?: string; inn?: string | null; preferredPayment?: string | null } | null {
   if (r.counterparty) return r.counterparty;
   const links = (r.client as any)?.counterparties as { counterparty: any }[] | undefined;
   if (r.counterpartyId && links?.length) {
