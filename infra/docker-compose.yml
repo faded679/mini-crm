@@ -40,6 +40,8 @@ services:
       TBANK_TERMINAL_KEY: ${TBANK_TERMINAL_KEY:-}
       TBANK_SECRET_KEY: ${TBANK_SECRET_KEY:-}
       TBANK_API_URL: ${TBANK_API_URL:-https://securepay.tinkoff.ru/v2}
+      # self-signed в цепочке на сервере ломает fetch к T-Bank; отключить: TBANK_INSECURE_SSL=false
+      TBANK_INSECURE_SSL: ${TBANK_INSECURE_SSL:-true}
       API_BASE_URL: ${API_BASE_URL:-https://test.ved31.ru/api}
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://sologo.ru}
       ZVONOK_PUBLIC_KEY: ${ZVONOK_PUBLIC_KEY:-}

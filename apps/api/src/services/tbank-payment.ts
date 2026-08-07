@@ -1,4 +1,6 @@
 import crypto from "crypto";
+import https from "https";
+import { URL } from "url";
 
 interface TBankReceiptItem {
   Name: string;
@@ -51,18 +53,33 @@ interface TBankNotification {
   Token: string;
 }
 
+function envFlagTrue(name: string, defaultValue = false): boolean {
+  const v = process.env[name];
+  if (v == null || v === "") return defaultValue;
+  return v === "1" || v.toLowerCase() === "true" || v.toLowerCase() === "yes";
+}
+
 export class TBankPaymentService {
   private terminalKey: string;
   private secretKey: string;
   private apiUrl: string;
+  private insecureSsl: boolean;
+  private httpsAgent: https.Agent;
 
   constructor() {
     this.terminalKey = process.env.TBANK_TERMINAL_KEY || "";
     this.secretKey = process.env.TBANK_SECRET_KEY || "";
     this.apiUrl = process.env.TBANK_API_URL || "https://securepay.tinkoff.ru/v2";
+    // На части серверов в цепочке TLS появляется self-signed (прокси/антивирус).
+    // Включаем точечно для T-Bank, не для всего Node.
+    this.insecureSsl = envFlagTrue("TBANK_INSECURE_SSL", true);
+    this.httpsAgent = new https.Agent({ rejectUnauthorized: !this.insecureSsl });
 
     if (!this.terminalKey || !this.secretKey) {
       console.warn("T-Bank credentials not configured");
+    }
+    if (this.insecureSsl) {
+      console.warn("T-Bank: TBANK_INSECURE_SSL enabled (TLS verify disabled for T-Bank API only)");
     }
   }
 
@@ -86,6 +103,42 @@ export class TBankPaymentService {
 
     // SHA-256 хеш
     return crypto.createHash("sha256").update(concatenated).digest("hex");
+  }
+
+  private postJson(urlStr: string, body: Record<string, any>): Promise<{ status: number; statusText: string; text: string }> {
+    const url = new URL(urlStr);
+    const payload = JSON.stringify(body);
+
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          protocol: url.protocol,
+          hostname: url.hostname,
+          port: url.port || 443,
+          path: `${url.pathname}${url.search}`,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payload),
+          },
+          agent: this.httpsAgent,
+        },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+          res.on("end", () => {
+            resolve({
+              status: res.statusCode || 0,
+              statusText: res.statusMessage || "",
+              text: Buffer.concat(chunks).toString("utf8"),
+            });
+          });
+        }
+      );
+      req.on("error", reject);
+      req.write(payload);
+      req.end();
+    });
   }
 
   /**
@@ -115,29 +168,23 @@ export class TBankPaymentService {
     console.log("T-Bank Init URL:", url);
     console.log("T-Bank Init request:", JSON.stringify(body, null, 2));
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    const responseText = await response.text();
+    const response = await this.postJson(url, body);
     console.log("T-Bank Init response status:", response.status);
 
     let result: TBankInitPaymentResponse;
     try {
-      result = JSON.parse(responseText) as TBankInitPaymentResponse;
+      result = JSON.parse(response.text) as TBankInitPaymentResponse;
     } catch {
-      console.error("T-Bank returned non-JSON response:", responseText.slice(0, 500));
+      console.error("T-Bank returned non-JSON response:", response.text.slice(0, 500));
       throw new Error(`T-Bank API error: ${response.status} ${response.statusText} (non-JSON response)`);
     }
 
     console.log("T-Bank Init response:", JSON.stringify(result, null, 2));
 
-    if (!response.ok || !result.Success) {
-      throw new Error(`T-Bank payment init failed: ${result.ErrorCode || response.status} - ${result.Message || response.statusText}`);
+    if (response.status < 200 || response.status >= 300 || !result.Success) {
+      throw new Error(
+        `T-Bank payment init failed: ${result.ErrorCode || response.status} - ${result.Message || response.statusText}`
+      );
     }
 
     return result;
@@ -164,22 +211,16 @@ export class TBankPaymentService {
 
     const token = this.generateToken(requestData);
 
-    const response = await fetch(`${this.apiUrl}/GetState`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...requestData,
-        Token: token,
-      }),
+    const response = await this.postJson(`${this.apiUrl}/GetState`, {
+      ...requestData,
+      Token: token,
     });
 
-    if (!response.ok) {
+    if (response.status < 200 || response.status >= 300) {
       throw new Error(`T-Bank API error: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return JSON.parse(response.text);
   }
 }
 
