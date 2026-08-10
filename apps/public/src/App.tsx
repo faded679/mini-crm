@@ -6,9 +6,10 @@ import {
   getSelectedOrgId,
   setSelectedOrgId,
   clearSelectedOrgId,
+  clearAuth,
   migrateOrgStorage,
 } from "./auth";
-import { getMe, type ClientOrganization, type MeResponse } from "./api";
+import { getMe, ApiRequestError, type ClientOrganization, type MeResponse } from "./api";
 import BottomNav from "./components/BottomNav";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -20,13 +21,37 @@ import Info from "./pages/Info";
 import Success from "./pages/Success";
 import SelectOrganization from "./pages/SelectOrganization";
 
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function getMeWithRetry(token: string, attempts = 3): Promise<MeResponse> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await getMe(token);
+    } catch (err) {
+      lastErr = err;
+      if (err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
+        throw err;
+      }
+      if (i < attempts - 1) {
+        await sleep(400 * (i + 1));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(isAuthenticated());
   const [me, setMe] = useState<MeResponse | null>(null);
   const [orgReady, setOrgReady] = useState(false);
   const [needsOrgPick, setNeedsOrgPick] = useState(false);
   const [organizations, setOrganizations] = useState<ClientOrganization[]>([]);
-  const [loadingMe, setLoadingMe] = useState(false);
+  /** true until first /me attempt finishes — avoids false "failed to load" flash */
+  const [loadingMe, setLoadingMe] = useState(() => isAuthenticated());
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const resolveOrgContext = useCallback(async () => {
     const token = getToken();
@@ -35,12 +60,15 @@ export default function App() {
       setOrgReady(false);
       setNeedsOrgPick(false);
       setOrganizations([]);
+      setLoadingMe(false);
+      setLoadError(null);
       return;
     }
 
     setLoadingMe(true);
+    setLoadError(null);
     try {
-      const data = await getMe(token);
+      const data = await getMeWithRetry(token);
       setMe(data);
       const orgs = data.organizations || [];
       setOrganizations(orgs);
@@ -72,9 +100,33 @@ export default function App() {
       setOrgReady(true);
     } catch (err) {
       console.error("Failed to load /me for org context:", err);
-      // Don't open cabinet without org context — FBO/FBS would fail with "org not selected"
+
+      if (err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) {
+        clearAuth();
+        setAuthed(false);
+        setMe(null);
+        setOrgReady(false);
+        setNeedsOrgPick(false);
+        setOrganizations([]);
+        setLoadError(null);
+        return;
+      }
+
+      // Degraded: if org already chosen, open cabinet — FBO/FBS will re-fetch /me on submit
+      if (getSelectedOrgId() != null) {
+        setNeedsOrgPick(false);
+        setOrgReady(true);
+        setLoadError(null);
+        return;
+      }
+
       setNeedsOrgPick(false);
       setOrgReady(false);
+      setLoadError(
+        err instanceof ApiRequestError
+          ? `Не удалось загрузить профиль (${err.status})`
+          : "Не удалось загрузить профиль. Проверьте интернет и попробуйте снова."
+      );
     } finally {
       setLoadingMe(false);
     }
@@ -87,21 +139,22 @@ export default function App() {
   useEffect(() => {
     const check = () => setAuthed(isAuthenticated());
     window.addEventListener("storage", check);
-    window.addEventListener("se-org-changed", check);
     return () => {
       window.removeEventListener("storage", check);
-      window.removeEventListener("se-org-changed", check);
     };
   }, []);
 
   useEffect(() => {
     if (authed) {
+      setLoadingMe(true);
       resolveOrgContext();
     } else {
       setMe(null);
       setOrgReady(false);
       setNeedsOrgPick(false);
       setOrganizations([]);
+      setLoadingMe(false);
+      setLoadError(null);
     }
   }, [authed, resolveOrgContext]);
 
@@ -111,16 +164,30 @@ export default function App() {
 
   if (!orgReady && !needsOrgPick) {
     return (
-      <div className="min-h-[100dvh] bg-bg flex flex-col items-center justify-center gap-3 px-4">
-        <p className="text-muted text-sm">{loadingMe ? "Загрузка..." : "Не удалось загрузить профиль"}</p>
-        {!loadingMe && (
-          <button
-            type="button"
-            className="text-sm text-accent underline"
-            onClick={() => resolveOrgContext()}
-          >
-            Повторить
-          </button>
+      <div className="min-h-[100dvh] bg-bg flex flex-col items-center justify-center gap-3 px-4 text-center">
+        {loadingMe || !loadError ? (
+          <p className="text-muted text-sm">Загрузка...</p>
+        ) : (
+          <>
+            <p className="text-muted text-sm">{loadError}</p>
+            <button
+              type="button"
+              className="text-sm text-accent underline"
+              onClick={() => resolveOrgContext()}
+            >
+              Повторить
+            </button>
+            <button
+              type="button"
+              className="text-sm text-muted underline"
+              onClick={() => {
+                clearAuth();
+                setAuthed(false);
+              }}
+            >
+              Выйти и войти заново
+            </button>
+          </>
         )}
       </div>
     );

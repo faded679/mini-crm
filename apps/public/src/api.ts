@@ -2,11 +2,23 @@ import { getAuthHeader } from "./auth";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
+export class ApiRequestError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`API error ${status}: ${body}`);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, options);
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
+    throw new ApiRequestError(res.status, body);
   }
   return res.json();
 }
