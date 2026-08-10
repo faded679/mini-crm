@@ -16,6 +16,13 @@ import {
   type CounterpartyPayload,
   type CounterpartyFinanceSummary,
 } from "../api";
+import {
+  PREFERRED_PAYMENT_METHODS,
+  PREFERRED_PAYMENT_LABELS,
+  normalizePreferredPayment,
+  parsePreferredPayment,
+  serializePreferredPayment,
+} from "../lib/preferredPayment";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU");
@@ -46,7 +53,7 @@ function toFormState(c?: Counterparty): FormState {
     director: c.director,
     directorPost: c.directorPost,
     contract: c.contract,
-    preferredPayment: c.preferredPayment ?? "",
+    preferredPayment: normalizePreferredPayment(c.preferredPayment) ?? "",
     contactClientIds: c.contacts.map((x) => x.client.id),
   };
 }
@@ -299,7 +306,7 @@ export default function Counterparties() {
         director: form.director ?? null,
         directorPost: form.directorPost ?? null,
         contract: form.contract ?? null,
-        preferredPayment: (form.preferredPayment && form.preferredPayment.trim()) ? form.preferredPayment.trim() : null,
+        preferredPayment: normalizePreferredPayment(form.preferredPayment),
         contactClientIds: form.contactClientIds ?? [],
       };
 
@@ -574,38 +581,29 @@ export default function Counterparties() {
               <div className="md:col-span-2">
                 <div className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Предпочтительная оплата</div>
                 <div className="flex flex-wrap gap-3 mb-2">
-                  {(["qr", "link", "invoice_act", "edo"] as const).map((val) => {
-                    const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
-                    const rawParts = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
-                    const current = rawParts.map(p => p.startsWith("other:") ? "other" : p);
-                    const checked = current.includes(val);
+                  {PREFERRED_PAYMENT_METHODS.map((val) => {
+                    const { methods, other } = parsePreferredPayment(form.preferredPayment);
+                    const checked = methods.has(val);
                     return (
                       <label key={val} className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-gray-100">
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => {
-                            const parts = (form.preferredPayment ?? "").split(",").map(s => s.trim()).filter(Boolean);
-                            const next = checked
-                              ? parts.filter(p => p !== val)
-                              : [...parts, val];
-                            setField("preferredPayment", next.join(",") || "");
+                            const parsed = parsePreferredPayment(form.preferredPayment);
+                            if (parsed.methods.has(val)) parsed.methods.delete(val);
+                            else parsed.methods.add(val);
+                            setField("preferredPayment", serializePreferredPayment(parsed.methods, parsed.other));
                           }}
                           className="rounded"
                         />
-                        {labels[val]}
+                        {PREFERRED_PAYMENT_LABELS[val]}
                       </label>
                     );
                   })}
-                  {/* Other checkbox */}
                   {(() => {
-                    const raw = form.preferredPayment ?? "";
-                    // Split carefully: other: part may contain commas, so find it last
-                    const otherMatch = raw.match(/(^|,)(other:[^]*)/);
-                    const otherPart = otherMatch ? otherMatch[2] : null;
-                    const otherChecked = !!otherPart;
-                    const otherText = otherPart ? otherPart.slice(6) : "";
-                    const simpleParts = raw.split(",").map(s => s.trim()).filter(s => Boolean(s) && !s.startsWith("other"));
+                    const { methods, other } = parsePreferredPayment(form.preferredPayment);
+                    const otherChecked = other !== null;
                     return (
                       <>
                         <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-900 dark:text-gray-100">
@@ -613,12 +611,10 @@ export default function Counterparties() {
                             type="checkbox"
                             checked={otherChecked}
                             onChange={() => {
-                              if (otherChecked) {
-                                setField("preferredPayment", simpleParts.join(",") || "");
-                              } else {
-                                const next = [...simpleParts, "other:"];
-                                setField("preferredPayment", next.join(",") || "");
-                              }
+                              setField(
+                                "preferredPayment",
+                                serializePreferredPayment(methods, otherChecked ? null : "")
+                              );
                             }}
                             className="rounded"
                           />
@@ -627,10 +623,12 @@ export default function Counterparties() {
                         {otherChecked && (
                           <input
                             type="text"
-                            value={otherText}
+                            value={other ?? ""}
                             onChange={(e) => {
-                              const next = [...simpleParts, `other:${e.target.value}`];
-                              setField("preferredPayment", next.join(",") || "");
+                              setField(
+                                "preferredPayment",
+                                serializePreferredPayment(methods, e.target.value)
+                              );
                             }}
                             placeholder="Комментарий..."
                             className="flex-1 min-w-[160px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"

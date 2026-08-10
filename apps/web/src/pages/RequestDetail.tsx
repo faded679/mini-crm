@@ -56,6 +56,7 @@ import {
   type PriceFbsEntry,
 } from "../api";
 import { cn } from "../lib/utils";
+import { preferredPaymentBadges } from "../lib/preferredPayment";
 import { ArrowLeft, FileText, Plus, Trash2 } from "lucide-react";
 
 const statusLabels: Record<RequestStatus, string> = {
@@ -73,6 +74,19 @@ const statusColors: Record<RequestStatus, string> = {
   done: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   archived: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
+
+/** Org for request — never fall back to another client's org when multi-org. */
+function getDetailRequestOrg(request: ShipmentRequestDetail | null | undefined) {
+  if (!request) return null;
+  if (request.counterparty) return request.counterparty;
+  const links = (request.client as any)?.counterparties as { counterparty: any }[] | undefined;
+  if (!links?.length) return null;
+  if (request.counterpartyId) {
+    return links.find((l) => l.counterparty?.id === request.counterpartyId)?.counterparty ?? null;
+  }
+  if (links.length === 1) return links[0]?.counterparty ?? null;
+  return null;
+}
 
 export default function RequestDetail({ embedded = false, requestId, onArchived }: { embedded?: boolean; requestId?: number; onArchived?: () => void }) {
   const { id } = useParams<{ id: string }>();
@@ -351,40 +365,20 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Заявка #{request.id}</h1>
 
             <p className="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap">
-              {request.counterparty?.shortName ||
-                request.counterparty?.name ||
-                (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.shortName ||
-                (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.name ||
-                (request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
-                (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
-                "—"}
               {(() => {
-                const pp =
-                  request.counterparty?.preferredPayment ||
-                  (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.preferredPayment ||
-                  (request.client as any)?.counterparties?.[0]?.counterparty?.preferredPayment;
-                if (!pp) return null;
-                const labels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
-                const colors: Record<string, string> = {
-                  qr: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-                  link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-                  invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-                  edo: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
-                  other: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-                };
-                const methods = pp.split(",").map((s: string) => s.trim()).filter(Boolean);
+                const org = getDetailRequestOrg(request);
+                return org?.shortName || org?.name || "—";
+              })()}
+              {(() => {
+                const badges = preferredPaymentBadges(getDetailRequestOrg(request)?.preferredPayment);
+                if (badges.length === 0) return null;
                 return (
                   <>
-                    {methods.map((m: string) => {
-                      const isOther = m.startsWith("other:");
-                      const key = isOther ? "other" : m;
-                      const label = isOther ? `Др.: ${m.slice(6) || "…"}` : (labels[m] ?? m);
-                      return (
-                        <span key={m} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[key] ?? "bg-gray-100 text-gray-600"}`}>
-                          💳 {label}
-                        </span>
-                      );
-                    })}
+                    {badges.map((b) => (
+                      <span key={b.key} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${b.colorClass}`}>
+                        💳 {b.label}
+                      </span>
+                    ))}
                   </>
                 );
               })()}
@@ -1160,10 +1154,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                           setConfirmInvoice(true);
                         } else {
                           // No existing invoice, prepare to create new one
-                          const cp =
-                            request?.counterparty ||
-                            (request?.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request?.counterpartyId)?.counterparty ||
-                            (request?.client as any)?.counterparties?.[0]?.counterparty;
+                          const cp = getDetailRequestOrg(request);
                           setInvoiceCounterpartyId(cp?.id ?? "");
                           if (services.length > 0) {
                             setInvoiceItems(services.map((s) => ({
@@ -1182,10 +1173,7 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                       } catch (err) {
                         console.error("Failed to check existing invoices:", err);
                         // Fallback to creating new invoice
-                        const cp =
-                          request?.counterparty ||
-                          (request?.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request?.counterpartyId)?.counterparty ||
-                          (request?.client as any)?.counterparties?.[0]?.counterparty;
+                        const cp = getDetailRequestOrg(request);
                         setInvoiceCounterpartyId(cp?.id ?? "");
                         if (services.length > 0) {
                           setInvoiceItems(services.map((s) => ({
@@ -1472,13 +1460,10 @@ export default function RequestDetail({ embedded = false, requestId, onArchived 
                   <div>
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Контрагент (заказчик)</label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                      {request.counterparty?.shortName ||
-                        request.counterparty?.name ||
-                        (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.shortName ||
-                        (request.client as any)?.counterparties?.find((l: any) => l.counterparty?.id === request.counterpartyId)?.counterparty?.name ||
-                        (request.client as any)?.counterparties?.[0]?.counterparty?.shortName ||
-                        (request.client as any)?.counterparties?.[0]?.counterparty?.name ||
-                        "Не привязан"}
+                      {(() => {
+                        const org = getDetailRequestOrg(request);
+                        return org?.shortName || org?.name || "Не привязан";
+                      })()}
                     </p>
                   </div>
 

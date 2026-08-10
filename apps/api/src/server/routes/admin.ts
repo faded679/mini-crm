@@ -23,6 +23,34 @@ const __dirname = path.dirname(__filename_admin);
 
 const router = Router();
 
+const PREFERRED_PAYMENT_METHODS = new Set(["qr", "link", "invoice_act", "edo"]);
+
+/** Keep only known methods + one other: comment; drop garbage (invoice numbers etc.). */
+function normalizePreferredPaymentValue(raw: unknown): string | null {
+  if (raw == null) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+
+  let other: string | null = null;
+  let main = text;
+  const otherIdx = text.search(/(?:^|,)other:/);
+  if (otherIdx >= 0) {
+    const start = text[otherIdx] === "," ? otherIdx + 1 : otherIdx;
+    other = text.slice(start + "other:".length);
+    main = text.slice(0, otherIdx).replace(/,\s*$/, "");
+  }
+
+  const methods: string[] = [];
+  for (const part of main.split(",")) {
+    const p = part.trim();
+    if (PREFERRED_PAYMENT_METHODS.has(p) && !methods.includes(p)) methods.push(p);
+  }
+  // stable order
+  const ordered = ["qr", "link", "invoice_act", "edo"].filter((m) => methods.includes(m));
+  if (other !== null) ordered.push(`other:${other}`);
+  return ordered.length ? ordered.join(",") : null;
+}
+
 // GET /admin/requests/:id/photo/:photoId - получить фото от Telegram или с диска (публичный endpoint)
 router.get("/requests/:id/photo/:photoId", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -1724,7 +1752,7 @@ router.post("/counterparties", async (req: Request, res: Response, next: NextFun
         director: toNullIfEmpty(body.director),
         directorPost: toNullIfEmpty(body.directorPost),
         contract: toNullIfEmpty(body.contract),
-        preferredPayment: toNullIfEmpty(body.preferredPayment),
+        preferredPayment: toNullIfEmpty(normalizePreferredPaymentValue(body.preferredPayment)),
         contacts: {
           create: contactClientIds.map((clientId) => ({ clientId })),
         },
@@ -1774,7 +1802,10 @@ router.patch("/counterparties/:id", async (req: Request, res: Response, next: Ne
         director: body.director !== undefined ? toNullIfEmpty(body.director) : undefined,
         directorPost: body.directorPost !== undefined ? toNullIfEmpty(body.directorPost) : undefined,
         contract: body.contract !== undefined ? toNullIfEmpty(body.contract) : undefined,
-        preferredPayment: body.preferredPayment !== undefined ? toNullIfEmpty(body.preferredPayment) : undefined,
+        preferredPayment:
+          body.preferredPayment !== undefined
+            ? toNullIfEmpty(normalizePreferredPaymentValue(body.preferredPayment))
+            : undefined,
         contacts:
           contactClientIds !== undefined
             ? {

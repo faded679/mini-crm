@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, checkInvoicePayment, type Invoice } from "../api";
 import { useAuth } from "../auth";
 import { cn } from "../lib/utils";
+import { preferredPaymentBadges } from "../lib/preferredPayment";
 
 function formatDateRu(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU");
@@ -323,27 +324,15 @@ export default function Invoices() {
                       <div className="flex flex-col gap-1">
                         <span>{cpName}</span>
                         {inv.counterparty?.preferredPayment && (() => {
-                          const payLabels: Record<string, string> = { qr: "QR", link: "Ссылка", invoice_act: "Счёт и Акт", edo: "ЭДО" };
-                          const payColors: Record<string, string> = {
-                            qr: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-                            link: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-                            invoice_act: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-                            edo: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
-                            other: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-                          };
-                          const parts = inv.counterparty.preferredPayment.split(",").map(s => s.trim()).filter(Boolean);
+                          const badges = preferredPaymentBadges(inv.counterparty.preferredPayment);
+                          if (badges.length === 0) return null;
                           return (
                             <div className="flex flex-wrap gap-1">
-                              {parts.map(m => {
-                                const isOther = m.startsWith("other:");
-                                const key = isOther ? "other" : m;
-                                const label = isOther ? `Др.: ${m.slice(6) || "…"}` : (payLabels[m] ?? m);
-                                return (
-                                  <span key={m} className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${payColors[key] ?? "bg-gray-100 text-gray-600"}`}>
-                                    {label}
-                                  </span>
-                                );
-                              })}
+                              {badges.map((b) => (
+                                <span key={b.key} className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${b.colorClass}`}>
+                                  {b.label}
+                                </span>
+                              ))}
                             </div>
                           );
                         })()}

@@ -58,15 +58,20 @@ function getRequestTotal(r: ShipmentRequest) {
   return total > 0 ? total : null;
 }
 
-/** Организация заявки: явная привязка, иначе fallback на первую связь клиента */
+/**
+ * Организация заявки.
+ * Не берём «первую» орг клиента, если у него несколько — иначе preferredPayment
+ * (QR / Ссылка / Счёт и Акт) чужой орг показывается на заявке.
+ */
 function getRequestOrg(r: ShipmentRequest): { id?: number; shortName?: string | null; name?: string; inn?: string | null; preferredPayment?: string | null } | null {
   if (r.counterparty) return r.counterparty;
   const links = (r.client as any)?.counterparties as { counterparty: any }[] | undefined;
-  if (r.counterpartyId && links?.length) {
-    const found = links.find((l) => l.counterparty?.id === r.counterpartyId)?.counterparty;
-    if (found) return found;
+  if (!links?.length) return null;
+  if (r.counterpartyId) {
+    return links.find((l) => l.counterparty?.id === r.counterpartyId)?.counterparty ?? null;
   }
-  return links?.[0]?.counterparty ?? null;
+  if (links.length === 1) return links[0]?.counterparty ?? null;
+  return null;
 }
 
 function getEffectiveVolume(r: ShipmentRequest): number | null {
@@ -289,20 +294,26 @@ export default function Requests() {
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
     
     // Проверяем, что все заявки от одной организации (counterparty).
-    // Приоритет: явный counterpartyId на заявке, иначе все связи клиента.
-    const cpIdSets = selectedRequests.map(r => {
-      if (r.counterpartyId) return new Set([r.counterpartyId]);
-      const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
-      return new Set((cps ?? []).map(c => c.counterparty.id));
-    });
-    // Найдём пересечение всех наборов
-    let intersection: Set<number> = cpIdSets[0] ?? new Set();
-    for (let i = 1; i < cpIdSets.length; i++) {
-      intersection = new Set([...intersection].filter(id => cpIdSets[i].has(id)));
-    }
-    if (intersection.size === 0 && cpIdSets.some(s => s.size > 0)) {
-      alert("Выберите заявки от одной организации");
-      return;
+    const explicitIds = selectedRequests
+      .map((r) => r.counterpartyId)
+      .filter((id): id is number => id != null);
+    const sameExplicit =
+      explicitIds.length === selectedRequests.length && new Set(explicitIds).size === 1;
+
+    if (!sameExplicit) {
+      const cpIdSets = selectedRequests.map((r) => {
+        if (r.counterpartyId) return new Set([r.counterpartyId]);
+        const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
+        return new Set((cps ?? []).map((c) => c.counterparty.id));
+      });
+      let intersection: Set<number> = cpIdSets[0] ?? new Set();
+      for (let i = 1; i < cpIdSets.length; i++) {
+        intersection = new Set([...intersection].filter((id) => cpIdSets[i].has(id)));
+      }
+      if (intersection.size !== 1) {
+        alert("Выберите заявки от одной организации");
+        return;
+      }
     }
 
     // Автозаполняем позиции счета из услуг заявок, группируя одинаковые услуги
@@ -353,20 +364,30 @@ export default function Requests() {
     }
 
     const selectedRequests = requests.filter(r => selectedIds.has(r.id));
-    // Ищем общий counterparty через пересечение всех наборов
-    const cpIdSetsCreate = selectedRequests.map(r => {
-      if (r.counterpartyId) return new Set([r.counterpartyId]);
-      const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
-      return new Set((cps ?? []).map(c => c.counterparty.id));
-    });
-    let commonCpIds: Set<number> = cpIdSetsCreate[0] ?? new Set();
-    for (let i = 1; i < cpIdSetsCreate.length; i++) {
-      commonCpIds = new Set([...commonCpIds].filter(id => cpIdSetsCreate[i].has(id)));
+    // Prefer explicit org on each request; only fall back to shared single org
+    const explicitIds = selectedRequests
+      .map((r) => r.counterpartyId)
+      .filter((id): id is number => id != null);
+    let counterpartyId: number | undefined;
+    if (explicitIds.length === selectedRequests.length && new Set(explicitIds).size === 1) {
+      counterpartyId = explicitIds[0];
+    } else {
+      const cpIdSetsCreate = selectedRequests.map((r) => {
+        if (r.counterpartyId) return new Set([r.counterpartyId]);
+        const cps = (r.client as any)?.counterparties as { counterparty: { id: number } }[] | undefined;
+        return new Set((cps ?? []).map((c) => c.counterparty.id));
+      });
+      let commonCpIds: Set<number> = cpIdSetsCreate[0] ?? new Set();
+      for (let i = 1; i < cpIdSetsCreate.length; i++) {
+        commonCpIds = new Set([...commonCpIds].filter((id) => cpIdSetsCreate[i].has(id)));
+      }
+      if (commonCpIds.size === 1) {
+        counterpartyId = [...commonCpIds][0];
+      }
     }
-    const counterpartyId = commonCpIds.size > 0 ? [...commonCpIds][0] : undefined;
 
     if (!counterpartyId) {
-      alert("Не найдена организация для клиентов. Убедитесь, что все клиенты привязаны к одной организации.");
+      alert("Не найдена одна общая организация для выбранных заявок. Укажите организацию на заявках или выберите заявки одной организации.");
       return;
     }
 
