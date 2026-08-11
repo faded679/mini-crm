@@ -410,11 +410,49 @@ export function deleteInvoice(id: number) {
   return request<void>(`/admin/invoices/${id}`, { method: "DELETE" });
 }
 
-export function setInvoicePaymentStatus(id: number, isPaid: boolean) {
-  return request<Invoice>(`/admin/invoices/${id}/payment`, {
-    method: "PATCH",
-    body: JSON.stringify({ isPaid }),
-  });
+export class InvoicePaymentError extends Error {
+  code?: string;
+  available?: number;
+  needed?: number;
+
+  constructor(message: string, opts?: { code?: string; available?: number; needed?: number }) {
+    super(message);
+    this.name = "InvoicePaymentError";
+    this.code = opts?.code;
+    this.available = opts?.available;
+    this.needed = opts?.needed;
+  }
+}
+
+export function setInvoicePaymentStatus(
+  id: number,
+  isPaid: boolean,
+  opts?: { allowCash?: boolean }
+) {
+  return (async () => {
+    const token = getToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(`${API_URL}/admin/invoices/${id}/payment`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ isPaid, allowCash: opts?.allowCash === true }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({} as any));
+      const details = (body as any).details || {};
+      throw new InvoicePaymentError((body as any).message || `HTTP ${res.status}`, {
+        code: details.code || (body as any).code,
+        available: details.available,
+        needed: details.needed,
+      });
+    }
+
+    if (res.status === 204) return undefined as unknown as Invoice;
+    return res.json() as Promise<Invoice>;
+  })();
 }
 
 export function checkInvoicePayment(id: number) {

@@ -200,8 +200,8 @@ export async function findMatchedPaymentForInvoice(
 }
 
 /**
- * Ignore MANUAL-* payment rows created by "Отметить оплаченным" for this invoice.
- * Does NOT touch real bank imports or T-Bank payments.
+ * Ignore MANUAL-* / CASH-* payment rows created by manual mark-paid for this invoice.
+ * Does NOT touch real bank imports or T-Bank payments. Does NOT delete rows — only status=ignored.
  */
 export async function ignoreManualPaymentsForInvoice(
   counterpartyId: number,
@@ -214,14 +214,24 @@ export async function ignoreManualPaymentsForInvoice(
       counterpartyId,
       direction: "incoming",
       status: "matched",
-      documentNumber: { startsWith: "MANUAL-" },
       OR: [
-        { invoiceNumbers: { has: invoiceNumber } },
-        { purpose: { contains: `счету №${invoiceNumber}`, mode: "insensitive" } },
-        { purpose: { contains: `счёта №${invoiceNumber}`, mode: "insensitive" } },
-        { purpose: { contains: `счета №${invoiceNumber}`, mode: "insensitive" } },
-        { purpose: { contains: `Счёт №${invoiceNumber}`, mode: "insensitive" } },
-        { purpose: { contains: `Счет №${invoiceNumber}`, mode: "insensitive" } },
+        { documentNumber: { startsWith: "MANUAL-" } },
+        { documentNumber: { startsWith: "CASH-" } },
+      ],
+      AND: [
+        {
+          OR: [
+            { invoiceNumbers: { has: invoiceNumber } },
+            { purpose: { contains: `счету №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `счёта №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `счета №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `счёту №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `по счету №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `по счёту №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `Счёт №${invoiceNumber}`, mode: "insensitive" } },
+            { purpose: { contains: `Счет №${invoiceNumber}`, mode: "insensitive" } },
+          ],
+        },
       ],
     },
     select: { id: true },

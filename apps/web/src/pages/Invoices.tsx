@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, checkInvoicePayment, type Invoice } from "../api";
+import { deleteInvoice, getInvoices, sendInvoicePdf, sendActPdf, sendInvoicePaymentLink, getInvoicePdfUrlById, getActPdfUrlById, getToken, setInvoicePaymentStatus, checkInvoicePayment, InvoicePaymentError, type Invoice } from "../api";
 import { useAuth } from "../auth";
 import { cn } from "../lib/utils";
 import { preferredPaymentBadges } from "../lib/preferredPayment";
@@ -472,13 +472,32 @@ export default function Invoices() {
                                 await setInvoicePaymentStatus(inv.id, true);
                                 await reload();
                               } catch (err) {
-                                alert(err instanceof Error ? err.message : "Ошибка при изменении статуса оплаты");
+                                if (err instanceof InvoicePaymentError && err.code === "PREPAID_INSUFFICIENT") {
+                                  const fmt = (n?: number) =>
+                                    (n ?? 0).toLocaleString("ru-RU", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    });
+                                  const ok = confirm(
+                                    `Не хватает предоплаты (доступно ${fmt(err.available)} ₽, нужно ${fmt(err.needed)} ₽).\n\nКлиент оплатил наличными / вне системы?\nНажмите ОК — отметить оплаченным и добавить поступление.\nОтмена — ничего не менять.`
+                                  );
+                                  if (ok) {
+                                    try {
+                                      await setInvoicePaymentStatus(inv.id, true, { allowCash: true });
+                                      await reload();
+                                    } catch (err2) {
+                                      alert(err2 instanceof Error ? err2.message : "Ошибка при оплате наличными");
+                                    }
+                                  }
+                                } else {
+                                  alert(err instanceof Error ? err.message : "Ошибка при изменении статуса оплаты");
+                                }
                               } finally {
                                 setPaidToggling(null);
                               }
                             }}
                             className="px-2 py-1 text-xs rounded-lg font-medium border transition disabled:opacity-50 bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
-                            title="Оплатить с предоплаты организации (без новой проводки)"
+                            title="С предоплаты или наличными (спросит, если предоплаты не хватает)"
                           >
                             {paidToggling === inv.id ? "..." : "Отметить оплаченным"}
                           </button>

@@ -651,13 +651,13 @@ router.get("/invoices/:id", async (req: Request, res: Response, next: NextFuncti
   }
 });
 
-// PATCH /admin/invoices/:id/payment — отметить счёт оплаченным с предоплаты (без новой проводки)
+// PATCH /admin/invoices/:id/payment — оплата с предоплаты или (по confirm) наличными
 router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
 
-    const { isPaid } = req.body as { isPaid: boolean };
+    const { isPaid, allowCash } = req.body as { isPaid: boolean; allowCash?: boolean };
     if (typeof isPaid !== "boolean") throw new ApiError(400, "isPaid must be boolean");
 
     const currentInvoice = await (prisma as any).invoice.findUnique({
@@ -677,26 +677,66 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
 
     if (isPaid) {
       if (!currentInvoice.counterpartyId) {
-        throw new ApiError(400, "У счёта нет организации — нельзя оплатить с баланса");
+        throw new ApiError(400, "У счёта нет организации — нельзя отметить оплату");
       }
 
-      // Уже есть проводка по этому номеру (банк / T-Bank / старый MANUAL) — только статус
+      // Уже есть проводка по этому номеру (банк / T-Bank / наличные / старый MANUAL) — только статус
       const existingTx = await findMatchedPaymentForInvoice(
         currentInvoice.counterpartyId,
         currentInvoice.number
       );
 
+      let createdCashTx = false;
+
       if (!existingTx) {
-        // Оплата с предоплаты: хватает ли незакрытых поступлений (без создания MANUAL)
         const { available } = await getUnallocatedPrepaid(currentInvoice.counterpartyId);
-        if (available + 1e-9 < invoiceAmount) {
-          const fmt = (n: number) =>
-            n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          throw new ApiError(
-            400,
-            `Не хватает предоплаты: доступно ${fmt(available)} ₽, нужно ${fmt(invoiceAmount)} ₽. Пополните баланс или дождитесь оплаты по счёту.`
-          );
+        const prepaidCovers = available + 1e-9 >= invoiceAmount;
+
+        if (!prepaidCovers) {
+          if (!allowCash) {
+            const fmt = (n: number) =>
+              n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            throw new ApiError(
+              400,
+              `Не хватает предоплаты: доступно ${fmt(available)} ₽, нужно ${fmt(invoiceAmount)} ₽. Можно отметить оплату наличными.`,
+              {
+                code: "PREPAID_INSUFFICIENT",
+                available,
+                needed: invoiceAmount,
+              }
+            );
+          }
+
+          // Наличные / оплата вне системы — одна matched-проводка (не удаляем из БД позже, только ignore при снятии)
+          const invoiceDate = currentInvoice.date
+            ? new Date(currentInvoice.date).toLocaleDateString("ru-RU", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : "";
+
+          await (prisma as any).bankTransaction.create({
+            data: {
+              counterpartyId: currentInvoice.counterpartyId,
+              direction: "incoming",
+              status: "matched",
+              amount: invoiceAmount,
+              purpose: `Оплата наличными по счету №${currentInvoice.number} от ${invoiceDate}`,
+              documentDate: new Date(),
+              documentNumber: `CASH-${Date.now()}`,
+              payerName:
+                currentInvoice.counterparty?.shortName ||
+                currentInvoice.counterparty?.name ||
+                "Клиент",
+              recipientName: "Sologo",
+              invoiceNumbers: [currentInvoice.number],
+              matchedAt: new Date(),
+            },
+          });
+          createdCashTx = true;
         }
+        // else: хватает предоплаты — только isPaid, без новой строки
       }
 
       const updated = await (prisma as any).invoice.update({
@@ -709,13 +749,12 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
         include: { items: true, counterparty: true },
       });
 
-      // Новую BankTransaction НЕ создаём — деньги уже в totalPaid (депозит / выписка / T-Bank)
       await recalculateBalance(currentInvoice.counterpartyId);
-      res.json(updated);
+      res.json({ ...updated, paidFromCash: createdCashTx });
       return;
     }
 
-    // Снятие оплаты: только статус + ignore старых MANUAL-* (update status, без удаления строк)
+    // Снятие оплаты: только статус + ignore старых MANUAL-/CASH-* (update status, без удаления строк)
     const newStatus =
       currentInvoice.status === "paid" ? "sent" : currentInvoice.status;
 
