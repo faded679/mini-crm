@@ -11,6 +11,7 @@ import {
   recalculateBalance,
   findMatchedPaymentForInvoice,
   ignoreManualPaymentsForInvoice,
+  getUnallocatedPrepaid,
 } from "../services/bank-import-service.js";
 import { RequestStatus } from "@prisma/client";
 import { generateInvoicePdfBuffer } from "../services/invoice-pdf.js";
@@ -650,7 +651,7 @@ router.get("/invoices/:id", async (req: Request, res: Response, next: NextFuncti
   }
 });
 
-// PATCH /admin/invoices/:id/payment — отметить счёт оплаченным вручную
+// PATCH /admin/invoices/:id/payment — отметить счёт оплаченным с предоплаты (без новой проводки)
 router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
@@ -671,68 +672,68 @@ router.patch("/invoices/:id/payment", async (req: Request, res: Response, next: 
       return;
     }
 
-    const newStatus = isPaid
-      ? "paid"
-      : currentInvoice.status === "paid" ? "sent" : currentInvoice.status;
+    const invoiceAmount =
+      currentInvoice.items?.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0) || 0;
+
+    if (isPaid) {
+      if (!currentInvoice.counterpartyId) {
+        throw new ApiError(400, "У счёта нет организации — нельзя оплатить с баланса");
+      }
+
+      // Уже есть проводка по этому номеру (банк / T-Bank / старый MANUAL) — только статус
+      const existingTx = await findMatchedPaymentForInvoice(
+        currentInvoice.counterpartyId,
+        currentInvoice.number
+      );
+
+      if (!existingTx) {
+        // Оплата с предоплаты: хватает ли незакрытых поступлений (без создания MANUAL)
+        const { available } = await getUnallocatedPrepaid(currentInvoice.counterpartyId);
+        if (available + 1e-9 < invoiceAmount) {
+          const fmt = (n: number) =>
+            n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          throw new ApiError(
+            400,
+            `Не хватает предоплаты: доступно ${fmt(available)} ₽, нужно ${fmt(invoiceAmount)} ₽. Пополните баланс или дождитесь оплаты по счёту.`
+          );
+        }
+      }
+
+      const updated = await (prisma as any).invoice.update({
+        where: { id },
+        data: {
+          isPaid: true,
+          paidAt: new Date(),
+          status: "paid",
+        },
+        include: { items: true, counterparty: true },
+      });
+
+      // Новую BankTransaction НЕ создаём — деньги уже в totalPaid (депозит / выписка / T-Bank)
+      await recalculateBalance(currentInvoice.counterpartyId);
+      res.json(updated);
+      return;
+    }
+
+    // Снятие оплаты: только статус + ignore старых MANUAL-* (update status, без удаления строк)
+    const newStatus =
+      currentInvoice.status === "paid" ? "sent" : currentInvoice.status;
 
     const updated = await (prisma as any).invoice.update({
       where: { id },
       data: {
-        isPaid,
-        paidAt: isPaid ? new Date() : null,
+        isPaid: false,
+        paidAt: null,
         status: newStatus,
       },
       include: { items: true, counterparty: true },
     });
 
     if (currentInvoice.counterpartyId) {
-      if (isPaid) {
-        // Не создаём вторую оплату, если уже есть matched-проводка по этому счёту
-        // (выписка / T-Bank / предыдущая ручная отметка)
-        const existingTx = await findMatchedPaymentForInvoice(
-          currentInvoice.counterpartyId,
-          currentInvoice.number
-        );
-
-        if (!existingTx) {
-          const totalAmount =
-            currentInvoice.items?.reduce((s: number, it: any) => s + (Number(it.amount) || 0), 0) || 0;
-
-          const invoiceDate = currentInvoice.date
-            ? new Date(currentInvoice.date).toLocaleDateString("ru-RU", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })
-            : "";
-
-          await (prisma as any).bankTransaction.create({
-            data: {
-              counterpartyId: currentInvoice.counterpartyId,
-              direction: "incoming",
-              status: "matched",
-              amount: totalAmount,
-              purpose: `Оплата по счету №${currentInvoice.number} от ${invoiceDate} (ручная отметка)`,
-              documentDate: new Date(),
-              documentNumber: `MANUAL-${Date.now()}`,
-              payerName:
-                currentInvoice.counterparty?.shortName ||
-                currentInvoice.counterparty?.name ||
-                "Клиент",
-              recipientName: "Sologo",
-              invoiceNumbers: [currentInvoice.number],
-              matchedAt: new Date(),
-            },
-          });
-        }
-      } else {
-        // Снятие оплаты: убираем только MANUAL-проводки, реальные платежи не трогаем
-        await ignoreManualPaymentsForInvoice(
-          currentInvoice.counterpartyId,
-          currentInvoice.number
-        );
-      }
-
+      await ignoreManualPaymentsForInvoice(
+        currentInvoice.counterpartyId,
+        currentInvoice.number
+      );
       await recalculateBalance(currentInvoice.counterpartyId);
     }
 

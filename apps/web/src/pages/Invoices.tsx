@@ -471,10 +471,14 @@ export default function Invoices() {
                               try {
                                 await setInvoicePaymentStatus(inv.id, true);
                                 await reload();
-                              } catch { alert("Ошибка при изменении статуса оплаты"); }
-                              finally { setPaidToggling(null); }
+                              } catch (err) {
+                                alert(err instanceof Error ? err.message : "Ошибка при изменении статуса оплаты");
+                              } finally {
+                                setPaidToggling(null);
+                              }
                             }}
                             className="px-2 py-1 text-xs rounded-lg font-medium border transition disabled:opacity-50 bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
+                            title="Оплатить с предоплаты организации (без новой проводки)"
                           >
                             {paidToggling === inv.id ? "..." : "Отметить оплаченным"}
                           </button>

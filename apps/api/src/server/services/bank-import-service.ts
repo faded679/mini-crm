@@ -238,6 +238,50 @@ export async function ignoreManualPaymentsForInvoice(
 }
 
 /**
+ * Prepaid not yet assigned to paid invoices.
+ * available = matched incoming payments − sum of already paid (non-cancelled) invoices.
+ * This is NOT the same as −counterpartyBalance.balance (unpaid invoices already reduce that).
+ */
+export async function getUnallocatedPrepaid(counterpartyId: number): Promise<{
+  totalPaid: number;
+  paidInvoicesSum: number;
+  available: number;
+}> {
+  const txAgg = await (prisma as any).bankTransaction.aggregate({
+    where: {
+      counterpartyId,
+      direction: "incoming",
+      status: "matched",
+    },
+    _sum: { amount: true },
+  });
+  const totalPaid = Number(txAgg._sum.amount) || 0;
+
+  const paidInvoices = await (prisma as any).invoice.findMany({
+    where: {
+      counterpartyId,
+      isPaid: true,
+      status: { not: "cancelled" },
+    },
+    include: { items: true },
+  });
+
+  const paidInvoicesSum = paidInvoices.reduce((sum: number, invoice: any) => {
+    const invoiceTotal = (invoice.items || []).reduce(
+      (itemSum: number, item: any) => itemSum + (Number(item.amount) || 0),
+      0
+    );
+    return sum + invoiceTotal;
+  }, 0);
+
+  return {
+    totalPaid,
+    paidInvoicesSum,
+    available: Math.max(0, totalPaid - paidInvoicesSum),
+  };
+}
+
+/**
  * Recalculate balance for a counterparty
  * - totalBilled: sum of invoice item amounts excluding cancelled invoices
  * - totalPaid: sum of all matched incoming bank transactions
