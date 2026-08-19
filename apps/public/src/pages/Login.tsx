@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { requestVerification, checkVerification } from "../api";
 import { saveAuth } from "../auth";
 import ProfileCompletion from "./ProfileCompletion";
+import { Link } from "react-router-dom";
 
 interface LoginProps {
   onSuccess: () => void;
@@ -16,7 +17,6 @@ export default function Login({ onSuccess }: LoginProps) {
   const [retryLoading, setRetryLoading] = useState(false);
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
@@ -158,15 +158,15 @@ export default function Login({ onSuccess }: LoginProps) {
                   </div>
                 </div>
                 <p className="text-xs text-muted leading-relaxed select-none">
-                  Я даю согласие на{" "}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPrivacy(true); }}
+                  Я даю согласие на обработку персональных данных в соответствии с{" "}
+                  <Link
+                    to="/privacy"
+                    onClick={(e) => e.stopPropagation()}
                     className="text-accent underline"
                   >
-                    обработку персональных данных
-                  </button>{" "}
-                  в соответствии с Федеральным законом №152-ФЗ
+                    политикой конфиденциальности
+                  </Link>{" "}
+                  и Федеральным законом № 152-ФЗ
                 </p>
               </label>
 
@@ -181,39 +181,6 @@ export default function Login({ onSuccess }: LoginProps) {
             </>
 
           ) : null}
-
-          {/* Privacy modal */}
-          {showPrivacy && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowPrivacy(false)}>
-              <div className="absolute inset-0 bg-black/40" />
-              <div
-                className="relative bg-white rounded-t-[24px] w-full max-w-[480px] max-h-[85vh] flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
-                  <h3 className="text-heading font-bold text-base">Согласие на обработку персональных данных</h3>
-                  <button onClick={() => setShowPrivacy(false)} className="text-2xl leading-none text-muted">&times;</button>
-                </div>
-                <div className="overflow-y-auto px-5 py-4 text-xs text-muted leading-relaxed space-y-3">
-                  <p>Настоящим я, субъект персональных данных, в соответствии с требованиями Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных», свободно, своей волей и в своём интересе даю согласие на обработку своих персональных данных.</p>
-                  <p><strong className="text-heading">Оператор:</strong> ИП Соловьёв Артём Александрович, ИНН 302201915296, 309167, Россия, Белгородская обл., Красноярусжкий р-н, пос. Степное, ул. Садовая, д. 9/1.</p>
-                  <p><strong className="text-heading">Перечень персональных данных:</strong> фамилия, имя, отчество; номер телефона; адрес электронной почты; ИНН организации; данные об операциях и заявках.</p>
-                  <p><strong className="text-heading">Цели обработки:</strong> идентификация пользователя, оказание логистических услуг, связь по вопросам исполнения договора, направление уведомлений о статусе заявок.</p>
-                  <p><strong className="text-heading">Способы обработки:</strong> сбор, запись, систематизация, накопление, хранение, уточнение, использование, передача (при необходимости), обезличивание, блокирование, удаление, уничтожение персональных данных.</p>
-                  <p><strong className="text-heading">Срок действия согласия:</strong> бессрочно, до момента его отзыва субъектом персональных данных.</p>
-                  <p>Согласие может быть отозвано путём направления письменного заявления на адрес электронной почты оператора. После отзыва согласия оператор прекратит обработку персональных данных и уничтожит их в течение 30 дней, если иное не предусмотрено законодательством.</p>
-                </div>
-                <div className="px-5 pb-5 pt-3">
-                  <button
-                    onClick={() => { setConsent(true); setShowPrivacy(false); }}
-                    className="w-full h-12 rounded-2xl bg-accent text-white font-semibold text-sm transition active:bg-accent-dark"
-                  >
-                    Принимаю
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {step !== "phone" && (
             <>

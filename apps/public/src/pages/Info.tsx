@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
@@ -78,6 +79,9 @@ export default function Info() {
         <div className="flex flex-col gap-2 text-sm">
           <a href="tel:+79586606096" className="text-accent font-medium">+7 (958) 660-60-96</a>
           <a href="https://t.me/SolovyovEx" target="_blank" rel="noopener noreferrer" className="text-accent font-medium">@SolovyovEx (Telegram)</a>
+          <Link to="/privacy" className="text-muted text-xs underline underline-offset-2">
+            Политика конфиденциальности
+          </Link>
         </div>
       </section>
     </div>

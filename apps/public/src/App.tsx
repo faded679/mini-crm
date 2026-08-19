@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import {
   isAuthenticated,
   getToken,
@@ -20,6 +20,8 @@ import Profile from "./pages/Profile";
 import Info from "./pages/Info";
 import Success from "./pages/Success";
 import SelectOrganization from "./pages/SelectOrganization";
+import PrivacyPage from "./pages/Privacy";
+import CookieBanner from "./components/CookieBanner";
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -44,6 +46,7 @@ async function getMeWithRetry(token: string, attempts = 3): Promise<MeResponse> 
 }
 
 export default function App() {
+  const location = useLocation();
   const [authed, setAuthed] = useState(isAuthenticated());
   const [me, setMe] = useState<MeResponse | null>(null);
   const [orgReady, setOrgReady] = useState(false);
@@ -158,13 +161,28 @@ export default function App() {
     }
   }, [authed, resolveOrgContext]);
 
+  if (location.pathname === "/privacy") {
+    return (
+      <>
+        <PrivacyPage />
+        <CookieBanner />
+      </>
+    );
+  }
+
   if (!authed) {
-    return <Login onSuccess={() => setAuthed(true)} />;
+    return (
+      <>
+        <Login onSuccess={() => setAuthed(true)} />
+        <CookieBanner />
+      </>
+    );
   }
 
   if (!orgReady && !needsOrgPick) {
     return (
-      <div className="min-h-[100dvh] bg-bg flex flex-col items-center justify-center gap-3 px-4 text-center">
+      <>
+        <div className="min-h-[100dvh] bg-bg flex flex-col items-center justify-center gap-3 px-4 text-center">
         {loadingMe || !loadError ? (
           <p className="text-muted text-sm">Загрузка...</p>
         ) : (
@@ -189,19 +207,24 @@ export default function App() {
             </button>
           </>
         )}
-      </div>
+        </div>
+        <CookieBanner />
+      </>
     );
   }
 
   if (needsOrgPick) {
     return (
-      <SelectOrganization
-        organizations={organizations}
-        onSelected={() => {
-          setNeedsOrgPick(false);
-          setOrgReady(true);
-        }}
-      />
+      <>
+        <SelectOrganization
+          organizations={organizations}
+          onSelected={() => {
+            setNeedsOrgPick(false);
+            setOrgReady(true);
+          }}
+        />
+        <CookieBanner />
+      </>
     );
   }
 
@@ -227,11 +250,13 @@ export default function App() {
               />
             }
           />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/success/:id" element={<Success />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
       <BottomNav />
+      <CookieBanner />
     </div>
   );
 }
